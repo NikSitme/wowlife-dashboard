@@ -256,6 +256,11 @@
   .rev-row.child .rval { font-weight: 500; color: var(--text-secondary); }
   .rev-row.child .rmom { font-size: 10.5px; font-weight: 400; }
   .rev-row.child .rpct { font-weight: 400; }
+  .rev-row.group { cursor: pointer; user-select: none; }
+  .rev-row.group .exp-toggle { display: inline-block; width: 12px; color: var(--text-muted); font-size: 10px; transition: transform .12s; }
+  .rev-row.group.open .exp-toggle { transform: rotate(90deg); }
+  .rev-row.group:not(.has-children) .exp-toggle { visibility: hidden; }
+  .exp-children[hidden] { display: none; }
 
   .donut-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
   .donut-legend { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 140px; }
@@ -349,6 +354,19 @@
     </div>
   </div>
 
+  <div class="row2">
+    <div class="card">
+      <div class="rev-lbl">РАСХОДЫ ЗА ПЕРИОД</div>
+      <div class="rev-big" id="expHeadlineVal"></div>
+      <div class="rev-breakdown" id="expHeadlineBreakdown"></div>
+    </div>
+    <div class="card">
+      <h2>Расходы по категориям</h2>
+      <p class="cap">Сумма за выбранный период</p>
+      <div id="expCatChart"></div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Выручка по каналам</h2>
     <p class="cap">Сумма за выбранный период</p>
@@ -376,12 +394,6 @@
       <span class="item"><span class="key" style="background:var(--s3)"></span>Чистая прибыль</span>
     </div>
     <div class="chart-wrap" id="trendWrap"></div>
-  </div>
-
-  <div class="card">
-    <h2>Расходы по категориям</h2>
-    <p class="cap">Сумма за выбранный период</p>
-    <div id="expCatChart"></div>
   </div>
 
   <div class="card">
@@ -3134,7 +3146,11 @@ window.__salesActSetData = function(newData){
       operating_total: sum("operating_total"),
       gross_profit: sum("gross_profit"),
       ebitda: sum("ebitda"),
+      interest: sum("interest"),
+      taxes: sum("taxes"),
       net_profit: sum("net_profit"),
+      loan_principal: sum("loan_principal"),
+      dividends: sum("dividends"),
       revenue_breakdown: mergeBreakdown(months, "revenue_breakdown"),
       direct_breakdown: mergeBreakdown(months, "direct_breakdown"),
       personnel_breakdown: mergeBreakdown(months, "personnel_breakdown"),
@@ -3417,6 +3433,7 @@ window.__salesActSetData = function(newData){
     renderRevenueDonut(agg);
     renderRevenueYearChart();
     renderTrend();
+    renderExpenseHeadline(agg);
     renderHBarColored(root.querySelector("#expCatChart"), agg);
     renderHBar(root.querySelector("#revChanChart"), agg.revenue_breakdown, "var(--seq)", agg.revenue_total);
     renderTable(agg);
@@ -3564,6 +3581,127 @@ window.__salesActSetData = function(newData){
       }
     });
     box.innerHTML = html;
+  }
+
+  // ---------- Expense structure (custom grouping, requested layout) ----------
+  var EXPENSE_GROUPS = [
+    { label: "Активации",                   flat: true,  items: [["direct", "Активация"]] },
+    { label: "Расходы маркетплейсов",        flat: true,  items: [["direct", "Расходы ВБ"], ["direct", "Расходы ОЗОН"], ["direct", "Расходы ЯМ"], ["direct", "Расходы ФВ"]] },
+    { label: "ФОТ",                          flat: true,  items: [["personnel", "*"]] },
+    { label: "Расходы офиса",                flat: true,  items: [["admin", "Расходы офиса"]] },
+    { label: "Создание продукта",            flat: true,  items: [["direct", "Создание продукта"]] },
+    { label: "Возвраты",                     flat: true,  items: [["direct", "Возвраты"]] },
+    { label: "Комиссии",                     flat: false, items: [["direct", "Эквайринговая комиссия"], ["direct", "Банковские комиссии"]] },
+    { label: "Доставка",                     flat: false, items: [["indirect", "Доставка"], ["indirect", "Доставка Далли"]] },
+    { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
+    { label: "Сервисы административные",     flat: false, items: [["indirect", "Телефония"], ["indirect", "СМС"], ["admin", "Сервисы административные"], ["admin", "Найм сотрудников"], ["admin", "Прочие административные расходы"]] },
+    { label: "Подарки команде",              flat: true,  items: [["admin", "Подарки команде"]] },
+    { label: "Налоги",                       flat: true,  items: [["standalone", "taxes"]] },
+    { label: "Проценты по кредитам и займам", flat: true, items: [["standalone", "interest"]] },
+    { label: "Аренда офиса",                 flat: false, items: [["admin", "Аренда офиса Мск"], ["admin", "Аренда и содержание офиса"]] },
+    { label: "Тело кредита и др.",           flat: true,  items: [["standalone", "loan_principal"], ["standalone", "dividends"]] },
+    // всё, что не попало ни в одну категорию выше (обычно нулевое) — чтобы сумма всегда сходилась с реальными расходами
+    { label: "Прочее",                       flat: false, items: [
+      ["indirect", "Сервисы продукта"], ["indirect", "Доставка СДЭК"], ["indirect", "Доставка 5Post"], ["indirect", "Оборудование"],
+      ["indirect", "Открытие нового города"], ["indirect", "Съёмки"], ["indirect", "Монтаж"], ["indirect", "Консалтинг"], ["indirect", "B2B"],
+      ["admin", "Административный отдел"], ["admin", "Подарки партнерам"],
+      ["admin", "1% за регистрацию"], ["admin", "Страховые взносы ИП"],
+    ]},
+  ];
+
+  function pick(breakdownArr, name){
+    if (!breakdownArr) return 0;
+    var it = breakdownArr.filter(function(x){ return x.name === name; })[0];
+    return it ? it.value : 0;
+  }
+
+  function expenseGroupsRaw(agg){
+    return EXPENSE_GROUPS.map(function(g){
+      var childVals = g.items.map(function(pair){
+        var kind = pair[0], name = pair[1];
+        var value;
+        if (kind === "standalone") value = agg[name] || 0;
+        else if (name === "*") value = agg[kind + "_total"] || 0;
+        else value = pick(agg[kind + "_breakdown"], name);
+        return { name: name, value: value };
+      });
+      var total = childVals.reduce(function(a, c){ return a + c.value; }, 0);
+      return { label: g.label, flat: g.flat, total: total, children: childVals };
+    });
+  }
+
+  function expensePartsNested(agg){
+    var total = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total + (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0);
+    var groups = expenseGroupsRaw(agg).filter(function(g){ return g.total > 0.5; });
+    groups.forEach(function(g){
+      g.share = total ? g.total / total : 0;
+      if (!g.flat){
+        g.children = g.children.filter(function(c){ return c.value > 0.5; }).sort(function(a,b){ return b.value - a.value; });
+      } else {
+        g.children = [];
+      }
+    });
+    groups.sort(function(a, b){ return b.total - a.total; });
+    return { total: total, groups: groups };
+  }
+
+  function expenseMoMPct(){
+    var i = state.to;
+    if (i < 1) return null;
+    var curAgg = aggregate(i, i), prevAgg = aggregate(i - 1, i - 1);
+    var cur = expenseGroupsRaw(curAgg);
+    var prev = expenseGroupsRaw(prevAgg);
+    function pct(c, p){ if (p === 0) return c === 0 ? 0 : null; return (c - p) / Math.abs(p) * 100; }
+    function totalOf(a){ return a.direct_costs_total + a.personnel_total + a.indirect_total + a.admin_total + (a.interest||0) + (a.taxes||0) + (a.loan_principal||0) + (a.dividends||0); }
+    var out = { total: pct(totalOf(curAgg), totalOf(prevAgg)) };
+    cur.forEach(function(g, idx){
+      out[g.label] = pct(g.total, prev[idx].total);
+      g.children.forEach(function(c, ci){
+        out[g.label + "\u0001" + c.name] = pct(c.value, prev[idx].children[ci].value);
+      });
+    });
+    return out;
+  }
+
+  var expOpenGroups = {};
+
+  function renderExpenseHeadline(agg){
+    var mom = expenseMoMPct();
+    var data = expensePartsNested(agg);
+    root.querySelector("#expHeadlineVal").innerHTML = fmt(data.total) + (mom ? momSpan(mom.total, "big") : "");
+    var box = root.querySelector("#expHeadlineBreakdown");
+    var html = "";
+    data.groups.forEach(function(g, gi){
+      var hasChildren = !g.flat && g.children.length > 0;
+      var isOpen = !!expOpenGroups[g.label];
+      html += '<div class="rev-row group' + (hasChildren ? ' has-children' : '') + (isOpen ? ' open' : '') + '" data-group="' + gi + '">' +
+        '<span class="exp-toggle">▸</span>' +
+        '<span class="rname">' + g.label + '</span>' +
+        '<span class="rval">' + fmtCompact(g.total) + (mom ? momSpan(mom[g.label]) : "") + '</span>' +
+        '<span class="rpct">' + (g.share * 100).toFixed(0) + '%</span>' +
+        '</div>';
+      if (hasChildren){
+        html += '<div class="exp-children"' + (isOpen ? "" : " hidden") + ' data-group-children="' + gi + '">';
+        g.children.forEach(function(c){
+          html += '<div class="rev-row child">' +
+            '<span class="rname">' + c.name + '</span>' +
+            '<span class="rval">' + fmtCompact(c.value) + (mom ? momSpan(mom[g.label + "" + c.name], "child") : "") + '</span>' +
+            '</div>';
+        });
+        html += '</div>';
+      }
+    });
+    box.innerHTML = html;
+    box.querySelectorAll(".rev-row.group.has-children").forEach(function(row){
+      row.addEventListener("click", function(){
+        var gi = row.getAttribute("data-group");
+        var label = data.groups[gi].label;
+        expOpenGroups[label] = !expOpenGroups[label];
+        row.classList.toggle("open", expOpenGroups[label]);
+        var kids = box.querySelector('[data-group-children="' + gi + '"]');
+        if (kids) kids.hidden = !expOpenGroups[label];
+      });
+    });
   }
 
   function renderRevenueYearChart(){
