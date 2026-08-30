@@ -249,6 +249,8 @@
   .rev-row .rname { color: var(--text-secondary); flex: 1; }
   .rev-row .rval { font-weight: 650; font-variant-numeric: tabular-nums; }
   .rev-row .rmom { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 3px; font-variant-numeric: tabular-nums; }
+  .rmom.big.good { color: var(--good); font-weight: 650; }
+  .rmom.big.bad { color: var(--bad); font-weight: 650; }
   .rev-row .rpct { color: var(--text-muted); font-weight: 650; width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
   .rev-row.child { padding-left: 17px; font-size: 12px; position: relative; }
   .rev-row.child::before { content: ""; position: absolute; left: 4px; top: 0; bottom: 50%; width: 8px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: 0 0 0 4px; }
@@ -354,6 +356,12 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>Выручка по каналам</h2>
+    <p class="cap">Сумма за выбранный период</p>
+    <div id="revChanChart"></div>
+  </div>
+
   <div class="row2">
     <div class="card">
       <div class="rev-lbl">РАСХОДЫ ЗА ПЕРИОД</div>
@@ -368,17 +376,17 @@
   </div>
 
   <div class="card">
-    <h2>Выручка по каналам</h2>
-    <p class="cap">Сумма за выбранный период</p>
-    <div id="revChanChart"></div>
-  </div>
-
-  <div class="card">
     <h2>Динамика выручки за год</h2>
     <p class="cap">Выручка по месяцам, текущий месяц выделен · пунктир — линия тренда</p>
-    <div class="legend">
-      <span class="item"><span class="key" style="background:var(--s1)"></span>Выручка</span>
-      <span class="item"><span class="key trend" style="background:var(--s3)"></span>Тренд</span>
+    <div class="legend" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <span class="item"><span class="key" style="background:var(--s1)"></span>Выручка</span>
+        <span class="item"><span class="key trend" style="background:var(--s3)"></span>Тренд</span>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <div class="presets" id="yearChannelPresets" style="margin-left:0;"></div>
+        <div class="presets" id="yearCityPresets" style="margin-left:0;"></div>
+      </div>
     </div>
     <div class="chart-wrap" id="revYearWrap"></div>
   </div>
@@ -3558,9 +3566,20 @@ window.__salesActSetData = function(newData){
     return ' <span class="rmom' + (extraCls ? " " + extraCls : "") + '">(' + (pct>=0?"+":"") + pct.toFixed(0) + '%)</span>';
   }
 
+  // Для итоговых значений (заголовок блока) — стрелка и цвет отражают, хорошо это или плохо
+  // для бизнеса, а не буквальный знак числа: рост выручки — хорошо (зелёная стрелка вверх),
+  // рост расходов — плохо (красная стрелка вниз), и наоборот.
+  function momArrowSpan(pct, goodWhenPositive){
+    if (pct === null || pct === undefined) return "";
+    var isGood = goodWhenPositive ? (pct >= 0) : (pct <= 0);
+    var cls = isGood ? "good" : "bad";
+    var arrow = isGood ? "↑" : "↓";
+    return ' <span class="rmom big ' + cls + '">' + arrow + ' ' + (pct>=0?"+":"") + pct.toFixed(0) + '%</span>';
+  }
+
   function renderRevenueHeadline(agg){
     var mom = revenueMoMPct();
-    root.querySelector("#revHeadlineVal").innerHTML = fmt(agg.revenue_total) + (mom ? momSpan(mom.total, "big") : "");
+    root.querySelector("#revHeadlineVal").innerHTML = fmt(agg.revenue_total) + (mom ? momArrowSpan(mom.total, true) : "");
     root.querySelector("#revHeadlineSub").textContent = periodLabel();
     var parts = revenuePartsNested(agg);
     var box = root.querySelector("#revHeadlineBreakdown");
@@ -3675,7 +3694,7 @@ window.__salesActSetData = function(newData){
   function renderExpenseHeadline(agg){
     var mom = expenseMoMPct();
     var data = expensePartsNested(agg);
-    root.querySelector("#expHeadlineVal").innerHTML = fmt(data.total) + (mom ? momSpan(mom.total, "big") : "");
+    root.querySelector("#expHeadlineVal").innerHTML = fmt(data.total) + (mom ? momArrowSpan(mom.total, false) : "");
     var box = root.querySelector("#expHeadlineBreakdown");
     var html = "";
     data.groups.forEach(function(g, gi){
@@ -3711,9 +3730,49 @@ window.__salesActSetData = function(newData){
     });
   }
 
+  var yearChartState = { channel: "all", city: "all" };
+  var YEAR_CHANNEL_OPTS = [["all","Все"],["site","Сайт"],["mp","Маркетплейсы"]];
+  var YEAR_CITY_OPTS = [["all","Все"],["msk","МСК"],["spb","СПБ"]];
+
+  function monthRevenueFiltered(m, channel, city){
+    var rb = m.revenue_breakdown;
+    function val(i){ return rb[i] ? rb[i].value : 0; }
+    // порядок REVENUE_LABELS: 0 Wowlife МСК, 1 Wowlife СПБ, 2 ВБ СПБ, 3 ВБ МСК, 4 ОЗОН СПБ,
+    // 5 ОЗОН МСК, 6 ЯМ СПБ, 7 ЯМ МСК, 8 Flowwow СПБ, 9 Flowwow МСК, 10 B2B (без города)
+    var siteMsk = val(0), siteSpb = val(1);
+    var mpSpb = val(2)+val(4)+val(6)+val(8), mpMsk = val(3)+val(5)+val(7)+val(9);
+    var b2b = val(10);
+    var siteVal = city === "msk" ? siteMsk : city === "spb" ? siteSpb : siteMsk + siteSpb;
+    var mpVal = city === "msk" ? mpMsk : city === "spb" ? mpSpb : mpMsk + mpSpb;
+    if (channel === "site") return siteVal;
+    if (channel === "mp") return mpVal;
+    return siteVal + mpVal + (city === "all" ? b2b : 0);
+  }
+
+  function initYearFilters(){
+    function build(container, opts, key){
+      if (container.dataset.built) return;
+      container.dataset.built = "1";
+      opts.forEach(function(opt){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "chip" + (yearChartState[key] === opt[0] ? " active" : "");
+        b.textContent = opt[1];
+        b.addEventListener("click", function(){
+          yearChartState[key] = opt[0];
+          Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+          renderRevenueYearChart();
+        });
+        container.appendChild(b);
+      });
+    }
+    build(root.querySelector("#yearChannelPresets"), YEAR_CHANNEL_OPTS, "channel");
+    build(root.querySelector("#yearCityPresets"), YEAR_CITY_OPTS, "city");
+  }
+
   function renderRevenueYearChart(){
     var wrap = root.querySelector("#revYearWrap");
     if (!wrap) return;
+    initYearFilters();
     var yearStr = DATA[DATA.length-1].date.slice(0,4);
     var months = DATA.filter(function(m){ return m.date.slice(0,4) === yearStr; });
     var startIdx = DATA.length - months.length;
@@ -3724,7 +3783,7 @@ window.__salesActSetData = function(newData){
     var h = 220, padL = 54, padB = 28, padT = 14, padR = 14;
     var plotW = w - padL - padR, plotH = h - padT - padB;
 
-    var revenues = months.map(function(m){ return m.revenue_total; });
+    var revenues = months.map(function(m){ return monthRevenueFiltered(m, yearChartState.channel, yearChartState.city); });
     var maxVal = Math.max.apply(null, revenues.concat([0])) * 1.15 || 1;
     function yScale(v){ return padT + plotH - (v/maxVal)*plotH; }
 
@@ -4035,6 +4094,9 @@ window.__salesActSetData = function(newData){
     var rLoan = rowByB("Тело кредита");
     var rDividends = rowByB("Вывод дивидендов");
     var rFinal = rowByA("прибыль после выплаты тела кредита и дивидендов");
+    // "Сервисы разработки" физически лежит в диапазоне "Косвенные расходы", но не входит
+    // в её официальную сумму (проверено сверкой) — считаем отдельно, чтобы не потерять деньги.
+    var rDevServices = rowByB("Сервисы разработки");
 
     var months = [];
     var k = 0;
@@ -4069,6 +4131,7 @@ window.__salesActSetData = function(newData){
         loan_principal: Math.abs(v(rLoan, fact_col)),
         dividends: Math.abs(v(rDividends, fact_col)),
         final_profit: v(rFinal, fact_col),
+        dev_services: Math.abs(v(rDevServices, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
       });
@@ -4445,7 +4508,7 @@ window.__salesActSetData = function(newData){
     return d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
-  async function runUpdate(btn, statusEl, detailsEl){
+  async function runUpdate(btn, statusEl){
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = "Обновляю…";
@@ -4497,13 +4560,9 @@ window.__salesActSetData = function(newData){
     btn.disabled = false;
     btn.textContent = originalText;
     var okParts = [results.opiu, results.salesact, results.wowsales].filter(Boolean);
-    var msg = "";
-    if (okParts.length) msg += "Обновлено (" + fmtTime(new Date()) + "):\n— " + okParts.join("\n— ");
-    if (errors.length) msg += (msg ? "\n\n" : "") + "Проблемы (данные в соответствующих разделах не тронуты):\n— " + errors.join("\n— ");
-    if (statusEl) statusEl.textContent = okParts.length ? ("Обновлено " + fmtTime(new Date())) + (errors.length ? " (частично, см. подробности)" : "") : "Обновление не удалось (см. подробности)";
-    if (detailsEl){
-      detailsEl.textContent = msg || "Ничего не обновилось.";
-      detailsEl.style.display = "block";
+    if (statusEl){
+      statusEl.textContent = okParts.length ? ("Обновлено " + fmtTime(new Date())) + (errors.length ? " (частично)" : "") : "Обновление не удалось";
+      statusEl.title = [].concat(okParts, errors).join("\n");
     }
   }
 
@@ -4516,28 +4575,12 @@ window.__salesActSetData = function(newData){
     btn.type = "button";
     btn.textContent = "Обновить данные";
     btn.style.cssText = "font:inherit; font-size:13px; font-weight:600; color:#fff; background:#2a78d6; border:none; border-radius:999px; padding:8px 16px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.15);";
-    var statusRow = document.createElement("div");
-    statusRow.style.cssText = "display:flex; align-items:center; gap:6px;";
     var statusEl = document.createElement("div");
     statusEl.style.cssText = "font-size:11px; color:var(--text-muted,#898781);";
-    var closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.textContent = "✕";
-    closeBtn.style.cssText = "display:none; font-size:10px; line-height:1; border:none; background:transparent; color:var(--text-muted,#898781); cursor:pointer; padding:2px;";
-    var detailsEl = document.createElement("pre");
-    detailsEl.style.cssText = "display:none; white-space:pre-wrap; font:12px/1.4 monospace; text-align:left; background:var(--surface-1,#1a1a19); color:var(--text-primary,#fff); border:1px solid var(--border,rgba(255,255,255,0.15)); border-radius:8px; padding:10px 12px; margin:0; max-height:280px; overflow:auto; box-shadow:0 4px 16px rgba(0,0,0,0.2);";
-    statusRow.appendChild(statusEl);
-    statusRow.appendChild(closeBtn);
     wrap.appendChild(btn);
-    wrap.appendChild(statusRow);
-    wrap.appendChild(detailsEl);
+    wrap.appendChild(statusEl);
     document.body.appendChild(wrap);
-    closeBtn.addEventListener("click", function(){ detailsEl.style.display = "none"; closeBtn.style.display = "none"; });
-    btn.addEventListener("click", function(){
-      closeBtn.style.display = "none";
-      detailsEl.style.display = "none";
-      runUpdate(btn, statusEl, detailsEl).then(function(){ closeBtn.style.display = "inline"; });
-    });
+    btn.addEventListener("click", function(){ runUpdate(btn, statusEl); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
