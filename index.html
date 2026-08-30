@@ -3125,7 +3125,7 @@ window.__salesActSetData = function(newData){
   function mergeBreakdown(months, key){
     var map = {}, order = [];
     months.forEach(function(m){
-      m[key].forEach(function(it){
+      (m[key] || []).forEach(function(it){
         if (!(it.name in map)) { map[it.name] = 0; order.push(it.name); }
         map[it.name] += it.value;
       });
@@ -3155,7 +3155,9 @@ window.__salesActSetData = function(newData){
       direct_breakdown: mergeBreakdown(months, "direct_breakdown"),
       personnel_breakdown: mergeBreakdown(months, "personnel_breakdown"),
       indirect_breakdown: mergeBreakdown(months, "indirect_breakdown"),
-      admin_breakdown: mergeBreakdown(months, "admin_breakdown")
+      admin_breakdown: mergeBreakdown(months, "admin_breakdown"),
+      product_creation_breakdown: mergeBreakdown(months, "product_creation_breakdown"),
+      taxes_breakdown: mergeBreakdown(months, "taxes_breakdown")
     };
   }
 
@@ -3589,14 +3591,14 @@ window.__salesActSetData = function(newData){
     { label: "Расходы маркетплейсов",        flat: true,  items: [["direct", "Расходы ВБ"], ["direct", "Расходы ОЗОН"], ["direct", "Расходы ЯМ"], ["direct", "Расходы ФВ"]] },
     { label: "ФОТ",                          flat: true,  items: [["personnel", "*"]] },
     { label: "Расходы офиса",                flat: true,  items: [["admin", "Расходы офиса"]] },
-    { label: "Создание продукта",            flat: true,  items: [["direct", "Создание продукта"]] },
+    { label: "Создание продукта",            flat: false, items: [["array", "product_creation_breakdown"]] },
     { label: "Возвраты",                     flat: true,  items: [["direct", "Возвраты"]] },
     { label: "Комиссии",                     flat: false, items: [["direct", "Эквайринговая комиссия"], ["direct", "Банковские комиссии"]] },
     { label: "Доставка",                     flat: false, items: [["indirect", "Доставка"], ["indirect", "Доставка Далли"]] },
     { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
     { label: "Сервисы административные",     flat: false, items: [["indirect", "Телефония"], ["indirect", "СМС"], ["admin", "Сервисы административные"], ["admin", "Найм сотрудников"], ["admin", "Прочие административные расходы"]] },
     { label: "Подарки команде",              flat: true,  items: [["admin", "Подарки команде"]] },
-    { label: "Налоги",                       flat: true,  items: [["standalone", "taxes"]] },
+    { label: "Налоги",                       flat: false, items: [["array", "taxes_breakdown"]] },
     { label: "Проценты по кредитам и займам", flat: true, items: [["standalone", "interest"]] },
     { label: "Аренда офиса",                 flat: false, items: [["admin", "Аренда офиса Мск"], ["admin", "Аренда и содержание офиса"]] },
     { label: "Тело кредита и др.",           flat: true,  items: [["standalone", "loan_principal"], ["standalone", "dividends"]] },
@@ -3617,13 +3619,18 @@ window.__salesActSetData = function(newData){
 
   function expenseGroupsRaw(agg){
     return EXPENSE_GROUPS.map(function(g){
-      var childVals = g.items.map(function(pair){
+      var childVals = [];
+      g.items.forEach(function(pair){
         var kind = pair[0], name = pair[1];
-        var value;
-        if (kind === "standalone") value = agg[name] || 0;
-        else if (name === "*") value = agg[kind + "_total"] || 0;
-        else value = pick(agg[kind + "_breakdown"], name);
-        return { name: name, value: value };
+        if (kind === "array"){
+          (agg[name] || []).forEach(function(it){ childVals.push({ name: it.name, value: it.value }); });
+        } else if (kind === "standalone"){
+          childVals.push({ name: name, value: agg[name] || 0 });
+        } else if (name === "*"){
+          childVals.push({ name: name, value: agg[kind + "_total"] || 0 });
+        } else {
+          childVals.push({ name: name, value: pick(agg[kind + "_breakdown"], name) });
+        }
       });
       var total = childVals.reduce(function(a, c){ return a + c.value; }, 0);
       return { label: g.label, flat: g.flat, total: total, children: childVals };
@@ -3991,6 +3998,8 @@ window.__salesActSetData = function(newData){
   var PERSONNEL_LABELS = ["ФОТ отдела продукта","ФОТ Маркетинга","ФОТ ОЗ:","ФОТ ОП","ФОТ разработки","ФОТ Административный","Отдел активации","Отдел м-плейсов"];
   var INDIRECT_LABELS = ["Сервисы продукта","Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post","Оборудование","Открытие нового города","Съёмки","Монтаж","Подрядчики маркетинговые","Email рассылка","Сервисы маркетинговые","Закупка рекламы","Консалтинг","Телефония","СМС","B2B"];
   var ADMIN_LABELS = ["Административный отдел","Аренда и содержание офиса","Аренда офиса Мск","Найм сотрудников","Расходы офиса","Сервисы административные","Подарки команде","Подарки партнерам","Прочие административные расходы","1% за регистрацию","Страховые взносы ИП"];
+  var PRODUCT_CREATION_LABELS = ["Коробки","Пакеты","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"];
+  var TAXES_LABELS = ["Налоги и пошлины","НДС 5% от выручки с сайта","НДС по маркетплейсам","УСН 1% от выручки с сайта","УСН по маркетплейсам"];
 
   function computeOpiu(rows){
     var labelRowA = {}, labelRowB = {};
@@ -4060,6 +4069,8 @@ window.__salesActSetData = function(newData){
         loan_principal: Math.abs(v(rLoan, fact_col)),
         dividends: Math.abs(v(rDividends, fact_col)),
         final_profit: v(rFinal, fact_col),
+        product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
+        taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
       });
       k++;
       if (k > 60) break; // safety valve
@@ -4074,6 +4085,8 @@ window.__salesActSetData = function(newData){
         ["personnel", m.personnel_breakdown, m.personnel_total],
         ["indirect", m.indirect_breakdown, m.indirect_total],
         ["admin", m.admin_breakdown, m.admin_total],
+        ["product_creation", m.product_creation_breakdown, (m.direct_breakdown.filter(function(x){return x.name==="Создание продукта";})[0]||{value:0}).value],
+        ["taxes_breakdown", m.taxes_breakdown, m.taxes],
       ].forEach(function(chk){
         var sum = chk[1].reduce(function(a, x){ return a + x.value; }, 0);
         if (Math.abs(sum - chk[2]) > 1) problems.push(m.label + " " + chk[0] + ": breakdown=" + sum.toFixed(2) + " total=" + chk[2].toFixed(2));
