@@ -4581,6 +4581,10 @@ window.__salesActSetData = function(newData){
     wrap.appendChild(statusEl);
     document.body.appendChild(wrap);
     btn.addEventListener("click", function(){ runUpdate(btn, statusEl); });
+    // подтягиваем свежие данные сразу при каждом открытии/перезагрузке страницы —
+    // кнопка остаётся только для повторного пересчёта внутри уже открытой вкладки
+    statusEl.textContent = "Загрузка свежих данных…";
+    runUpdate(btn, statusEl);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
