@@ -3980,6 +3980,7 @@ window.__salesActSetData = function(newData){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var FEED_ID = "1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA";
+  var CACHE_KEY = "wowlife-dashboard-cache-v1";
 
   // ---------- generic helpers ----------
   function parseCsv(text){
@@ -4564,13 +4565,45 @@ window.__salesActSetData = function(newData){
       } catch (e) { errors.push(e.message); }
     }
 
+    var okParts = [results.opiu, results.salesact, results.wowsales].filter(Boolean);
+
+    if (okParts.length){
+      try {
+        var cache = loadCache() || {};
+        if (opiuData) cache.opiu = opiuData;
+        if (saData) cache.salesact = saData;
+        if (wsData){
+          cache.sales = wsData.sales;
+          cache.activations = wsData.activations;
+          cache.partners = wsData.partners;
+        }
+        cache.savedAt = new Date().toISOString();
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      } catch (e) { /* localStorage недоступен (приватный режим и т.п.) — не критично */ }
+    }
+
     btn.disabled = false;
     btn.textContent = originalText;
-    var okParts = [results.opiu, results.salesact, results.wowsales].filter(Boolean);
     if (statusEl){
       statusEl.textContent = okParts.length ? ("Обновлено " + fmtTime(new Date())) + (errors.length ? " (частично)" : "") : "Обновление не удалось";
       statusEl.title = [].concat(okParts, errors).join("\n");
     }
+  }
+
+  function loadCache(){
+    try {
+      var raw = localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function applyCache(cache){
+    try {
+      if (cache.opiu) window.__opiuSetData(cache.opiu);
+      if (cache.salesact) window.__salesActSetData(cache.salesact);
+      if (cache.sales && cache.activations && cache.partners) window.__wowSalesSetData(cache.sales, cache.activations, cache.partners);
+      return true;
+    } catch (e) { return false; }
   }
 
   function init(){
@@ -4588,9 +4621,17 @@ window.__salesActSetData = function(newData){
     wrap.appendChild(statusEl);
     document.body.appendChild(wrap);
     btn.addEventListener("click", function(){ runUpdate(btn, statusEl); });
-    // подтягиваем свежие данные сразу при каждом открытии/перезагрузке страницы —
-    // кнопка остаётся только для повторного пересчёта внутри уже открытой вкладки
-    statusEl.textContent = "Загрузка свежих данных…";
+
+    // сначала мгновенно показываем то, что уже сохранено в браузере с прошлого раза
+    // (если есть), а затем тихо обновляем в фоне — чтобы не ждать пересчёта при каждом
+    // открытии страницы
+    var cache = loadCache();
+    if (cache && applyCache(cache)){
+      var savedDate = cache.savedAt ? new Date(cache.savedAt) : null;
+      statusEl.textContent = savedDate ? ("Показаны данные из кэша (" + fmtTime(savedDate) + "), обновляю…") : "Обновляю…";
+    } else {
+      statusEl.textContent = "Загрузка свежих данных…";
+    }
     runUpdate(btn, statusEl);
   }
 
