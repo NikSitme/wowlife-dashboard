@@ -359,7 +359,8 @@
   <div class="row3">
     <div class="card">
       <h2>Структура выручки</h2>
-      <p class="cap">Сайт (МСК/СПБ) и маркетплейсы за выбранный период</p>
+      <p class="cap">Сайт (МСК/СПБ) и маркетплейсы за выбранный период · в штуках — по данным CRM, без B2B</p>
+      <div class="presets" id="revDonutModePresets" style="margin-left:0; margin-bottom:10px;"></div>
       <div class="donut-wrap">
         <div class="chart-wrap" id="revDonutWrap"></div>
         <div class="donut-legend" id="revDonutLegend"></div>
@@ -367,7 +368,8 @@
     </div>
     <div class="card">
       <h2>Структура выручки по сайту</h2>
-      <p class="cap">Только сайт: МСК и СПБ, за выбранный период</p>
+      <p class="cap">Только сайт: МСК и СПБ, за выбранный период · в штуках — по данным CRM</p>
+      <div class="presets" id="revSiteCityModePresets" style="margin-left:0; margin-bottom:10px;"></div>
       <div class="donut-wrap">
         <div class="chart-wrap" id="revSiteCityDonutWrap"></div>
         <div class="donut-legend" id="revSiteCityDonutLegend"></div>
@@ -3877,7 +3879,69 @@ window.__salesActSetData = function(newData){
     });
   }
 
+  var MODE_OPTS = [["rub","В рублях"],["count","В штуках"]];
+  function buildModeToggle(containerSel, stateObj, onChange){
+    var container = root.querySelector(containerSel);
+    if (!container || container.dataset.built) return;
+    container.dataset.built = "1";
+    MODE_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip" + (stateObj.mode === opt[0] ? " active" : "");
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        stateObj.mode = opt[0];
+        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+        onChange();
+      });
+      container.appendChild(b);
+    });
+  }
+
+  // сумма "штук" (кол-во сертификатов с учётом x2/x3 в описании сделки) по каналам CRM за выбранный период
+  function sumChannelCount(keys){
+    var sa = window.__salesActData;
+    var byChan = sa && sa.revenueByChannelMonth;
+    if (!byChan) return null;
+    var total = 0, any = false;
+    for (var i = state.from; i <= state.to; i++){
+      var m = byChan[DATA[i].label];
+      if (!m) continue;
+      keys.forEach(function(k){ if (m[k]){ total += m[k].count; any = true; } });
+    }
+    return any ? total : null;
+  }
+
+  var MP_CHANNEL_KEYS = ["ozonMsk","ozonSpb","wbMsk","wbSpb","ymMsk","ymSpb","flowwowMsk","flowwowSpb"];
+
+  function revenuePartsCount(){
+    var siteMsk = sumChannelCount(["siteMsk"]), siteSpb = sumChannelCount(["siteSpb"]), mp = sumChannelCount(MP_CHANNEL_KEYS);
+    if (siteMsk === null && siteSpb === null && mp === null) return null;
+    siteMsk = siteMsk || 0; siteSpb = siteSpb || 0; mp = mp || 0;
+    var total = siteMsk + siteSpb + mp;
+    return [
+      { name: "Сайт МСК", value: siteMsk, color: "var(--site1)" },
+      { name: "Сайт СПБ", value: siteSpb, color: "var(--site2)" },
+      { name: "Маркетплейсы", value: mp, color: "var(--mp1)" }
+    ].filter(function(p){ return p.value > 0; }).map(function(p){
+      p.share = total ? p.value/total : 0;
+      return p;
+    });
+  }
+
+  var revDonutModeState = { mode: "rub" };
   function renderRevenueDonut(agg){
+    buildModeToggle("#revDonutModePresets", revDonutModeState, function(){ renderRevenueDonut(agg); });
+    if (revDonutModeState.mode === "count"){
+      var parts = revenuePartsCount();
+      if (parts === null){
+        var wrap = root.querySelector("#revDonutWrap"), legend = root.querySelector("#revDonutLegend");
+        wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных CRM за период (обновляется отдельно)</p>';
+        legend.innerHTML = "";
+        return;
+      }
+      renderDonutGeneric("#revDonutWrap", "#revDonutLegend", parts, "% от числа сертификатов (CRM, без B2B)", true);
+      return;
+    }
     renderDonutGeneric("#revDonutWrap", "#revDonutLegend", revenueParts(agg), "% от выручки");
   }
 
@@ -3894,28 +3958,41 @@ window.__salesActSetData = function(newData){
     });
   }
 
+  function siteCityPartsCount(){
+    var siteMsk = sumChannelCount(["siteMsk"]), siteSpb = sumChannelCount(["siteSpb"]);
+    if (siteMsk === null && siteSpb === null) return null;
+    siteMsk = siteMsk || 0; siteSpb = siteSpb || 0;
+    var total = siteMsk + siteSpb;
+    return [
+      { name: "Сайт МСК", value: siteMsk, color: "var(--site1)" },
+      { name: "Сайт СПБ", value: siteSpb, color: "var(--site2)" }
+    ].filter(function(p){ return p.value > 0; }).map(function(p){
+      p.share = total ? p.value/total : 0;
+      return p;
+    });
+  }
+
+  var revSiteCityModeState = { mode: "rub" };
   function renderRevenueSiteCityDonut(agg){
+    buildModeToggle("#revSiteCityModePresets", revSiteCityModeState, function(){ renderRevenueSiteCityDonut(agg); });
+    if (revSiteCityModeState.mode === "count"){
+      var parts = siteCityPartsCount();
+      if (parts === null){
+        var wrap = root.querySelector("#revSiteCityDonutWrap"), legend = root.querySelector("#revSiteCityDonutLegend");
+        wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных CRM за период (обновляется отдельно)</p>';
+        legend.innerHTML = "";
+        return;
+      }
+      renderDonutGeneric("#revSiteCityDonutWrap", "#revSiteCityDonutLegend", parts, "% от числа сертификатов по сайту (CRM)", true);
+      return;
+    }
     renderDonutGeneric("#revSiteCityDonutWrap", "#revSiteCityDonutLegend", siteCityParts(agg), "% от выручки по сайту");
   }
 
   var certModeState = { mode: "rub" };
-  var CERT_MODE_OPTS = [["rub","В рублях"],["count","В штуках"]];
 
   function initCertModeFilter(){
-    var container = root.querySelector("#certModePresets");
-    if (!container || container.dataset.built) return;
-    container.dataset.built = "1";
-    CERT_MODE_OPTS.forEach(function(opt){
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "chip" + (certModeState.mode === opt[0] ? " active" : "");
-      b.textContent = opt[1];
-      b.addEventListener("click", function(){
-        certModeState.mode = opt[0];
-        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
-        renderRevenueSiteCertDonut();
-      });
-      container.appendChild(b);
-    });
+    buildModeToggle("#certModePresets", certModeState, renderRevenueSiteCertDonut);
   }
 
   function siteCertParts(){
@@ -4087,6 +4164,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 <script>
@@ -4282,12 +4360,28 @@ window.__salesActSetData = function(newData){
   }
 
   // ================= Продажи и активации (таблица "Никита") =================
+  var QTY_RE = /[xх](\d+)\s*(?:—|-)/i;
+  function dealQty(description){
+    var m = QTY_RE.exec(description || "");
+    return m ? parseInt(m[1], 10) : 1;
+  }
+
+  var MP_SOURCE_MAP = { "OZON": "ozon", "Ozon": "ozon", "Wildberries": "wb", "ЯМ": "ym", "flowwow": "flowwow" };
+  function classifyChannel(source, city){
+    var cityKey = city === "Москва" ? "Msk" : city === "Санкт-Петербург" ? "Spb" : null;
+    if (!cityKey) return null;
+    var mp = MP_SOURCE_MAP[(source || "").trim()];
+    if (mp) return mp + cityKey;
+    return "site" + cityKey;
+  }
+
   function computeSalesAct(mktRows, actRows){
     var mh = mktRows[0];
     var iStage = headerIndex(mh, "стадия"), iDate = headerIndex(mh, "дата оплаты"), iSum = headerIndex(mh, "сумма");
-    var iType = headerIndex(mh, "тип товара");
+    var iType = headerIndex(mh, "тип товара"), iCity = headerIndex(mh, "город"), iSource = headerIndex(mh, "источник"), iDesc = headerIndex(mh, "описание");
     var salesCount = {}, salesSum = {}, salesDates = [];
     var revenueByTypeMonth = {};
+    var revenueByChannelMonth = {};
     for (var r = 1; r < mktRows.length; r++){
       var row = mktRows[r];
       if (!row || row[iStage] !== "Сделка успешна" || !row[iDate]) continue;
@@ -4296,15 +4390,25 @@ window.__salesActSetData = function(newData){
       salesCount[d] = (salesCount[d] || 0) + 1;
       salesSum[d] = (salesSum[d] || 0) + ruNum(row[iSum]);
       salesDates.push(d);
+      var monthKey = d.slice(0, 7);
+      var qty = dealQty(row[iDesc]);
+
       var type = (row[iType] || "").trim();
       if (type === "Электронный" || type === "Физический"){
-        var monthKey = d.slice(0, 7);
         if (!revenueByTypeMonth[monthKey]) revenueByTypeMonth[monthKey] = {
           "Электронный": { sum: 0, count: 0 },
           "Физический": { sum: 0, count: 0 },
         };
         revenueByTypeMonth[monthKey][type].sum += ruNum(row[iSum]);
-        revenueByTypeMonth[monthKey][type].count += 1;
+        revenueByTypeMonth[monthKey][type].count += qty;
+      }
+
+      var channel = classifyChannel(row[iSource], row[iCity]);
+      if (channel){
+        if (!revenueByChannelMonth[monthKey]) revenueByChannelMonth[monthKey] = {};
+        if (!revenueByChannelMonth[monthKey][channel]) revenueByChannelMonth[monthKey][channel] = { sum: 0, count: 0 };
+        revenueByChannelMonth[monthKey][channel].sum += ruNum(row[iSum]);
+        revenueByChannelMonth[monthKey][channel].count += qty;
       }
     }
 
@@ -4393,6 +4497,7 @@ window.__salesActSetData = function(newData){
       backlog: backlog,
       dow: { sales: dowSales, act: dowAct },
       revenueByTypeMonth: revenueByTypeMonth,
+      revenueByChannelMonth: revenueByChannelMonth,
     };
 
     var problems = [];
