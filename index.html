@@ -376,6 +376,7 @@
     <div class="card">
       <h2>Структура выручки по сайту</h2>
       <p class="cap">Электронные и физические сертификаты · по данным CRM, могут не совпадать с бухг. выручкой Адеска</p>
+      <div class="presets" id="certModePresets" style="margin-left:0; margin-bottom:10px;"></div>
       <div class="donut-wrap">
         <div class="chart-wrap" id="revSiteCertDonutWrap"></div>
         <div class="donut-legend" id="revSiteCertDonutLegend"></div>
@@ -3897,19 +3898,39 @@ window.__salesActSetData = function(newData){
     renderDonutGeneric("#revSiteCityDonutWrap", "#revSiteCityDonutLegend", siteCityParts(agg), "% от выручки по сайту");
   }
 
+  var certModeState = { mode: "rub" };
+  var CERT_MODE_OPTS = [["rub","В рублях"],["count","В штуках"]];
+
+  function initCertModeFilter(){
+    var container = root.querySelector("#certModePresets");
+    if (!container || container.dataset.built) return;
+    container.dataset.built = "1";
+    CERT_MODE_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip" + (certModeState.mode === opt[0] ? " active" : "");
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        certModeState.mode = opt[0];
+        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+        renderRevenueSiteCertDonut();
+      });
+      container.appendChild(b);
+    });
+  }
+
   function siteCertParts(){
     var sa = window.__salesActData;
     var byType = sa && sa.revenueByTypeMonth;
     if (!byType) return null;
-    var mStart = DATA[state.from], mEnd = DATA[state.to];
+    var field = certModeState.mode === "count" ? "count" : "sum";
     var electronic = 0, physical = 0, any = false;
     for (var i = state.from; i <= state.to; i++){
       var key = DATA[i].label; // "YYYY-MM"
       var m = byType[key];
       if (!m) continue;
       any = true;
-      electronic += m["Электронный"] || 0;
-      physical += m["Физический"] || 0;
+      electronic += (m["Электронный"] && m["Электронный"][field]) || 0;
+      physical += (m["Физический"] && m["Физический"][field]) || 0;
     }
     if (!any) return null;
     var total = electronic + physical;
@@ -3923,6 +3944,7 @@ window.__salesActSetData = function(newData){
   }
 
   function renderRevenueSiteCertDonut(){
+    initCertModeFilter();
     var parts = siteCertParts();
     if (parts === null){
       var wrap = root.querySelector("#revSiteCertDonutWrap");
@@ -3931,10 +3953,11 @@ window.__salesActSetData = function(newData){
       legend.innerHTML = "";
       return;
     }
-    renderDonutGeneric("#revSiteCertDonutWrap", "#revSiteCertDonutLegend", parts, "% от выручки по сайту (CRM)");
+    var suffix = certModeState.mode === "count" ? "% от числа сертификатов (CRM)" : "% от выручки по сайту (CRM)";
+    renderDonutGeneric("#revSiteCertDonutWrap", "#revSiteCertDonutLegend", parts, suffix, certModeState.mode === "count");
   }
 
-  function renderDonutGeneric(wrapSel, legendSel, parts, tipSuffix){
+  function renderDonutGeneric(wrapSel, legendSel, parts, tipSuffix, isCount){
     var wrap = root.querySelector(wrapSel);
     var legend = root.querySelector(legendSel);
     if (!parts.length){
@@ -3942,6 +3965,8 @@ window.__salesActSetData = function(newData){
       legend.innerHTML = "";
       return;
     }
+    var fmtVal = isCount ? function(n){ return Math.round(n).toLocaleString("ru-RU") + " шт"; } : fmt;
+    var fmtCenter = isCount ? function(n){ return Math.round(n).toLocaleString("ru-RU") + " шт"; } : fmtCompact;
     var size = 180, r = 62, sw = 26, cx = size/2, cy = size/2;
     var circ = 2 * Math.PI * r;
     var total = parts.reduce(function(a,p){ return a+p.value; }, 0);
@@ -3956,7 +3981,7 @@ window.__salesActSetData = function(newData){
       offset += frac*circ;
     });
     svgParts.push('<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" class="axis-label" style="font-size:11px">Всего</text>');
-    svgParts.push('<text x="'+cx+'" y="'+(cy+13)+'" text-anchor="middle" fill="var(--text-primary)" style="font-size:13px;font-weight:650">'+fmtCompact(total)+'</text>');
+    svgParts.push('<text x="'+cx+'" y="'+(cy+13)+'" text-anchor="middle" fill="var(--text-primary)" style="font-size:13px;font-weight:650">'+fmtCenter(total)+'</text>');
     wrap.innerHTML = '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+svgParts.join("")+'</svg>';
 
     var svgEl = wrap.querySelector("svg");
@@ -3964,7 +3989,7 @@ window.__salesActSetData = function(newData){
       el.addEventListener("mousemove", function(ev){
         var i = +el.getAttribute("data-i");
         var p = parts[i];
-        var html = '<div class="t-title">'+p.name+'</div>' + row2(p.color, fmt(p.value), (p.share*100).toFixed(1)+tipSuffix);
+        var html = '<div class="t-title">'+p.name+'</div>' + row2(p.color, fmtVal(p.value), (p.share*100).toFixed(1)+tipSuffix);
         showTip(ev.clientX + window.scrollX, ev.clientY + window.scrollY, html);
       });
       el.addEventListener("mouseleave", hideTip);
@@ -4062,6 +4087,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 <script>
 (function(){
@@ -4273,8 +4299,12 @@ window.__salesActSetData = function(newData){
       var type = (row[iType] || "").trim();
       if (type === "Электронный" || type === "Физический"){
         var monthKey = d.slice(0, 7);
-        if (!revenueByTypeMonth[monthKey]) revenueByTypeMonth[monthKey] = { "Электронный": 0, "Физический": 0 };
-        revenueByTypeMonth[monthKey][type] += ruNum(row[iSum]);
+        if (!revenueByTypeMonth[monthKey]) revenueByTypeMonth[monthKey] = {
+          "Электронный": { sum: 0, count: 0 },
+          "Физический": { sum: 0, count: 0 },
+        };
+        revenueByTypeMonth[monthKey][type].sum += ruNum(row[iSum]);
+        revenueByTypeMonth[monthKey][type].count += 1;
       }
     }
 
