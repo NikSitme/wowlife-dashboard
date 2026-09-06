@@ -3627,14 +3627,14 @@ window.__salesActSetData = function(newData){
       html += '<div class="rev-row">' +
         '<span class="rdot" style="background:'+p.color+'"></span>' +
         '<span class="rname">'+p.name+'</span>' +
-        '<span class="rval">'+fmtCompact(p.value)+(mom ? momSpan(mom[p.name], null, true) : "")+'</span>' +
+        '<span class="rval">'+fmt(p.value)+(mom ? momSpan(mom[p.name], null, true) : "")+'</span>' +
         '<span class="rpct">'+(p.share*100).toFixed(0)+'%</span>' +
         '</div>';
       if (p.children && p.children.length){
         p.children.forEach(function(c){
           html += '<div class="rev-row child">' +
             '<span class="rname">'+c.name+'</span>' +
-            '<span class="rval">'+fmtCompact(c.value)+(mom ? momSpan(mom[c.name], "child", true) : "")+'</span>' +
+            '<span class="rval">'+fmt(c.value)+(mom ? momSpan(mom[c.name], "child", true) : "")+'</span>' +
             '<span class="rpct">'+(c.share*100).toFixed(0)+'%</span>' +
             '</div>';
         });
@@ -4164,6 +4164,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
