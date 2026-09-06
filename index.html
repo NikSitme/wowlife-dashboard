@@ -3215,9 +3215,10 @@ window.__salesActSetData = function(newData){
     var deals = filteredDeals();
     var byPartner = {};
     deals.forEach(function(d){
-      byPartner[d.partnerName] = (byPartner[d.partnerName]||0) + d.amount;
+      if (!byPartner[d.partnerName]) byPartner[d.partnerName] = { value: 0, legalName: d.legalName || "" };
+      byPartner[d.partnerName].value += d.amount;
     });
-    var items = Object.keys(byPartner).map(function(name){ return {name:name, value: byPartner[name]}; })
+    var items = Object.keys(byPartner).map(function(name){ return {name:name, value: byPartner[name].value, legalName: byPartner[name].legalName}; })
       .filter(function(it){ return it.value > 0; })
       .sort(function(a,b){ return b.value - a.value; });
     if (!items.length){ container.innerHTML = '<p class="cap" style="margin:0">Нет данных за период</p>'; return; }
@@ -3227,7 +3228,7 @@ window.__salesActSetData = function(newData){
       var row = document.createElement("div");
       row.className = "hbar-row";
       row.innerHTML =
-        '<div class="name">'+it.name+'</div>' +
+        '<div class="name">'+it.name+(it.legalName ? '<br><span style="font-weight:400;font-size:11px;color:var(--text-muted)">'+it.legalName+'</span>' : '')+'</div>' +
         '<div class="track"><div class="fill" style="width:'+(it.value/max*100).toFixed(1)+'%;background:var(--s2)"></div></div>' +
         '<div class="amt">'+kredFmtCompact(it.value)+'</div>';
       container.appendChild(row);
@@ -4343,6 +4344,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4746,7 +4748,7 @@ window.__salesActSetData = function(newData){
 
   var UNPAID_STAGES = { "Ожидает оплаты": true, "Ждем сверку": true };
 
-  function computeKreditorka(kredRows, actRows){
+  function computeKreditorka(kredRows, actRows, partnersRows){
     // имя партнёра по id берём из вкладки "Активация" — в самой "Кредиторка" его нет
     var ah = actRows[0];
     var iPid2 = headerIndex(ah, "id партнера"), iPname = headerIndex(ah, "партнеры");
@@ -4766,6 +4768,26 @@ window.__salesActSetData = function(newData){
       partnerName[pid] = best;
     });
 
+    // юр. лицо по названию партнёра — из вкладки "Партнеры" ("Наименование партнера" -> "Наименование контрагента").
+    // у части партнёров несколько юр.лиц (сеть точек под одним брендом) — перечисляем через "; ".
+    var legalByName = {};
+    if (partnersRows){
+      var ph = partnersRows[0];
+      var iPname2 = headerIndex(ph, "Наименование партнера"), iLegal = headerIndex(ph, "Наименование контрагента");
+      var legalSets = {};
+      for (var p = 1; p < partnersRows.length; p++){
+        var prow = partnersRows[p];
+        if (!prow) continue;
+        var nm = (prow[iPname2] || "").trim(), legal = (prow[iLegal] || "").trim();
+        if (!nm || !legal) continue;
+        if (!legalSets[nm]) legalSets[nm] = {};
+        legalSets[nm][legal] = true;
+      }
+      Object.keys(legalSets).forEach(function(nm){
+        legalByName[nm] = Object.keys(legalSets[nm]).sort().join("; ");
+      });
+    }
+
     var kh = kredRows[0];
     var iStage = headerIndex(kh, "стадия"), iDate = headerIndex(kh, "дата активации"),
         iSum = headerIndex(kh, "себестоимость"), iPid = headerIndex(kh, "id партнера");
@@ -4779,7 +4801,8 @@ window.__salesActSetData = function(newData){
       if (!d) continue;
       var amount = ruNum(row[iSum]);
       var pid = (row[iPid] || "").trim();
-      unpaidDeals.push({ date: d, partnerId: pid, partnerName: partnerName[pid] || ("Партнёр #" + pid), amount: amount });
+      var pname = partnerName[pid] || ("Партнёр #" + pid);
+      unpaidDeals.push({ date: d, partnerId: pid, partnerName: pname, legalName: legalByName[pname] || "", amount: amount });
       totalUnpaid += amount;
     }
 
@@ -4983,6 +5006,7 @@ window.__salesActSetData = function(newData){
       safeFetch("nikitaMarketing", NIKITA_ID, "Маркетинг"),
       safeFetch("nikitaActivation", NIKITA_ID, "Активация"),
       safeFetch("nikitaKreditorka", NIKITA_ID, "Кредиторка"),
+      safeFetch("nikitaPartners", NIKITA_ID, "Партнеры"),
       safeFetch("feedList1", FEED_ID, "Лист1"),
       safeFetch("feedVygruzka", FEED_ID, "Выгрузка"),
       safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
@@ -5019,7 +5043,7 @@ window.__salesActSetData = function(newData){
     // Кредиторка
     if (fetches.nikitaKreditorka && fetches.nikitaActivation){
       try {
-        var kData = computeKreditorka(fetches.nikitaKreditorka, fetches.nikitaActivation);
+        var kData = computeKreditorka(fetches.nikitaKreditorka, fetches.nikitaActivation, fetches.nikitaPartners);
         window.__kreditorkaSetData(kData);
         results.kreditorka = "Кредиторка: непогашено " + Math.round(kData.totalUnpaid).toLocaleString("ru-RU") + " ₽";
       } catch (e) { errors.push(e.message); }
