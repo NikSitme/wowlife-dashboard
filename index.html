@@ -335,6 +335,7 @@
     <button class="tabbtn active" data-tab="opiu" type="button">ОПиУ</button>
     <button class="tabbtn" data-tab="salesact" type="button">Продажи и активации</button>
     <button class="tabbtn" data-tab="wowsales" type="button">Аналитика продаж</button>
+    <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
   </div>
 
   <div class="tabpanel" data-panel="opiu">
@@ -3078,7 +3079,178 @@ window.__salesActSetData = function(newData){
   </div>
 
 
+  <div class="tabpanel" data-panel="kreditorka" hidden>
+
+  <div class="card">
+    <div class="filters">
+      <label>Период</label>
+      <div class="presets" id="kredPeriodPresets"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="rev-lbl">ОБЩИЙ ДОЛГ</div>
+    <div class="rev-big" id="kredTotalVal"></div>
+    <div class="rev-sub" id="kredTotalSub"></div>
+  </div>
+
+  <div class="card">
+    <h2>Динамика кредиторки</h2>
+    <p class="cap">Непогашенный остаток по месяцам возникновения долга (дата активации) · показывает, из сделок каких месяцев остался текущий долг — это не историческая сверка баланса на прошлую дату, а разбивка текущего остатка по происхождению</p>
+    <div class="chart-wrap" id="kredTrendWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2>Долг по партнёрам</h2>
+    <p class="cap">Кому и сколько должны, за выбранный период</p>
+    <div id="kredPartnersChart"></div>
+  </div>
+
+  </div>
+
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
+
+<script>
+(function(){
+  var KREDITORKA_DATA = { asOf: null, totalUnpaid: 0, unpaidDeals: [] };
+
+  var PERIOD_OPTS = [["1m","1 мес"],["3m","3 мес"],["6m","6 мес"],["1y","1 год"],["all","Всё время"]];
+  var kredState = { period: "all" };
+
+  function fmtRub(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function kredFmtCompact(n){
+    var a = Math.abs(n);
+    if (a >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,"") + " млн ₽";
+    if (a >= 1000) return Math.round(n/1000) + " тыс ₽";
+    return Math.round(n) + " ₽";
+  }
+
+  function periodCutoffDate(){
+    if (kredState.period === "all") return null;
+    var d = new Date();
+    if (kredState.period === "1m") d.setMonth(d.getMonth()-1);
+    else if (kredState.period === "3m") d.setMonth(d.getMonth()-3);
+    else if (kredState.period === "6m") d.setMonth(d.getMonth()-6);
+    else if (kredState.period === "1y") d.setFullYear(d.getFullYear()-1);
+    return d.toISOString().slice(0,10);
+  }
+
+  function filteredDeals(){
+    var cutoff = periodCutoffDate();
+    if (!cutoff) return KREDITORKA_DATA.unpaidDeals;
+    return KREDITORKA_DATA.unpaidDeals.filter(function(d){ return d.date >= cutoff; });
+  }
+
+  function initPeriodFilter(){
+    var container = document.getElementById("kredPeriodPresets");
+    if (!container || container.dataset.built) return;
+    container.dataset.built = "1";
+    PERIOD_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip" + (kredState.period === opt[0] ? " active" : "");
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        kredState.period = opt[0];
+        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+        renderKreditorka();
+      });
+      container.appendChild(b);
+    });
+  }
+
+  function renderHeadline(){
+    var deals = filteredDeals();
+    var total = deals.reduce(function(a,d){ return a+d.amount; }, 0);
+    var valEl = document.getElementById("kredTotalVal"), subEl = document.getElementById("kredTotalSub");
+    if (!valEl) return;
+    valEl.textContent = fmtRub(total);
+    subEl.textContent = (kredState.period === "all"
+      ? "Непогашено по всем сделкам"
+      : "Непогашено по сделкам за выбранный период (по дате активации)")
+      + (KREDITORKA_DATA.asOf ? ", по данным на " + KREDITORKA_DATA.asOf : "");
+  }
+
+  function renderTrend(){
+    var wrap = document.getElementById("kredTrendWrap");
+    if (!wrap) return;
+    var deals = filteredDeals();
+    if (!deals.length){ wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных за период</p>'; return; }
+    var byMonth = {};
+    deals.forEach(function(d){
+      var mk = d.date.slice(0,7);
+      byMonth[mk] = (byMonth[mk]||0) + d.amount;
+    });
+    var months = Object.keys(byMonth).sort();
+    var values = months.map(function(m){ return byMonth[m]; });
+    var w = Math.max(wrap.clientWidth || 600, 300), h = 220, padL = 60, padB = 28, padT = 14, padR = 14;
+    var plotW = w - padL - padR, plotH = h - padT - padB;
+    var maxVal = Math.max.apply(null, values.concat([0])) * 1.15 || 1;
+    function yScale(v){ return padT + plotH - (v/maxVal)*plotH; }
+    var n = months.length;
+    var groupW = plotW / n;
+    var barW = Math.min(40, groupW*0.5);
+    var svgParts = [];
+    var steps = 4;
+    for (var s=0;s<=steps;s++){
+      var gv = maxVal*s/steps;
+      var gy = yScale(gv);
+      svgParts.push('<line x1="'+padL+'" x2="'+(w-padR)+'" y1="'+gy.toFixed(1)+'" y2="'+gy.toFixed(1)+'" stroke="var(--surface-2)" stroke-width="1"/>');
+      svgParts.push('<text x="'+(padL-8)+'" y="'+(gy+3).toFixed(1)+'" text-anchor="end" class="axis-label" style="font-size:10px">'+kredFmtCompact(gv)+'</text>');
+    }
+    months.forEach(function(m,i){
+      var cx = padL + groupW*i + groupW/2;
+      var bx = cx - barW/2;
+      var v = values[i];
+      var y = yScale(v);
+      var hgt = Math.max(padT+plotH-y,1);
+      svgParts.push('<rect x="'+bx.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" fill="var(--s2)"/>');
+      svgParts.push('<text x="'+cx.toFixed(1)+'" y="'+(h-8)+'" text-anchor="middle" class="axis-label" style="font-size:10px">'+m+'</text>');
+    });
+    wrap.innerHTML = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+svgParts.join("")+'</svg>';
+  }
+
+  function renderPartners(){
+    var container = document.getElementById("kredPartnersChart");
+    if (!container) return;
+    var deals = filteredDeals();
+    var byPartner = {};
+    deals.forEach(function(d){
+      byPartner[d.partnerName] = (byPartner[d.partnerName]||0) + d.amount;
+    });
+    var items = Object.keys(byPartner).map(function(name){ return {name:name, value: byPartner[name]}; })
+      .filter(function(it){ return it.value > 0; })
+      .sort(function(a,b){ return b.value - a.value; });
+    if (!items.length){ container.innerHTML = '<p class="cap" style="margin:0">Нет данных за период</p>'; return; }
+    var max = Math.max.apply(null, items.map(function(i){return i.value;}));
+    container.innerHTML = "";
+    items.forEach(function(it){
+      var row = document.createElement("div");
+      row.className = "hbar-row";
+      row.innerHTML =
+        '<div class="name">'+it.name+'</div>' +
+        '<div class="track"><div class="fill" style="width:'+(it.value/max*100).toFixed(1)+'%;background:var(--s2)"></div></div>' +
+        '<div class="amt">'+kredFmtCompact(it.value)+'</div>';
+      container.appendChild(row);
+    });
+  }
+
+  function renderKreditorka(){
+    initPeriodFilter();
+    renderHeadline();
+    renderTrend();
+    renderPartners();
+  }
+
+  window.__kreditorkaSetData = function(newData){
+    KREDITORKA_DATA = newData;
+    renderKreditorka();
+  };
+  window.__kreditorkaRerender = renderKreditorka;
+
+  renderKreditorka();
+  window.addEventListener("resize", function(){ renderTrend(); });
+})();
+</script>
 
 </div>
 </div>
@@ -4092,6 +4264,7 @@ window.__salesActSetData = function(newData){
       tabPanels.forEach(function(p){ p.hidden = p.getAttribute("data-panel") !== target; });
       if (target === "salesact" && window.__salesActRerender) window.__salesActRerender();
       if (target === "wowsales" && window.__wowSalesRerender) window.__wowSalesRerender();
+      if (target === "kreditorka" && window.__kreditorkaRerender) window.__kreditorkaRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
   });
@@ -4164,6 +4337,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
@@ -4570,6 +4744,48 @@ window.__salesActSetData = function(newData){
     return classify;
   }
 
+  var UNPAID_STAGES = { "Ожидает оплаты": true, "Ждем сверку": true };
+
+  function computeKreditorka(kredRows, actRows){
+    // имя партнёра по id берём из вкладки "Активация" — в самой "Кредиторка" его нет
+    var ah = actRows[0];
+    var iPid2 = headerIndex(ah, "id партнера"), iPname = headerIndex(ah, "партнеры");
+    var nameCounts = {};
+    for (var a = 1; a < actRows.length; a++){
+      var arow = actRows[a];
+      if (!arow) continue;
+      var pid = (arow[iPid2] || "").trim(), pname = (arow[iPname] || "").trim();
+      if (!pid || !pname) continue;
+      if (!nameCounts[pid]) nameCounts[pid] = {};
+      nameCounts[pid][pname] = (nameCounts[pid][pname] || 0) + 1;
+    }
+    var partnerName = {};
+    Object.keys(nameCounts).forEach(function(pid){
+      var best = null, bestN = -1;
+      Object.keys(nameCounts[pid]).forEach(function(n){ if (nameCounts[pid][n] > bestN){ best = n; bestN = nameCounts[pid][n]; } });
+      partnerName[pid] = best;
+    });
+
+    var kh = kredRows[0];
+    var iStage = headerIndex(kh, "стадия"), iDate = headerIndex(kh, "дата активации"),
+        iSum = headerIndex(kh, "себестоимость"), iPid = headerIndex(kh, "id партнера");
+
+    var unpaidDeals = [];
+    var totalUnpaid = 0;
+    for (var r = 1; r < kredRows.length; r++){
+      var row = kredRows[r];
+      if (!row || !UNPAID_STAGES[row[iStage]]) continue;
+      var d = anyDateToIso(row[iDate]);
+      if (!d) continue;
+      var amount = ruNum(row[iSum]);
+      var pid = (row[iPid] || "").trim();
+      unpaidDeals.push({ date: d, partnerId: pid, partnerName: partnerName[pid] || ("Партнёр #" + pid), amount: amount });
+      totalUnpaid += amount;
+    }
+
+    return { asOf: new Date().toISOString().slice(0, 10), totalUnpaid: Math.round(totalUnpaid * 100) / 100, unpaidDeals: unpaidDeals };
+  }
+
   function computeWowsales(feedList1Rows, siteRows, mpRows, actRows){
     var classify = buildTaxonomy(feedList1Rows);
 
@@ -4754,7 +4970,7 @@ window.__salesActSetData = function(newData){
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = "Обновляю…";
-    var results = { opiu: null, salesact: null, wowsales: null };
+    var results = { opiu: null, salesact: null, wowsales: null, kreditorka: null };
     var errors = [];
 
     var fetches = {};
@@ -4766,6 +4982,7 @@ window.__salesActSetData = function(newData){
       safeFetch("adeskList1", ADESK_ID, "Лист1"),
       safeFetch("nikitaMarketing", NIKITA_ID, "Маркетинг"),
       safeFetch("nikitaActivation", NIKITA_ID, "Активация"),
+      safeFetch("nikitaKreditorka", NIKITA_ID, "Кредиторка"),
       safeFetch("feedList1", FEED_ID, "Лист1"),
       safeFetch("feedVygruzka", FEED_ID, "Выгрузка"),
       safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
@@ -4799,7 +5016,16 @@ window.__salesActSetData = function(newData){
       } catch (e) { errors.push(e.message); }
     }
 
-    var okParts = [results.opiu, results.salesact, results.wowsales].filter(Boolean);
+    // Кредиторка
+    if (fetches.nikitaKreditorka && fetches.nikitaActivation){
+      try {
+        var kData = computeKreditorka(fetches.nikitaKreditorka, fetches.nikitaActivation);
+        window.__kreditorkaSetData(kData);
+        results.kreditorka = "Кредиторка: непогашено " + Math.round(kData.totalUnpaid).toLocaleString("ru-RU") + " ₽";
+      } catch (e) { errors.push(e.message); }
+    }
+
+    var okParts = [results.opiu, results.salesact, results.wowsales, results.kreditorka].filter(Boolean);
 
     if (okParts.length){
       try {
@@ -4811,6 +5037,7 @@ window.__salesActSetData = function(newData){
           cache.activations = wsData.activations;
           cache.partners = wsData.partners;
         }
+        if (kData) cache.kreditorka = kData;
         cache.savedAt = new Date().toISOString();
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       } catch (e) { /* localStorage недоступен (приватный режим и т.п.) — не критично */ }
@@ -4836,6 +5063,7 @@ window.__salesActSetData = function(newData){
       if (cache.opiu) window.__opiuSetData(cache.opiu);
       if (cache.salesact) window.__salesActSetData(cache.salesact);
       if (cache.sales && cache.activations && cache.partners) window.__wowSalesSetData(cache.sales, cache.activations, cache.partners);
+      if (cache.kreditorka) window.__kreditorkaSetData(cache.kreditorka);
       return true;
     } catch (e) { return false; }
   }
