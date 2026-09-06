@@ -3095,6 +3095,16 @@ window.__salesActSetData = function(newData){
   </div>
 
   <div class="card">
+    <h2>Успеваем ли платить</h2>
+    <p class="cap">По каждому месяцу активации — какая доля стоимости партнёрам уже погашена, а какая всё ещё висит долгом · <span id="kredAgeMetric"></span></p>
+    <div class="chart-wrap" id="kredPaceWrap"></div>
+    <div class="legend" style="margin-top:8px;">
+      <span class="item"><span class="dot" style="background:var(--good)"></span>Погашено</span>
+      <span class="item"><span class="dot" style="background:var(--bad)"></span>Не погашено</span>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Динамика кредиторки</h2>
     <p class="cap">Непогашенный остаток по месяцам возникновения долга (дата активации) · показывает, из сделок каких месяцев остался текущий долг — это не историческая сверка баланса на прошлую дату, а разбивка текущего остатка по происхождению</p>
     <div class="chart-wrap" id="kredTrendWrap"></div>
@@ -3168,6 +3178,69 @@ window.__salesActSetData = function(newData){
       ? "Непогашено по всем сделкам"
       : "Непогашено по сделкам за выбранный период (по дате активации)")
       + (KREDITORKA_DATA.asOf ? ", по данным на " + KREDITORKA_DATA.asOf : "");
+  }
+
+  function renderPace(){
+    var wrap = document.getElementById("kredPaceWrap");
+    var ageMetricEl = document.getElementById("kredAgeMetric");
+    if (!wrap) return;
+
+    // средний возраст текущего непогашенного долга (взвешенный по сумме) — не зависит от выбранного периода,
+    // это всегда снимок "на сегодня"
+    var allUnpaid = KREDITORKA_DATA.unpaidDeals || [];
+    if (ageMetricEl){
+      if (allUnpaid.length){
+        var asOf = KREDITORKA_DATA.asOf ? new Date(KREDITORKA_DATA.asOf) : new Date();
+        var wSum = 0, wAgeSum = 0;
+        allUnpaid.forEach(function(d){
+          var days = Math.max(0, Math.round((asOf - new Date(d.date)) / 86400000));
+          wSum += d.amount;
+          wAgeSum += d.amount * days;
+        });
+        ageMetricEl.textContent = "средний возраст текущего долга: " + (wSum ? Math.round(wAgeSum / wSum) : 0) + " дн.";
+      } else {
+        ageMetricEl.textContent = "";
+      }
+    }
+
+    var unpaidByMonth = {};
+    allUnpaid.forEach(function(d){
+      var mk = d.date.slice(0, 7);
+      unpaidByMonth[mk] = (unpaidByMonth[mk] || 0) + d.amount;
+    });
+    var paidByMonth = KREDITORKA_DATA.paidByMonth || {};
+    var monthSet = {};
+    Object.keys(unpaidByMonth).forEach(function(m){ monthSet[m] = true; });
+    Object.keys(paidByMonth).forEach(function(m){ monthSet[m] = true; });
+    var months = Object.keys(monthSet).sort();
+    if (months.length > 12) months = months.slice(months.length - 12); // последний год — чтобы график оставался читаемым
+
+    if (!months.length){ wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных</p>'; return; }
+
+    var w = Math.max(wrap.clientWidth || 600, 300), h = 220, padL = 44, padB = 28, padT = 14, padR = 14;
+    var plotW = w - padL - padR, plotH = h - padT - padB;
+    var n = months.length;
+    var groupW = plotW / n;
+    var barW = Math.min(40, groupW * 0.55);
+    var svgParts = [];
+    [0, 50, 100].forEach(function(pct){
+      var gy = padT + plotH - (pct / 100) * plotH;
+      svgParts.push('<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" stroke="var(--surface-2)" stroke-width="1"/>');
+      svgParts.push('<text x="' + (padL - 8) + '" y="' + (gy + 3).toFixed(1) + '" text-anchor="end" class="axis-label" style="font-size:10px">' + pct + '%</text>');
+    });
+    months.forEach(function(m, i){
+      var paid = paidByMonth[m] || 0, unpaid = unpaidByMonth[m] || 0;
+      var total = paid + unpaid;
+      var paidPct = total ? paid / total : 0;
+      var cx = padL + groupW * i + groupW / 2;
+      var bx = cx - barW / 2;
+      var paidH = paidPct * plotH;
+      var unpaidH = plotH - paidH;
+      svgParts.push('<rect x="' + bx.toFixed(1) + '" y="' + (padT + plotH - paidH).toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + paidH.toFixed(1) + '" fill="var(--good)"/>');
+      svgParts.push('<rect x="' + bx.toFixed(1) + '" y="' + padT + '" width="' + barW.toFixed(1) + '" height="' + unpaidH.toFixed(1) + '" fill="var(--bad)"/>');
+      svgParts.push('<text x="' + cx.toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" class="axis-label" style="font-size:10px">' + m + '</text>');
+    });
+    wrap.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + svgParts.join("") + '</svg>';
   }
 
   function renderTrend(){
@@ -3267,6 +3340,7 @@ window.__salesActSetData = function(newData){
   function renderKreditorka(){
     initPeriodFilter();
     renderHeadline();
+    renderPace();
     renderTrend();
     renderPartners();
   }
@@ -3278,7 +3352,7 @@ window.__salesActSetData = function(newData){
   window.__kreditorkaRerender = renderKreditorka;
 
   renderKreditorka();
-  window.addEventListener("resize", function(){ renderTrend(); });
+  window.addEventListener("resize", function(){ renderPace(); renderTrend(); });
 })();
 </script>
 
@@ -4375,6 +4449,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4824,19 +4899,26 @@ window.__salesActSetData = function(newData){
 
     var unpaidDeals = [];
     var totalUnpaid = 0;
+    var paidByMonth = {}; // "Погашен" — для графика темпа оплаты; "Себес | отдел активаций" сюда не включаем (это не долг партнёру)
     for (var r = 1; r < kredRows.length; r++){
       var row = kredRows[r];
-      if (!row || !UNPAID_STAGES[row[iStage]]) continue;
+      if (!row) continue;
+      var stage = row[iStage];
       var d = anyDateToIso(row[iDate]);
       if (!d) continue;
       var amount = ruNum(row[iSum]);
-      var pid = (row[iPid] || "").trim();
-      var pname = partnerName[pid] || ("Партнёр #" + pid);
-      unpaidDeals.push({ date: d, partnerId: pid, partnerName: pname, legalName: legalByName[pname] || "", amount: amount });
-      totalUnpaid += amount;
+      if (UNPAID_STAGES[stage]){
+        var pid = (row[iPid] || "").trim();
+        var pname = partnerName[pid] || ("Партнёр #" + pid);
+        unpaidDeals.push({ date: d, partnerId: pid, partnerName: pname, legalName: legalByName[pname] || "", amount: amount });
+        totalUnpaid += amount;
+      } else if (stage === "Погашен"){
+        var monthKey = d.slice(0, 7);
+        paidByMonth[monthKey] = (paidByMonth[monthKey] || 0) + amount;
+      }
     }
 
-    return { asOf: new Date().toISOString().slice(0, 10), totalUnpaid: Math.round(totalUnpaid * 100) / 100, unpaidDeals: unpaidDeals };
+    return { asOf: new Date().toISOString().slice(0, 10), totalUnpaid: Math.round(totalUnpaid * 100) / 100, unpaidDeals: unpaidDeals, paidByMonth: paidByMonth };
   }
 
   function computeWowsales(feedList1Rows, siteRows, mpRows, actRows){
