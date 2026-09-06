@@ -3115,7 +3115,7 @@ window.__salesActSetData = function(newData){
   var KREDITORKA_DATA = { asOf: null, totalUnpaid: 0, unpaidDeals: [] };
 
   var PERIOD_OPTS = [["1m","1 мес"],["3m","3 мес"],["6m","6 мес"],["1y","1 год"],["all","Всё время"]];
-  var kredState = { period: "all" };
+  var kredState = { period: "3m" };
 
   function fmtRub(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
   function kredFmtCompact(n){
@@ -3224,15 +3224,44 @@ window.__salesActSetData = function(newData){
     if (!items.length){ container.innerHTML = '<p class="cap" style="margin:0">Нет данных за период</p>'; return; }
     var max = Math.max.apply(null, items.map(function(i){return i.value;}));
     container.innerHTML = "";
-    items.forEach(function(it){
+
+    function makeRow(it){
       var row = document.createElement("div");
       row.className = "hbar-row";
       row.innerHTML =
         '<div class="name">'+it.name+(it.legalName ? '<br><span style="font-weight:400;font-size:11px;color:var(--text-muted)">'+it.legalName+'</span>' : '')+'</div>' +
         '<div class="track"><div class="fill" style="width:'+(it.value/max*100).toFixed(1)+'%;background:var(--s2)"></div></div>' +
         '<div class="amt">'+kredFmtCompact(it.value)+'</div>';
-      container.appendChild(row);
-    });
+      return row;
+    }
+
+    var SMALL_THRESHOLD = 50000;
+    var big = items.filter(function(it){ return it.value >= SMALL_THRESHOLD; });
+    var small = items.filter(function(it){ return it.value < SMALL_THRESHOLD; });
+
+    big.forEach(function(it){ container.appendChild(makeRow(it)); });
+
+    if (small.length){
+      var smallTotal = small.reduce(function(a,i){ return a+i.value; }, 0);
+      var smallWrap = document.createElement("div");
+      smallWrap.hidden = true;
+      smallWrap.style.marginTop = "4px";
+      small.forEach(function(it){ smallWrap.appendChild(makeRow(it)); });
+
+      var labelClosed = "Показать ещё " + small.length + " партнёров с долгом < 50 тыс ₽ (всего " + kredFmtCompact(smallTotal) + ")";
+      var labelOpen = "Свернуть";
+      var toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "chip";
+      toggleBtn.style.cssText = "margin-top:8px; margin-left:0;";
+      toggleBtn.textContent = labelClosed;
+      toggleBtn.addEventListener("click", function(){
+        smallWrap.hidden = !smallWrap.hidden;
+        toggleBtn.textContent = smallWrap.hidden ? labelClosed : labelOpen;
+      });
+      container.appendChild(toggleBtn);
+      container.appendChild(smallWrap);
+    }
   }
 
   function renderKreditorka(){
@@ -4338,6 +4367,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
