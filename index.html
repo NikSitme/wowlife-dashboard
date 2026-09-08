@@ -3370,6 +3370,7 @@ window.__salesActSetData = function(newData){
       function val(i){ return rb[i] ? rb[i].value : 0; }
       // B2B считаем частью выручки по сайту — отдельного канала для него нет
       m.site_revenue_total = val(0) + val(1) + val(10);
+      m.marketplace_revenue_total = val(2)+val(3)+val(4)+val(5)+val(6)+val(7)+val(8)+val(9);
     });
   }
   decorateMonths(DATA);
@@ -3466,6 +3467,7 @@ window.__salesActSetData = function(newData){
       months: months,
       revenue_total: sum("revenue_total"),
       site_revenue_total: sum("site_revenue_total"),
+      marketplace_revenue_total: sum("marketplace_revenue_total"),
       direct_costs_total: sum("direct_costs_total"),
       personnel_total: sum("personnel_total"),
       indirect_total: sum("indirect_total"),
@@ -3495,6 +3497,7 @@ window.__salesActSetData = function(newData){
   var KPI_DEFS = [
     { key: "revenue_total", label: "Выручка", good: "up" },
     { key: "site_revenue_total", label: "Выручка по сайту", good: "up" },
+    { key: "marketplace_revenue_total", label: "Выручка по маркетплейсам", good: "up" },
     { key: "operating_total", label: "Операционные расходы", good: "down" },
     { key: "direct_costs_total", label: "Переменные расходы", good: "down" },
     { key: "ebitda", label: "EBITDA", good: "up" },
@@ -4461,6 +4464,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
