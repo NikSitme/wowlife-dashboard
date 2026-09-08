@@ -378,7 +378,7 @@
     </div>
     <div class="card">
       <h2>Структура выручки Электронные/Физические</h2>
-      <p class="cap">По данным CRM · в суммы не попадают доплаты</p>
+      <p class="cap">Только сайт (МСК/СПБ), без маркетплейсов · по данным CRM · в суммы не попадают доплаты</p>
       <div class="presets" id="certModePresets" style="margin-left:0; margin-bottom:10px;"></div>
       <div class="donut-wrap">
         <div class="chart-wrap" id="revSiteCertDonutWrap"></div>
@@ -4450,6 +4450,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4675,9 +4676,11 @@ window.__salesActSetData = function(newData){
       salesDates.push(d);
       var monthKey = d.slice(0, 7);
       var qty = dealQty(row[iDesc]);
+      var channel = classifyChannel(row[iSource], row[iCity]);
 
+      // электронные/физические — только сайт (МСК/СПБ), маркетплейсы сюда не считаем
       var type = (row[iType] || "").trim();
-      if (type === "Электронный" || type === "Физический"){
+      if ((type === "Электронный" || type === "Физический") && channel && channel.indexOf("site") === 0){
         if (!revenueByTypeMonth[monthKey]) revenueByTypeMonth[monthKey] = {
           "Электронный": { sum: 0, count: 0 },
           "Физический": { sum: 0, count: 0 },
@@ -4686,7 +4689,6 @@ window.__salesActSetData = function(newData){
         revenueByTypeMonth[monthKey][type].count += qty;
       }
 
-      var channel = classifyChannel(row[iSource], row[iCity]);
       if (channel){
         if (!revenueByChannelMonth[monthKey]) revenueByChannelMonth[monthKey] = {};
         if (!revenueByChannelMonth[monthKey][channel]) revenueByChannelMonth[monthKey][channel] = { sum: 0, count: 0 };
