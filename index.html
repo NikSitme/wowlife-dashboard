@@ -3451,7 +3451,7 @@ window.__salesActSetData = function(newData){
 
   function aggregate(from, to){
     var months = DATA.slice(from, to+1);
-    var sum = function(k){ return months.reduce(function(a,m){ return a+m[k]; }, 0); };
+    var sum = function(k){ return months.reduce(function(a,m){ return a+(m[k]||0); }, 0); };
     return {
       months: months,
       revenue_total: sum("revenue_total"),
@@ -3467,6 +3467,8 @@ window.__salesActSetData = function(newData){
       net_profit: sum("net_profit"),
       loan_principal: sum("loan_principal"),
       dividends: sum("dividends"),
+      dev_services: sum("dev_services"),
+      direktolog: sum("direktolog"),
       revenue_breakdown: mergeBreakdown(months, "revenue_breakdown"),
       direct_breakdown: mergeBreakdown(months, "direct_breakdown"),
       personnel_breakdown: mergeBreakdown(months, "personnel_breakdown"),
@@ -3929,19 +3931,20 @@ window.__salesActSetData = function(newData){
     { label: "Возвраты",                     flat: true,  items: [["direct", "Возвраты"]] },
     { label: "Комиссии",                     flat: false, items: [["direct", "Эквайринговая комиссия"], ["direct", "Банковские комиссии"]] },
     { label: "Доставка",                     flat: false, items: [["indirect", "Доставка"], ["indirect", "Доставка Далли"]] },
-    { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
+    { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["standalone", "direktolog", "Директолог"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
     { label: "Сервисы административные",     flat: false, items: [["indirect", "Телефония"], ["indirect", "СМС"], ["admin", "Сервисы административные"], ["admin", "Найм сотрудников"], ["admin", "Прочие административные расходы"]] },
     { label: "Подарки команде",              flat: true,  items: [["admin", "Подарки команде"]] },
     { label: "Налоги",                       flat: false, items: [["array", "taxes_breakdown"]] },
-    { label: "Проценты по кредитам и займам", flat: true, items: [["standalone", "interest"]] },
+    { label: "Проценты по кредитам и займам", flat: true, items: [["standalone", "interest", "Проценты по кредитам и займам"]] },
     { label: "Аренда офиса",                 flat: false, items: [["admin", "Аренда офиса Мск"], ["admin", "Аренда и содержание офиса"]] },
-    { label: "Тело кредита и др.",           flat: true,  items: [["standalone", "loan_principal"], ["standalone", "dividends"]] },
+    { label: "Тело кредита и др.",           flat: true,  items: [["standalone", "loan_principal", "Тело кредита"], ["standalone", "dividends", "Дивиденды"]] },
     // всё, что не попало ни в одну категорию выше (обычно нулевое) — чтобы сумма всегда сходилась с реальными расходами
     { label: "Прочее",                       flat: false, items: [
       ["indirect", "Сервисы продукта"], ["indirect", "Доставка СДЭК"], ["indirect", "Доставка 5Post"], ["indirect", "Оборудование"],
       ["indirect", "Открытие нового города"], ["indirect", "Съёмки"], ["indirect", "Монтаж"], ["indirect", "Консалтинг"], ["indirect", "B2B"],
       ["admin", "Административный отдел"], ["admin", "Подарки партнерам"],
       ["admin", "1% за регистрацию"], ["admin", "Страховые взносы ИП"],
+      ["standalone", "dev_services", "Сервисы разработки"],
     ]},
   ];
 
@@ -3959,7 +3962,7 @@ window.__salesActSetData = function(newData){
         if (kind === "array"){
           (agg[name] || []).forEach(function(it){ childVals.push({ name: it.name, value: it.value }); });
         } else if (kind === "standalone"){
-          childVals.push({ name: name, value: agg[name] || 0 });
+          childVals.push({ name: pair[2] || name, value: agg[name] || 0 });
         } else if (name === "*"){
           childVals.push({ name: name, value: agg[kind + "_total"] || 0 });
         } else {
@@ -3972,7 +3975,7 @@ window.__salesActSetData = function(newData){
   }
 
   function expensePartsNested(agg){
-    var total = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total + (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0);
+    var total = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total + (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0) + (agg.dev_services || 0) + (agg.direktolog || 0);
     var groups = expenseGroupsRaw(agg).filter(function(g){ return g.total > 0.5; });
     groups.forEach(function(g){
       g.share = total ? g.total / total : 0;
@@ -3993,7 +3996,7 @@ window.__salesActSetData = function(newData){
     var cur = expenseGroupsRaw(curAgg);
     var prev = expenseGroupsRaw(prevAgg);
     function pct(c, p){ if (p === 0) return c === 0 ? 0 : null; return (c - p) / Math.abs(p) * 100; }
-    function totalOf(a){ return a.direct_costs_total + a.personnel_total + a.indirect_total + a.admin_total + (a.interest||0) + (a.taxes||0) + (a.loan_principal||0) + (a.dividends||0); }
+    function totalOf(a){ return a.direct_costs_total + a.personnel_total + a.indirect_total + a.admin_total + (a.interest||0) + (a.taxes||0) + (a.loan_principal||0) + (a.dividends||0) + (a.dev_services||0) + (a.direktolog||0); }
     var out = { total: pct(totalOf(curAgg), totalOf(prevAgg)) };
     cur.forEach(function(g, idx){
       out[g.label] = pct(g.total, prev[idx].total);
@@ -4451,6 +4454,8 @@ window.__salesActSetData = function(newData){
 
 
 
+
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4578,9 +4583,10 @@ window.__salesActSetData = function(newData){
     var rLoan = rowByB("Тело кредита");
     var rDividends = rowByB("Вывод дивидендов");
     var rFinal = rowByA("прибыль после выплаты тела кредита и дивидендов");
-    // "Сервисы разработки" физически лежит в диапазоне "Косвенные расходы", но не входит
+    // "Сервисы разработки" и "Директолог" физически лежат в диапазоне "Косвенные расходы", но не входят
     // в её официальную сумму (проверено сверкой) — считаем отдельно, чтобы не потерять деньги.
     var rDevServices = rowByB("Сервисы разработки");
+    var rDirektolog = rowByB("Директолог");
 
     var months = [];
     var k = 0;
@@ -4616,6 +4622,7 @@ window.__salesActSetData = function(newData){
         dividends: Math.abs(v(rDividends, fact_col)),
         final_profit: v(rFinal, fact_col),
         dev_services: Math.abs(v(rDevServices, fact_col)),
+        direktolog: Math.abs(v(rDirektolog, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
       });
