@@ -3925,7 +3925,11 @@ window.__salesActSetData = function(newData){
   var EXPENSE_GROUPS = [
     { label: "Активации",                   flat: true,  items: [["direct", "Активация"]] },
     { label: "Расходы маркетплейсов",        flat: true,  items: [["direct", "Расходы ВБ"], ["direct", "Расходы ОЗОН"], ["direct", "Расходы ЯМ"], ["direct", "Расходы ФВ"]] },
-    { label: "ФОТ",                          flat: true,  items: [["personnel", "*"]] },
+    { label: "ФОТ",                          flat: false, items: [
+      ["personnel", "ФОТ отдела продукта"], ["personnel", "ФОТ Маркетинга"], ["personnel", "ФОТ ОЗ:"], ["personnel", "ФОТ ОП"],
+      ["personnel", "ФОТ Административный"], ["personnel", "Отдел активации"], ["personnel", "Отдел м-плейсов"],
+    ] },
+    { label: "Разработка",                   flat: false, items: [["standalone", "dev_services", "Сервисы разработки (в т.ч. сервер)"], ["personnel", "ФОТ разработки"]] },
     { label: "Расходы офиса",                flat: true,  items: [["admin", "Расходы офиса"]] },
     { label: "Создание продукта",            flat: false, items: [["array", "product_creation_breakdown"]] },
     { label: "Возвраты",                     flat: true,  items: [["direct", "Возвраты"]] },
@@ -3944,7 +3948,6 @@ window.__salesActSetData = function(newData){
       ["indirect", "Открытие нового города"], ["indirect", "Съёмки"], ["indirect", "Монтаж"], ["indirect", "Консалтинг"], ["indirect", "B2B"],
       ["admin", "Административный отдел"], ["admin", "Подарки партнерам"],
       ["admin", "1% за регистрацию"], ["admin", "Страховые взносы ИП"],
-      ["standalone", "dev_services", "Сервисы разработки"],
     ]},
   ];
 
@@ -4456,6 +4459,9 @@ window.__salesActSetData = function(newData){
 
 
 
+
+
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4583,8 +4589,9 @@ window.__salesActSetData = function(newData){
     var rLoan = rowByB("Тело кредита");
     var rDividends = rowByB("Вывод дивидендов");
     var rFinal = rowByA("прибыль после выплаты тела кредита и дивидендов");
-    // "Сервисы разработки" и "Директолог" физически лежат в диапазоне "Косвенные расходы", но не входят
-    // в её официальную сумму (проверено сверкой) — считаем отдельно, чтобы не потерять деньги.
+    // "Сервисы разработки" (включает в себя "Сервер" как подстатью) и "Директолог" физически лежат
+    // в диапазоне "Косвенные расходы", но не входят в её официальную сумму (проверено сверкой) —
+    // считаем отдельно, чтобы не потерять деньги.
     var rDevServices = rowByB("Сервисы разработки");
     var rDirektolog = rowByB("Директолог");
 
