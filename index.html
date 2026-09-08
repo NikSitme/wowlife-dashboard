@@ -347,11 +347,11 @@
       <p><b style="color:var(--text-primary)">Выручка по сайту</b> — сайт МСК + сайт СПБ + B2B (отдельного канала для B2B нет, поэтому включаем сюда).</p>
       <p><b style="color:var(--text-primary)">Выручка по маркетплейсам</b> — Ozon + Wildberries + Яндекс.Маркет + Flowwow.</p>
       <p><b style="color:var(--text-primary)">Переменные расходы (TVC по Голдрату)</b> — Активация, расходы ВБ/Ozon/ЯМ/Flowwow, эквайринговая и банковские комиссии, возвраты, создание продукта. Возникают только при факте продажи/погашения.</p>
-      <p><b style="color:var(--text-primary)">Операционные расходы (OE)</b> — всё, что не TVC: ФОТ + Косвенные + Административные (официальный итог Адеска) + Директолог + Сервисы разработки (не входят в официальные итоги, но это реальные деньги) + налоги + проценты по кредитам.</p>
+      <p><b style="color:var(--text-primary)">Операционные расходы (OE)</b> — всё, что не TVC: ФОТ + Косвенные + Административные (официальный итог Адеска) + Сервисы разработки (не входит в официальный итог, но это реальные деньги) + налоги + проценты по кредитам.</p>
       <p><b style="color:var(--text-primary)">Throughput (T)</b> — по Голдрату: Выручка минус Переменные расходы (TVC). Показывает, сколько денег сделка приносит компании до вычета операционных расходов.</p>
       <p><b style="color:var(--text-primary)">Разработка</b> — отдельная статья, не входит в «ФОТ»/«Косвенные» выше: ФОТ разработки + Сервисы разработки (включая сервер как подстатью).</p>
-      <p><b style="color:var(--text-primary)">Директолог</b> — отдельная статья внутри «Маркетинг»; физически лежит в диапазоне «Косвенные расходы» Адеска, но не входит в её официальный итог, поэтому считается отдельно.</p>
-      <p><b style="color:var(--text-primary)">EBITDA / Чистая прибыль</b> — официальные строки Адеска, скорректированные на Директолог и Сервисы разработки (в самом Адеске они туда не попадают, из-за чего прибыль там завышена).</p>
+      <p><b style="color:var(--text-primary)">Директолог</b> — подстатья «ФОТ Маркетинга» (в самом Адеске), уже целиком учтена в официальных «Расходы по персоналу»; отдельно на дашборде не выделяется, чтобы не задваивать.</p>
+      <p><b style="color:var(--text-primary)">EBITDA / Чистая прибыль</b> — официальные строки Адеска, скорректированные на Сервисы разработки (в самом Адеске эта статья туда не попадает, из-за чего прибыль там завышена).</p>
       <p><b style="color:var(--text-primary)">Структура выручки Электронные/Физические</b> — только сайт (МСК/СПБ), без маркетплейсов, по данным CRM «Никита»; доплаты в суммы не попадают.</p>
       <p><b style="color:var(--text-primary)">Кредиторка</b> — вкладка «Кредиторка» таблицы «Никита». Долг = стадии «Ожидает оплаты» + «Ждем сверку». «Погашен» — уже оплачено. «Себес | отдел активаций» — внутренний учёт, не долг партнёру, не считается.</p>
     </div>
@@ -3389,11 +3389,13 @@ window.__salesActSetData = function(newData){
       m.site_revenue_total = val(0) + val(1) + val(10);
       m.marketplace_revenue_total = val(2)+val(3)+val(4)+val(5)+val(6)+val(7)+val(8)+val(9);
 
-      // "Директолог" и "Сервисы разработки" физически не входят в официальные итоги Адеска
-      // (Косвенные/Операционные/EBITDA/Чистая прибыль) — считаем скорректированные версии отдельными
-      // полями (не перезаписываем оригинальные m.operating_total/ebitda/net_profit — decorateMonths
-      // может быть вызван на одном и том же объекте повторно из кэша, и нельзя вычитать дважды).
-      var extra = (m.direktolog || 0) + (m.dev_services || 0);
+      // "Сервисы разработки" физически не входит в официальные итоги Адеска (Косвенные/Операционные/
+      // EBITDA/Чистая прибыль) — считаем скорректированные версии отдельными полями (не перезаписываем
+      // оригинальные m.operating_total/ebitda/net_profit — decorateMonths может быть вызван на одном
+      // и том же объекте повторно из кэша, и нельзя вычитать дважды).
+      // ("Директолог" сюда НЕ входит — это подстатья "ФОТ Маркетинга", уже целиком учтённая в
+      // официальных "Расходы по персоналу"; отдельно его не считаем, иначе задвоение.)
+      var extra = m.dev_services || 0;
       m.operating_total_correct = m.operating_total + extra + (m.interest || 0) + (m.taxes || 0);
       m.ebitda_correct = m.ebitda - extra;
       m.net_profit_correct = m.net_profit - extra;
@@ -3514,7 +3516,6 @@ window.__salesActSetData = function(newData){
       loan_principal: sum("loan_principal"),
       dividends: sum("dividends"),
       dev_services: sum("dev_services"),
-      direktolog: sum("direktolog"),
       revenue_breakdown: mergeBreakdown(months, "revenue_breakdown"),
       direct_breakdown: mergeBreakdown(months, "direct_breakdown"),
       personnel_breakdown: mergeBreakdown(months, "personnel_breakdown"),
@@ -3985,7 +3986,7 @@ window.__salesActSetData = function(newData){
     { label: "Возвраты",                     flat: true,  items: [["direct", "Возвраты"]] },
     { label: "Комиссии",                     flat: false, items: [["direct", "Эквайринговая комиссия"], ["direct", "Банковские комиссии"]] },
     { label: "Доставка",                     flat: false, items: [["indirect", "Доставка"], ["indirect", "Доставка Далли"]] },
-    { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["standalone", "direktolog", "Директолог"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
+    { label: "Маркетинг",                    flat: false, items: [["indirect", "Подрядчики маркетинговые"], ["indirect", "Email рассылка"], ["indirect", "Сервисы маркетинговые"], ["indirect", "Закупка рекламы"]] },
     { label: "Сервисы административные",     flat: false, items: [["indirect", "Телефония"], ["indirect", "СМС"], ["admin", "Сервисы административные"], ["admin", "Найм сотрудников"], ["admin", "Прочие административные расходы"]] },
     { label: "Подарки команде",              flat: true,  items: [["admin", "Подарки команде"]] },
     { label: "Налоги",                       flat: false, items: [["array", "taxes_breakdown"]] },
@@ -4028,7 +4029,7 @@ window.__salesActSetData = function(newData){
   }
 
   function expensePartsNested(agg){
-    var total = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total + (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0) + (agg.dev_services || 0) + (agg.direktolog || 0);
+    var total = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total + (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0) + (agg.dev_services || 0);
     var groups = expenseGroupsRaw(agg).filter(function(g){ return g.total > 0.5; });
     groups.forEach(function(g){
       g.share = total ? g.total / total : 0;
@@ -4049,7 +4050,7 @@ window.__salesActSetData = function(newData){
     var cur = expenseGroupsRaw(curAgg);
     var prev = expenseGroupsRaw(prevAgg);
     function pct(c, p){ if (p === 0) return c === 0 ? 0 : null; return (c - p) / Math.abs(p) * 100; }
-    function totalOf(a){ return a.direct_costs_total + a.personnel_total + a.indirect_total + a.admin_total + (a.interest||0) + (a.taxes||0) + (a.loan_principal||0) + (a.dividends||0) + (a.dev_services||0) + (a.direktolog||0); }
+    function totalOf(a){ return a.direct_costs_total + a.personnel_total + a.indirect_total + a.admin_total + (a.interest||0) + (a.taxes||0) + (a.loan_principal||0) + (a.dividends||0) + (a.dev_services||0); }
     var out = { total: pct(totalOf(curAgg), totalOf(prevAgg)) };
     cur.forEach(function(g, idx){
       out[g.label] = pct(g.total, prev[idx].total);
@@ -4526,6 +4527,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4653,11 +4655,12 @@ window.__salesActSetData = function(newData){
     var rLoan = rowByB("Тело кредита");
     var rDividends = rowByB("Вывод дивидендов");
     var rFinal = rowByA("прибыль после выплаты тела кредита и дивидендов");
-    // "Сервисы разработки" (включает в себя "Сервер" как подстатью) и "Директолог" физически лежат
-    // в диапазоне "Косвенные расходы", но не входят в её официальную сумму (проверено сверкой) —
-    // считаем отдельно, чтобы не потерять деньги.
+    // "Сервисы разработки" (включает в себя "Сервер" как подстатью) физически лежит в диапазоне
+    // "Косвенные расходы", но не входит в её официальную сумму (проверено сверкой) — считаем отдельно,
+    // чтобы не потерять деньги. "Директолог" — НЕ отдельная статья: это подстатья "ФОТ Маркетинга",
+    // которая уже целиком входит в официальные "Расходы по персоналу" — считать его отдельно нельзя,
+    // это задвоит расход (была допущена такая ошибка, исправлено).
     var rDevServices = rowByB("Сервисы разработки");
-    var rDirektolog = rowByB("Директолог");
 
     var months = [];
     var k = 0;
@@ -4693,7 +4696,6 @@ window.__salesActSetData = function(newData){
         dividends: Math.abs(v(rDividends, fact_col)),
         final_profit: v(rFinal, fact_col),
         dev_services: Math.abs(v(rDevServices, fact_col)),
-        direktolog: Math.abs(v(rDirektolog, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
       });
