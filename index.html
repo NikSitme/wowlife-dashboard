@@ -419,7 +419,7 @@
       <div class="rev-breakdown" id="expHeadlineBreakdown"></div>
     </div>
     <div class="card">
-      <h2>Расходы по категориям</h2>
+      <h2>Расходы по отделам</h2>
       <p class="cap">Сумма за выбранный период</p>
       <div id="expCatChart"></div>
     </div>
@@ -3590,6 +3590,11 @@ window.__salesActSetData = function(newData){
       loan_principal: sum("loan_principal"),
       dividends: sum("dividends"),
       dev_services: sum("dev_services"),
+      product_lead: sum("product_lead"),
+      partner_mgr_new: sum("partner_mgr_new"),
+      partner_mgr_current: sum("partner_mgr_current"),
+      partner_mgr_other: sum("partner_mgr_other"),
+      content_mgr_katya: sum("content_mgr_katya"),
       revenue_breakdown: mergeBreakdown(months, "revenue_breakdown"),
       direct_breakdown: mergeBreakdown(months, "direct_breakdown"),
       personnel_breakdown: mergeBreakdown(months, "personnel_breakdown"),
@@ -3884,13 +3889,48 @@ window.__salesActSetData = function(newData){
     renderTable(agg);
   }
 
+  // ---------- Расходы по отделам ----------
+  // "ФОТ отдела продукта" в Адеске содержит и продуктовые, и партнёрские роли вперемешку — поэтому
+  // для Партнёров/Продукта берём конкретных людей (product_lead/partner_mgr_*/content_mgr_katya)
+  // по отдельным строкам, а не весь блок целиком.
+  function departmentTotals(agg){
+    function pk(kind, name){ return pick(agg[kind + "_breakdown"], name); }
+
+    var clients = pk("personnel", "ФОТ ОП") + pk("personnel", "Отдел активации") +
+      pk("indirect", "Телефония") + pk("indirect", "СМС") + pk("direct", "Возвраты");
+
+    var partners = (agg.partner_mgr_new || 0) + (agg.partner_mgr_current || 0) + (agg.partner_mgr_other || 0) +
+      (agg.content_mgr_katya || 0) + pk("direct", "Банковские комиссии");
+
+    var marketing = pk("personnel", "ФОТ Маркетинга") + pk("indirect", "Подрядчики маркетинговые") +
+      pk("indirect", "Сервисы маркетинговые") + pk("indirect", "Закупка рекламы");
+
+    var productCreation = (agg.product_creation_breakdown || []).reduce(function(a, x){ return a + x.value; }, 0);
+    var product = (agg.product_lead || 0) + productCreation +
+      pk("indirect", "Доставка") + pk("indirect", "Доставка Далли") + pk("indirect", "Доставка СДЭК") + pk("indirect", "Доставка 5Post");
+
+    var development = (agg.dev_services || 0) + pk("personnel", "ФОТ разработки");
+
+    var admin = pk("personnel", "ФОТ Административный") + pk("admin", "Расходы офиса") + pk("admin", "Сервисы административные");
+
+    var totalAll = agg.direct_costs_total + agg.personnel_total + agg.indirect_total + agg.admin_total +
+      (agg.interest || 0) + (agg.taxes || 0) + (agg.loan_principal || 0) + (agg.dividends || 0) + (agg.dev_services || 0);
+    var known = clients + partners + marketing + product + development + admin;
+    var other = totalAll - known;
+
+    return [
+      { name: "Клиенты",        value: clients,     color: "var(--s1)" },
+      { name: "Партнёры",       value: partners,    color: "var(--s2)" },
+      { name: "Маркетинг",      value: marketing,   color: "var(--s3)" },
+      { name: "Продукт",        value: product,     color: "var(--s4)" },
+      { name: "Разработка",     value: development, color: "var(--mp1)" },
+      { name: "Административный", value: admin,     color: "var(--site2)" },
+      { name: "Прочее",         value: other,       color: "var(--baseline)" }
+    ];
+  }
+
   function renderHBarColored(container, agg){
-    var items = [
-      { name: "Прямые", value: agg.direct_costs_total, color: "var(--s1)" },
-      { name: "Персонал", value: agg.personnel_total, color: "var(--s2)" },
-      { name: "Косвенные", value: agg.indirect_total, color: "var(--s3)" },
-      { name: "Административные", value: agg.admin_total, color: "var(--s4)" }
-    ].sort(function(a,b){ return b.value - a.value; });
+    var items = departmentTotals(agg).sort(function(a,b){ return b.value - a.value; });
     var total = items.reduce(function(a,i){ return a+i.value; }, 0);
     var max = Math.max.apply(null, items.map(function(i){ return i.value; }).concat([1]));
     container.innerHTML = "";
@@ -4605,6 +4645,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -4739,6 +4780,14 @@ window.__salesActSetData = function(newData){
     // это задвоит расход (была допущена такая ошибка, исправлено).
     var rDevServices = rowByB("Сервисы разработки");
 
+    // Подстатьи "ФОТ отдела продукта" — нужны для разбивки расходов по отделам (Партнёры/Продукт),
+    // т.к. это разные люди внутри одного личного состава.
+    var rProductLead = rowByB("Руководитель отдела продукта");
+    var rPartnerMgrNew = rowByB("Менеджер по новым партнерам");
+    var rPartnerMgrCurrent = rowByB("Менеджер по текущим партнерам (Настя Карпова)");
+    var rPartnerMgrOther = rowByB("Менеджер по партнёрам (Серёжа)");
+    var rContentMgrKatya = rowByB("Контент-менеджер сайта (Катя)");
+
     var months = [];
     var k = 0;
     while (true){
@@ -4773,6 +4822,11 @@ window.__salesActSetData = function(newData){
         dividends: Math.abs(v(rDividends, fact_col)),
         final_profit: v(rFinal, fact_col),
         dev_services: Math.abs(v(rDevServices, fact_col)),
+        product_lead: Math.abs(v(rProductLead, fact_col)),
+        partner_mgr_new: Math.abs(v(rPartnerMgrNew, fact_col)),
+        partner_mgr_current: Math.abs(v(rPartnerMgrCurrent, fact_col)),
+        partner_mgr_other: Math.abs(v(rPartnerMgrOther, fact_col)),
+        content_mgr_katya: Math.abs(v(rContentMgrKatya, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
       });
