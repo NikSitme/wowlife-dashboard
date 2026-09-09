@@ -1779,6 +1779,7 @@ window.__salesActSetData = function(newData){
   renderDowChart();
   renderAll();
   if (window.__opiuRerender) window.__opiuRerender();
+  if (window.__leadCertRerender) window.__leadCertRerender();
 };
 })();
 </script>
@@ -2073,6 +2074,24 @@ window.__salesActSetData = function(newData){
   <div class="kpi-row" id="ws-kpi-row"></div>
 
   <div class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">Продажи через лиды</h2>
+      <div class="metric-toggle" id="ws-lead-period"></div>
+    </div>
+    <p class="panel-note">Доля продаж, пришедших через лид (CRM «Никита», колонка «из лида»), среди всех продаж по всем каналам (сайт + маркетплейсы).</p>
+    <div id="ws-lead-stat"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">Электронные / физические сертификаты</h2>
+      <div class="metric-toggle" id="ws-cert-period"></div>
+    </div>
+    <p class="panel-note">По всем каналам (сайт + маркетплейсы), по данным CRM «Никита».</p>
+    <div id="ws-cert-stat"></div>
+  </div>
+
+  <div class="panel" hidden>
     <div class="panel-head">
       <h2 class="panel-title" id="ws-panel-title-cat">Продажи по категориям</h2>
       <div class="metric-toggle" data-target="metricCat">
@@ -3087,6 +3106,119 @@ window.__salesActSetData = function(newData){
     resetStateForView();
     renderAll();
   };
+})();
+</script>
+
+<script>
+(function(){
+  var origRerender = window.__wowSalesRerender;
+
+  var PERIOD_OPTS = [["all","Весь период"],["3m","3 мес"],["1m","1 мес"]];
+  var leadState = { period: "all" };
+  var certState = { period: "all" };
+
+  function fmtRub(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+
+  function periodMonths(period, allMonths){
+    if (period === "all") return allMonths;
+    var n = period === "3m" ? 3 : 1;
+    return allMonths.slice(Math.max(0, allMonths.length - n));
+  }
+
+  function buildToggle(containerId, stateObj, onChange){
+    var container = document.getElementById(containerId);
+    if (!container || container.dataset.built) return;
+    container.dataset.built = "1";
+    PERIOD_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = stateObj.period === opt[0] ? "active" : "";
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        stateObj.period = opt[0];
+        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+        onChange();
+      });
+      container.appendChild(b);
+    });
+  }
+
+  function renderLeadStat(){
+    var el = document.getElementById("ws-lead-stat");
+    if (!el) return;
+    var sa = window.__salesActData;
+    var byMonth = sa && sa.leadByMonth;
+    if (!byMonth || !Object.keys(byMonth).length){
+      el.innerHTML = '<p class="panel-note" style="margin:0">Нет данных</p>';
+      return;
+    }
+    var months = periodMonths(leadState.period, Object.keys(byMonth).sort());
+    var leadSum = 0, directSum = 0, leadCnt = 0, directCnt = 0;
+    months.forEach(function(m){
+      var v = byMonth[m];
+      leadSum += v.lead.sum; directSum += v.direct.sum;
+      leadCnt += v.lead.count; directCnt += v.direct.count;
+    });
+    var totalSum = leadSum + directSum, totalCnt = leadCnt + directCnt;
+    var sharePct = totalSum ? (leadSum / totalSum * 100) : 0;
+    var sharePctCnt = totalCnt ? (leadCnt / totalCnt * 100) : 0;
+    el.innerHTML =
+      '<div style="font-size:34px; font-weight:700; line-height:1.1;">' + sharePct.toFixed(1) + '%</div>' +
+      '<div style="margin-top:4px; color:var(--text-muted,#8a8a8a); font-size:13px;">' +
+        'по выручке: ' + fmtRub(leadSum) + ' из ' + fmtRub(totalSum) +
+        ' · по штукам: ' + sharePctCnt.toFixed(1) + '% (' + leadCnt + ' из ' + totalCnt + ')' +
+      '</div>';
+  }
+
+  function renderCertStat(){
+    var wrapId = "ws-cert-stat";
+    var el = document.getElementById(wrapId);
+    if (!el) return;
+    var sa = window.__salesActData;
+    var byMonth = sa && sa.typeByMonthAll;
+    if (!byMonth || !Object.keys(byMonth).length){
+      el.innerHTML = '<p class="panel-note" style="margin:0">Нет данных</p>';
+      return;
+    }
+    var months = periodMonths(certState.period, Object.keys(byMonth).sort());
+    var elecSum = 0, physSum = 0;
+    months.forEach(function(m){
+      var v = byMonth[m];
+      elecSum += v["Электронный"].sum;
+      physSum += v["Физический"].sum;
+    });
+    var total = elecSum + physSum;
+    if (!total){ el.innerHTML = '<p class="panel-note" style="margin:0">Нет данных за период</p>'; return; }
+    var elecPct = elecSum / total * 100, physPct = physSum / total * 100;
+    var size = 140, r = 50, sw = 20, cx = size/2, cy = size/2, circ = 2*Math.PI*r;
+    var elecLen = Math.max(elecPct/100*circ - 2, 0);
+    el.innerHTML =
+      '<div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">' +
+        '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">' +
+          '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--surface-2,#eee)" stroke-width="'+sw+'"/>' +
+          '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--site1,#4a7fe0)" stroke-width="'+sw+'" stroke-dasharray="'+elecLen.toFixed(1)+' '+(circ-elecLen).toFixed(1)+'" transform="rotate(-90 '+cx+' '+cy+')"/>' +
+        '</svg>' +
+        '<div>' +
+          '<div><span style="display:inline-block;width:9px;height:9px;border-radius:999px;background:var(--site1,#4a7fe0);margin-right:6px;"></span>Электронные: <b>'+elecPct.toFixed(1)+'%</b> ('+fmtRub(elecSum)+')</div>' +
+          '<div style="margin-top:6px;"><span style="display:inline-block;width:9px;height:9px;border-radius:999px;background:var(--surface-2,#ccc);margin-right:6px;"></span>Физические: <b>'+physPct.toFixed(1)+'%</b> ('+fmtRub(physSum)+')</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderLeadCertStats(){
+    buildToggle("ws-lead-period", leadState, renderLeadStat);
+    buildToggle("ws-cert-period", certState, renderCertStat);
+    renderLeadStat();
+    renderCertStat();
+  }
+
+  window.__wowSalesRerender = function(){
+    if (origRerender) origRerender();
+    renderLeadCertStats();
+  };
+  window.__leadCertRerender = renderLeadCertStats;
+
+  renderLeadCertStats();
 })();
 </script>
 
@@ -4539,6 +4671,7 @@ window.__salesActSetData = function(newData){
       tabPanels.forEach(function(p){ p.hidden = p.getAttribute("data-panel") !== target; });
       if (target === "salesact" && window.__salesActRerender) window.__salesActRerender();
       if (target === "wowsales" && window.__wowSalesRerender) window.__wowSalesRerender();
+      if (target === "wowsales" && window.__leadCertRerender) window.__leadCertRerender();
       if (target === "kreditorka" && window.__kreditorkaRerender) window.__kreditorkaRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
@@ -4622,6 +4755,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
@@ -4874,9 +5008,12 @@ window.__salesActSetData = function(newData){
     var mh = mktRows[0];
     var iStage = headerIndex(mh, "стадия"), iDate = headerIndex(mh, "дата оплаты"), iSum = headerIndex(mh, "сумма");
     var iType = headerIndex(mh, "тип товара"), iCity = headerIndex(mh, "город"), iSource = headerIndex(mh, "источник"), iDesc = headerIndex(mh, "описание");
+    var iLead = headerIndex(mh, "из лида");
     var salesCount = {}, salesSum = {}, salesDates = [];
     var revenueByTypeMonth = {};
     var revenueByChannelMonth = {};
+    var typeByMonthAll = {}; // электронные/физические по ВСЕМ каналам (сайт+маркетплейсы) — для "Аналитики продаж"
+    var leadByMonth = {}; // доля продаж "из лида" среди всех продаж, по всем каналам
     for (var r = 1; r < mktRows.length; r++){
       var row = mktRows[r];
       if (!row || row[iStage] !== "Сделка успешна" || !row[iDate]) continue;
@@ -4906,6 +5043,25 @@ window.__salesActSetData = function(newData){
         revenueByChannelMonth[monthKey][channel].sum += ruNum(row[iSum]);
         revenueByChannelMonth[monthKey][channel].count += qty;
       }
+
+      // электронные/физические по всем каналам (без ограничения "только сайт")
+      if (type === "Электронный" || type === "Физический"){
+        if (!typeByMonthAll[monthKey]) typeByMonthAll[monthKey] = {
+          "Электронный": { sum: 0, count: 0 },
+          "Физический": { sum: 0, count: 0 },
+        };
+        typeByMonthAll[monthKey][type].sum += ruNum(row[iSum]);
+        typeByMonthAll[monthKey][type].count += qty;
+      }
+
+      // доля продаж через лиды (колонка "из лида" — "Y" = сделка пришла из лида)
+      var isLead = (row[iLead] || "").trim() === "Y";
+      if (!leadByMonth[monthKey]) leadByMonth[monthKey] = {
+        lead: { sum: 0, count: 0 },
+        direct: { sum: 0, count: 0 },
+      };
+      leadByMonth[monthKey][isLead ? "lead" : "direct"].sum += ruNum(row[iSum]);
+      leadByMonth[monthKey][isLead ? "lead" : "direct"].count += qty;
     }
 
     var ah = actRows[0];
@@ -4994,6 +5150,8 @@ window.__salesActSetData = function(newData){
       dow: { sales: dowSales, act: dowAct },
       revenueByTypeMonth: revenueByTypeMonth,
       revenueByChannelMonth: revenueByChannelMonth,
+      typeByMonthAll: typeByMonthAll,
+      leadByMonth: leadByMonth,
     };
 
     var problems = [];
