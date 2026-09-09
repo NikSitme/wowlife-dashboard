@@ -3122,6 +3122,16 @@ window.__salesActSetData = function(newData){
   </div>
 
   <div class="card">
+    <h2>Как прилетает долг и как мы его гасим</h2>
+    <p class="cap">Кредиторка — новая стоимость активаций за месяц (по дате активации, все статусы). Оплаты — факт статьи «Активация» из ОПиУ Адеска за тот же месяц. Если оплаты стабильно ниже кредиторки — долг копится.</p>
+    <div class="chart-wrap" id="kredVsPaymentsWrap"></div>
+    <div class="legend" style="margin-top:8px;">
+      <span class="item"><span class="key" style="background:var(--bad)"></span>Кредиторка (новый долг)</span>
+      <span class="item"><span class="key" style="background:var(--good)"></span>Оплаты по активациям</span>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Динамика кредиторки</h2>
     <p class="cap">Непогашенный остаток по месяцам возникновения долга (дата активации) · показывает, из сделок каких месяцев остался текущий долг — это не историческая сверка баланса на прошлую дату, а разбивка текущего остатка по происхождению</p>
     <div class="chart-wrap" id="kredTrendWrap"></div>
@@ -3354,10 +3364,73 @@ window.__salesActSetData = function(newData){
     }
   }
 
+  function renderDebtVsPayments(){
+    var wrap = document.getElementById("kredVsPaymentsWrap");
+    if (!wrap) return;
+
+    // "Кредиторка" за месяц = вся стоимость активаций того месяца, реально причитающихся партнёрам
+    // (не погашено + уже погашено) — "Себес | отдел активаций" сюда не входит, это не долг партнёру.
+    var kreditorkaByMonth = {};
+    (KREDITORKA_DATA.unpaidDeals || []).forEach(function(d){
+      var mk = d.date.slice(0, 7);
+      kreditorkaByMonth[mk] = (kreditorkaByMonth[mk] || 0) + d.amount;
+    });
+    var paidByMonth = KREDITORKA_DATA.paidByMonth || {};
+    Object.keys(paidByMonth).forEach(function(mk){
+      kreditorkaByMonth[mk] = (kreditorkaByMonth[mk] || 0) + paidByMonth[mk];
+    });
+
+    // "Оплаты по активациям" — факт статьи "Активация" из ОПиУ (Адеск) за тот же месяц
+    var opiuData = window.__opiuData || [];
+    var paymentsByMonth = {};
+    opiuData.forEach(function(m){
+      var it = (m.direct_breakdown || []).filter(function(x){ return x.name === "Активация"; })[0];
+      if (it) paymentsByMonth[m.label] = it.value;
+    });
+
+    var months = Object.keys(kreditorkaByMonth).filter(function(mk){ return mk in paymentsByMonth; }).sort();
+    if (months.length > 12) months = months.slice(months.length - 12);
+
+    if (!months.length){ wrap.innerHTML = '<p class="cap" style="margin:0">Нет пересечения периодов между Кредиторкой и ОПиУ</p>'; return; }
+
+    var kredVals = months.map(function(m){ return kreditorkaByMonth[m] || 0; });
+    var payVals = months.map(function(m){ return paymentsByMonth[m] || 0; });
+
+    var w = Math.max(wrap.clientWidth || 600, 300), h = 240, padL = 54, padB = 28, padT = 14, padR = 14;
+    var plotW = w - padL - padR, plotH = h - padT - padB;
+    var n = months.length;
+    var stepX = n > 1 ? plotW / (n - 1) : 0;
+    var maxVal = Math.max.apply(null, kredVals.concat(payVals).concat([0])) * 1.15 || 1;
+    function yScale(v){ return padT + plotH - (v / maxVal) * plotH; }
+    function xScale(i){ return padL + stepX * i; }
+
+    var svgParts = [];
+    var steps = 4;
+    for (var s = 0; s <= steps; s++){
+      var gv = maxVal * s / steps;
+      var gy = yScale(gv);
+      svgParts.push('<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" stroke="var(--surface-2)" stroke-width="1"/>');
+      svgParts.push('<text x="' + (padL - 8) + '" y="' + (gy + 3).toFixed(1) + '" text-anchor="end" class="axis-label" style="font-size:10px">' + kredFmtCompact(gv) + '</text>');
+    }
+    function linePath(vals){
+      return vals.map(function(v, i){ return (i === 0 ? "M" : "L") + xScale(i).toFixed(1) + "," + yScale(v).toFixed(1); }).join(" ");
+    }
+    function dots(vals, color){
+      return vals.map(function(v, i){ return '<circle cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(v).toFixed(1) + '" r="3" fill="' + color + '"/>'; }).join("");
+    }
+    svgParts.push('<path d="' + linePath(kredVals) + '" fill="none" stroke="var(--bad)" stroke-width="2"/>' + dots(kredVals, "var(--bad)"));
+    svgParts.push('<path d="' + linePath(payVals) + '" fill="none" stroke="var(--good)" stroke-width="2"/>' + dots(payVals, "var(--good)"));
+    months.forEach(function(m, i){
+      svgParts.push('<text x="' + xScale(i).toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" class="axis-label" style="font-size:10px">' + m + '</text>');
+    });
+    wrap.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + svgParts.join("") + '</svg>';
+  }
+
   function renderKreditorka(){
     initPeriodFilter();
     renderHeadline();
     renderPace();
+    renderDebtVsPayments();
     renderTrend();
     renderPartners();
   }
@@ -3369,7 +3442,7 @@ window.__salesActSetData = function(newData){
   window.__kreditorkaRerender = renderKreditorka;
 
   renderKreditorka();
-  window.addEventListener("resize", function(){ renderPace(); renderTrend(); });
+  window.addEventListener("resize", function(){ renderPace(); renderDebtVsPayments(); renderTrend(); });
 })();
 </script>
 
@@ -3405,6 +3478,7 @@ window.__salesActSetData = function(newData){
     });
   }
   decorateMonths(DATA);
+  window.__opiuData = DATA;
 
   var MONTHS_RU = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
   function monthLabel(d){
@@ -4490,6 +4564,7 @@ window.__salesActSetData = function(newData){
   window.__opiuSetData = function(newData){
     DATA = newData;
     decorateMonths(DATA);
+    window.__opiuData = DATA;
     fromSel.innerHTML = "";
     toSel.innerHTML = "";
     DATA.forEach(function(m, i){
@@ -4503,9 +4578,11 @@ window.__salesActSetData = function(newData){
     syncSelects();
     markPreset(0);
     render();
+    if (window.__kreditorkaRerender) window.__kreditorkaRerender();
   };
 })();
 </script>
+
 
 
 
