@@ -2079,6 +2079,12 @@ window.__salesActSetData = function(newData){
       <div class="metric-toggle" id="ws-lead-period"></div>
     </div>
     <p class="panel-note">Доля продаж, пришедших через лид (CRM «Никита», колонка «из лида»), среди всех продаж по всем каналам (сайт + маркетплейсы).</p>
+    <div id="ws-lead-custom-range" hidden style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+      <label style="font-size:12px; color:var(--text-muted,#8a8a8a);">с</label>
+      <select id="ws-lead-from" class="f-select"></select>
+      <label style="font-size:12px; color:var(--text-muted,#8a8a8a);">по</label>
+      <select id="ws-lead-to" class="f-select"></select>
+    </div>
     <div id="ws-lead-stat"></div>
   </div>
 
@@ -3114,15 +3120,33 @@ window.__salesActSetData = function(newData){
   var origRerender = window.__wowSalesRerender;
 
   var PERIOD_OPTS = [["all","Весь период"],["3m","3 мес"],["1m","1 мес"]];
-  var leadState = { period: "all" };
   var certState = { period: "all" };
 
+  var LEAD_PERIOD_OPTS = [["prev_month","Прошлый месяц"],["cur_month","Текущий месяц"],["3m","3 мес"],["custom","Произвольный"]];
+  var leadState = { mode: "cur_month", customFrom: null, customTo: null };
+
   function fmtRub(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function monthKeyOffset(offset){
+    var d = new Date();
+    d.setMonth(d.getMonth() + offset);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
 
   function periodMonths(period, allMonths){
     if (period === "all") return allMonths;
     var n = period === "3m" ? 3 : 1;
     return allMonths.slice(Math.max(0, allMonths.length - n));
+  }
+
+  function leadPeriodMonths(allMonths){
+    if (leadState.mode === "cur_month") return allMonths.filter(function(m){ return m === monthKeyOffset(0); });
+    if (leadState.mode === "prev_month") return allMonths.filter(function(m){ return m === monthKeyOffset(-1); });
+    if (leadState.mode === "3m") return allMonths.slice(Math.max(0, allMonths.length - 3));
+    if (leadState.mode === "custom"){
+      var from = leadState.customFrom || allMonths[0], to = leadState.customTo || allMonths[allMonths.length - 1];
+      return allMonths.filter(function(m){ return m >= from && m <= to; });
+    }
+    return allMonths;
   }
 
   function buildToggle(containerId, stateObj, onChange){
@@ -3143,6 +3167,40 @@ window.__salesActSetData = function(newData){
     });
   }
 
+  function buildLeadToggle(allMonths){
+    var container = document.getElementById("ws-lead-period");
+    var rangeBox = document.getElementById("ws-lead-custom-range");
+    var fromSel = document.getElementById("ws-lead-from"), toSel = document.getElementById("ws-lead-to");
+    if (!container || container.dataset.built) return;
+    container.dataset.built = "1";
+    LEAD_PERIOD_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = leadState.mode === opt[0] ? "active" : "";
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        leadState.mode = opt[0];
+        Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
+        rangeBox.hidden = opt[0] !== "custom";
+        renderLeadStat();
+      });
+      container.appendChild(b);
+    });
+    if (fromSel && toSel && !fromSel.dataset.built){
+      fromSel.dataset.built = "1";
+      allMonths.forEach(function(m){
+        var o1 = document.createElement("option"); o1.value = m; o1.textContent = m;
+        fromSel.appendChild(o1);
+        var o2 = document.createElement("option"); o2.value = m; o2.textContent = m;
+        toSel.appendChild(o2);
+      });
+      fromSel.value = leadState.customFrom || allMonths[0];
+      toSel.value = leadState.customTo || allMonths[allMonths.length - 1];
+      fromSel.addEventListener("change", function(){ leadState.customFrom = fromSel.value; renderLeadStat(); });
+      toSel.addEventListener("change", function(){ leadState.customTo = toSel.value; renderLeadStat(); });
+    }
+  }
+
   function renderLeadStat(){
     var el = document.getElementById("ws-lead-stat");
     if (!el) return;
@@ -3152,13 +3210,19 @@ window.__salesActSetData = function(newData){
       el.innerHTML = '<p class="panel-note" style="margin:0">Нет данных</p>';
       return;
     }
-    var months = periodMonths(leadState.period, Object.keys(byMonth).sort());
+    var allMonths = Object.keys(byMonth).sort();
+    buildLeadToggle(allMonths);
+    var months = leadPeriodMonths(allMonths);
     var leadSum = 0, directSum = 0, leadCnt = 0, directCnt = 0;
     months.forEach(function(m){
       var v = byMonth[m];
       leadSum += v.lead.sum; directSum += v.direct.sum;
       leadCnt += v.lead.count; directCnt += v.direct.count;
     });
+    if (!months.length){
+      el.innerHTML = '<p class="panel-note" style="margin:0">Нет данных за выбранный период</p>';
+      return;
+    }
     var totalSum = leadSum + directSum, totalCnt = leadCnt + directCnt;
     var sharePct = totalSum ? (leadSum / totalSum * 100) : 0;
     var sharePctCnt = totalCnt ? (leadCnt / totalCnt * 100) : 0;
@@ -3206,7 +3270,6 @@ window.__salesActSetData = function(newData){
   }
 
   function renderLeadCertStats(){
-    buildToggle("ws-lead-period", leadState, renderLeadStat);
     buildToggle("ws-cert-period", certState, renderCertStat);
     renderLeadStat();
     renderCertStat();
@@ -4801,6 +4864,7 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
 
 
 
