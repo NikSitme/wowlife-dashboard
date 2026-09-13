@@ -471,6 +471,17 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>ОПиУ — полная структура (как в Адеске)</h2>
+    <p class="cap">Копия структуры листа Адеска: разделы и статьи в том же порядке, факт по месяцам. «Сервисы разработки» показаны там же, где лежат в самом Адеске, но не входят в официальный итог «Косвенные расходы» над ними — это уже проверено сверкой.</p>
+    <div class="table-scroll" style="overflow-x:auto; max-height:600px;">
+      <table id="opiuFullTable">
+        <thead><tr id="opiuFullTableHead"></tr></thead>
+        <tbody id="opiuFullTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   </div>
 
   <div class="tabpanel" data-panel="salesact" hidden>
@@ -4120,6 +4131,73 @@ window.__salesActSetData = function(newData){
     });
   }
 
+  // ---------- ОПиУ — полная структура (копия таблицы Адеска) ----------
+  // Ряды в том же порядке, что в самом листе Адеска. "field" — прямое поле месяца,
+  // "arr"+"name" — конкретная статья внутри breakdown-массива, "arrAll" — сумма всех
+  // элементов вложенного массива (напр. product_creation_breakdown).
+  // те же списки статей, что в update_button.js (там своя область видимости, отсюда не видна)
+  var REVENUE_LABELS = ["Wowlife МСК выручка","Wowlife СПБ Выручка","Выручка ВБ  СПБ","Выручка ВБ  МСК","Выручка ОЗОН СПБ","Выручка ОЗОН МСК","Выручка ЯМ СПБ","Выручка ЯМ МСК","Выручка Flowwow_СПБ","Выручка Flowwow_МСК","B2B выручка"];
+  var DIRECT_LABELS = ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ","Активация","Эквайринговая комиссия","Банковские комиссии","Возвраты","Создание продукта"];
+  var PERSONNEL_LABELS = ["ФОТ отдела продукта","ФОТ Маркетинга","ФОТ ОЗ:","ФОТ ОП","ФОТ разработки","ФОТ Административный","Отдел активации","Отдел м-плейсов"];
+  var INDIRECT_LABELS = ["Сервисы продукта","Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post","Оборудование","Открытие нового города","Съёмки","Монтаж","Подрядчики маркетинговые","Email рассылка","Сервисы маркетинговые","Закупка рекламы","Консалтинг","Телефония","СМС","B2B"];
+  var ADMIN_LABELS = ["Административный отдел","Аренда и содержание офиса","Аренда офиса Мск","Найм сотрудников","Расходы офиса","Сервисы административные","Подарки команде","Подарки партнерам","Прочие административные расходы","1% за регистрацию","Страховые взносы ИП"];
+  var PRODUCT_CREATION_LABELS = ["Коробки","Пакеты","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"];
+  var TAXES_LABELS = ["Налоги и пошлины","НДС 5% от выручки с сайта","НДС по маркетплейсам","УСН 1% от выручки с сайта","УСН по маркетплейсам"];
+
+  var OPIU_TABLE_ROWS = [
+    { label: "Выручка с НДС", bold: true, indent: 0, field: "revenue_total" },
+    ...REVENUE_LABELS.map(function(name){ return { label: name, indent: 1, arr: "revenue_breakdown", name: name }; }),
+
+    { label: "Прямые расходы", bold: true, indent: 0, field: "direct_costs_total" },
+    ...DIRECT_LABELS.map(function(name){
+      if (name === "Создание продукта"){
+        return [
+          { label: name, indent: 1, bold: true, arr: "direct_breakdown", name: name },
+          ...PRODUCT_CREATION_LABELS.map(function(n2){ return { label: n2, indent: 2, arr: "product_creation_breakdown", name: n2 }; })
+        ];
+      }
+      return [{ label: name, indent: 1, arr: "direct_breakdown", name: name }];
+    }).reduce(function(a,b){ return a.concat(b); }, []),
+
+    { label: "валовая прибыль", bold: true, indent: 0, field: "gross_profit" },
+
+    { label: "Операционные расходы", bold: true, indent: 0, field: "operating_total" },
+    { label: "Расходы по персоналу", bold: true, indent: 1, field: "personnel_total" },
+    ...PERSONNEL_LABELS.map(function(name){ return { label: name, indent: 2, arr: "personnel_breakdown", name: name }; }),
+    { label: "Косвенные расходы", bold: true, indent: 1, field: "indirect_total" },
+    ...INDIRECT_LABELS.map(function(name){ return { label: name, indent: 2, arr: "indirect_breakdown", name: name }; }),
+    { label: "Сервисы разработки (вкл. сервер)", indent: 2, italic: true, note: "вне официального итога «Косвенные расходы» выше", field: "dev_services" },
+    { label: "Административные расходы", bold: true, indent: 1, field: "admin_total" },
+    ...ADMIN_LABELS.map(function(name){ return { label: name, indent: 2, arr: "admin_breakdown", name: name }; }),
+
+    { label: "EBITDA", bold: true, indent: 0, field: "ebitda" },
+    { label: "Проценты по кредитам и займам", indent: 1, field: "interest" },
+    { label: "Налоги", bold: true, indent: 1, field: "taxes" },
+    ...TAXES_LABELS.map(function(name){ return { label: name, indent: 2, arr: "taxes_breakdown", name: name }; }),
+
+    { label: "Чистая прибыль", bold: true, indent: 0, field: "net_profit" },
+    { label: "Тело кредита", indent: 1, field: "loan_principal" },
+    { label: "Вывод дивидендов", indent: 1, field: "dividends" },
+    { label: "Прибыль после выплаты тела кредита и дивидендов", bold: true, indent: 0, field: "final_profit" },
+  ];
+  function opiuTableRowValue(row, m){
+    if (row.field !== undefined) return m[row.field] || 0;
+    return pick(m[row.arr], row.name);
+  }
+
+  function renderOpiuFullTable(){
+    var head = document.getElementById("opiuFullTableHead");
+    var body = document.getElementById("opiuFullTableBody");
+    if (!head || !body) return;
+    head.innerHTML = '<th>Статья</th>' + DATA.map(function(m){ return '<th class="num">' + monthLabel(m) + '</th>'; }).join("");
+    body.innerHTML = OPIU_TABLE_ROWS.map(function(row){
+      var cells = DATA.map(function(m){ return '<td class="num">' + fmtCompact(opiuTableRowValue(row, m)) + '</td>'; }).join("");
+      var style = (row.bold ? "font-weight:700;" : "") + (row.italic ? "font-style:italic; color:var(--text-muted);" : "");
+      var label = row.label + (row.note ? ' <span class="cap" style="font-style:normal;">(' + row.note + ')</span>' : "");
+      return '<tr style="' + style + '"><td style="padding-left:' + (10 + row.indent * 16) + 'px; white-space:nowrap;">' + label + '</td>' + cells + '</tr>';
+    }).join("");
+  }
+
   // ---------- master render ----------
   function render(){
     var agg = aggregate(state.from, state.to);
@@ -4134,6 +4212,7 @@ window.__salesActSetData = function(newData){
     renderHBarColored(root.querySelector("#expCatChart"), agg);
     renderHBar(root.querySelector("#revChanChart"), agg.revenue_breakdown, "var(--seq)", agg.revenue_total);
     renderTable(agg);
+    renderOpiuFullTable();
   }
 
   // ---------- Расходы по отделам ----------
@@ -4864,6 +4943,8 @@ window.__salesActSetData = function(newData){
   };
 })();
 </script>
+
+
 
 
 
