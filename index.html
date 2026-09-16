@@ -4972,6 +4972,7 @@ window.__salesActSetData = function(newData){
 
 
 
+
 <script>
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
@@ -5077,6 +5078,12 @@ window.__salesActSetData = function(newData){
     function v(r, c){ if (!r) return 0; var x = cell(r, c); if (x === undefined || x === null || x === "") return 0; return Math.round(ruNum(x) * 100) / 100; }
     function rowByA(label){ var r = labelRowA[label]; if (!r) throw new Error("ОПиУ: не найдена строка «" + label + "» (колонка A) — структура листа изменилась?"); return r; }
     function rowByB(label){ var r = labelRowB[label]; if (!r) throw new Error("ОПиУ: не найдена строка «" + label + "» (колонка B) — структура листа изменилась?"); return r; }
+    // как rowByA, но пробует несколько вариантов метки по очереди — на случай если Адеск
+    // переименует строку (уже было: "ebitda" переименовали в "Операционная прибыль")
+    function rowByAAny(labels){
+      for (var i = 0; i < labels.length; i++){ if (labelRowA[labels[i]]) return labelRowA[labels[i]]; }
+      throw new Error("ОПиУ: не найдена ни одна из строк «" + labels.join("», «") + "» (колонка A) — структура листа изменилась?");
+    }
 
     function breakdown(labels, factCol, abs){
       return labels.map(function(name){
@@ -5092,7 +5099,7 @@ window.__salesActSetData = function(newData){
     var rPersonnelTotal = rowByA("Расходы по персоналу");
     var rIndirectTotal = rowByA("Косвенные расходы");
     var rAdminTotal = rowByA("Административные расходы");
-    var rEbitda = rowByA("ebitda");
+    var rEbitda = rowByAAny(["ebitda", "Операционная прибыль"]);
     var rInterest = rowByB("Проценты по кредитам и займам");
     var rTaxes = rowByB("налоги");
     var rNetProfit = rowByA("чистая прибыль");
