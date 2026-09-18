@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WOWlife — кандидаты в партнёры</title>
+<style>
+  :root { --bg:#f9f9f7; --card:#fff; --text:#0b0b0b; --muted:#6b6a66; --border:rgba(0,0,0,.1); --acc:#2a78d6; --a:#0ca30c; --b:#eda100; --c:#898781; --ex:#d03b3b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0d0d0d; --card:#1a1a19; --text:#fff; --muted:#a8a69f; --border:rgba(255,255,255,.12); } }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-size:14px; }
+  .wrap { max-width:1280px; margin:0 auto; padding:20px 16px; }
+  h1 { font-size:20px; margin:0 0 4px; } .sub { color:var(--muted); margin:0 0 14px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+  .filters select, .filters input { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--text); }
+  .filters input { min-width:220px; }
+  .stats { color:var(--muted); font-size:13px; margin-bottom:10px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  th, td { padding:8px 10px; text-align:left; vertical-align:top; border-top:1px solid var(--border); }
+  th { cursor:pointer; user-select:none; background:var(--bg); font-weight:600; position:sticky; top:0; }
+  tr:hover td { background:rgba(42,120,214,.05); }
+  .pr { display:inline-block; min-width:18px; text-align:center; border-radius:6px; padding:1px 6px; color:#fff; font-weight:600; font-size:12px; }
+  .pr.A { background:var(--a); } .pr.B { background:var(--b); } .pr.C { background:var(--c); }
+  .tag { display:inline-block; border:1px solid var(--border); border-radius:999px; padding:1px 8px; font-size:12px; margin:1px 2px 1px 0; color:var(--muted); }
+  .muted { color:var(--muted); } .why { max-width:420px; } a { color:var(--acc); }
+  .stars { white-space:nowrap; } .ex { color:var(--ex); font-size:12px; }
+  @media (max-width:800px) { .why, .hide-m { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Кандидаты в партнёры WOWlife</h1>
+  <p class="sub">Собрано по стратегиям из <code>strategies.json</code>. Текущие партнёры исключены (<code>existing_partners.csv</code>). Обновление: <code>python3 scripts/scout.py merge</code>.</p>
+  <div class="filters">
+    <input id="q" placeholder="Поиск по названию / категории / описанию">
+    <select id="city"><option value="">Все города</option></select>
+    <select id="strategy"><option value="">Все стратегии</option></select>
+    <select id="priority"><option value="">Любой приоритет</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+    <select id="status"><option value="">Любой статус</option><option value="new">Новый</option><option value="contacted">Связались</option><option value="negotiating">Переговоры</option><option value="signed">Подключён</option><option value="rejected">Отказ</option></select>
+    <label><input type="checkbox" id="rated"> только с рейтингом</label>
+  </div>
+  <div class="stats" id="stats"></div>
+  <table>
+    <thead><tr>
+      <th data-k="priority">Пр.</th><th data-k="name">Название</th><th data-k="city" class="hide-m">Город</th><th data-k="strategy">Стратегия / категория</th>
+      <th data-k="rating">Рейтинг</th><th data-k="price_from" class="hide-m">Цена от</th><th class="why">Что / почему</th><th class="hide-m">Ссылки</th><th data-k="status" class="hide-m">Статус</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+<script>
+const STRAT = {}; let DATA = []; let sortK = 'priority', sortDir = 1;
+const $ = id => document.getElementById(id);
+async function load() {
+  try { const s = await (await fetch('strategies.json')).json(); for (const x of s.strategies) STRAT[x.id] = x.name; } catch (e) {}
+  try { DATA = await (await fetch('candidates/all.json')).json(); } catch (e) { $('stats').textContent = 'Не удалось загрузить candidates/all.json — запустите scripts/scout.py merge'; return; }
+  const cities = [...new Set(DATA.map(r => r.city).filter(Boolean))].sort();
+  for (const c of cities) $('city').insertAdjacentHTML('beforeend', `<option>${c}</option>`);
+  const strats = [...new Set(DATA.flatMap(r => String(r.strategy || '').split('|')))].filter(Boolean).sort();
+  for (const s of strats) $('strategy').insertAdjacentHTML('beforeend', `<option value="${s}">${STRAT[s] || s}</option>`);
+  for (const el of document.querySelectorAll('.filters input, .filters select')) el.addEventListener('input', render);
+  for (const th of document.querySelectorAll('th[data-k]')) th.addEventListener('click', () => { const k = th.dataset.k; if (sortK === k) sortDir = -sortDir; else { sortK = k; sortDir = 1; } render(); });
+  render();
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function render() {
+  const q = $('q').value.trim().toLowerCase(), city = $('city').value, st = $('strategy').value, pr = $('priority').value, status = $('status').value, rated = $('rated').checked;
+  let rows = DATA.filter(r =>
+    (!q || [r.name, r.category, r.what, r.why, r.address].join(' ').toLowerCase().includes(q)) &&
+    (!city || r.city === city) && (!st || String(r.strategy || '').split('|').includes(st)) &&
+    (!pr || r.priority === pr) && (!status || (r.status || 'new') === status) && (!rated || r.rating));
+  const ord = { A: 0, B: 1, C: 2 };
+  rows.sort((a, b) => {
+    let x = a[sortK], y = b[sortK];
+    if (sortK === 'priority') { x = ord[x] ?? 9; y = ord[y] ?? 9; }
+    if (typeof x === 'number' || typeof y === 'number') return ((x ?? -1) - (y ?? -1)) * sortDir * (sortK === 'priority' ? 1 : -1);
+    return String(x ?? '').localeCompare(String(y ?? ''), 'ru') * sortDir;
+  });
+  $('stats').textContent = `${rows.length} из ${DATA.length} кандидатов · A: ${rows.filter(r => r.priority === 'A').length} · B: ${rows.filter(r => r.priority === 'B').length} · Москва: ${rows.filter(r => /Москва|МО/.test(r.city || '')).length} · СПб: ${rows.filter(r => /Санкт|СПб/.test(r.city || '')).length}`;
+  $('rows').innerHTML = rows.map(r => {
+    const strat = String(r.strategy || '').split('|').map(s => `<span class="tag">${esc(STRAT[s] || s)}</span>`).join('');
+    const links = [r.website && `<a href="${esc(r.website)}" target="_blank" rel="noopener">сайт</a>`,
+      `<a href="https://yandex.ru/maps/?text=${encodeURIComponent(r.yandex_maps_query || (r.name + ' ' + (r.city || '')))}" target="_blank" rel="noopener">Я.Карты</a>`,
+      r.source && `<a href="${esc(r.source)}" target="_blank" rel="noopener">источник</a>`].filter(Boolean).join(' · ');
+    const rating = r.rating ? `<span class="stars">★ ${r.rating}${r.reviews ? ` <span class="muted">(${r.reviews})</span>` : ''}</span>` : '<span class="muted">—</span>';
+    return `<tr><td><span class="pr ${esc(r.priority || 'C')}">${esc(r.priority || 'C')}</span></td>
+      <td><b>${esc(r.name)}</b>${r.gift_cert_ready ? ' <span class="tag" title="есть подарочные сертификаты">🎁</span>' : ''}${r.visual_score >= 4 ? ' <span class="tag" title="визуально сильный">📸</span>' : ''}<div class="muted">${esc(r.address || '')}</div></td>
+      <td class="hide-m">${esc(r.city || '')}</td><td>${strat}<div class="muted">${esc(r.category || '')}</div></td>
+      <td>${rating}</td><td class="hide-m">${r.price_from ? esc(r.price_from) + ' ₽' : '<span class="muted">—</span>'}</td>
+      <td class="why">${esc(r.what || '')}<div class="muted">${esc(r.why || '')}</div></td>
+      <td class="hide-m">${links}</td><td class="hide-m">${esc(r.status || 'new')}${r.comment ? `<div class="muted">${esc(r.comment)}</div>` : ''}</td></tr>`;
+  }).join('');
+}
+load();
+</script>
+</body>
+</html>
