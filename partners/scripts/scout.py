@@ -197,11 +197,44 @@ def cmd_search(args):
         json.dump(keep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         print(f"  -> {path}: {len(keep)} кандидатов (исключено текущих партнёров: {dropped})")
 
+SETS = {  # к каким наборам сайта подходит кандидат (по стратегии и чеку)
+    "Для двоих": {"romance", "relax", "gastro", "visual", "country", "premium", "mindful", "beauty", "water", "air"},
+    "Для мужчин": {"extreme", "tech", "water", "air", "gastro", "craft", "premium", "season"},
+    "Для женщин": {"relax", "beauty", "craft", "mindful", "visual", "gastro", "learn"},
+    "Для детей": {"family"},
+    "Премиум": {"premium"},
+    "Универсальные": {"extreme", "water", "air", "tech", "relax", "craft", "gastro", "learn", "visual", "season", "family"},
+}
+
+def set_fit(r):
+    st = set(str(r.get("strategy") or "").split("|"))
+    price = r.get("price_from") or 0
+    fit = [name for name, ss in SETS.items() if st & ss]
+    if price >= 15000 and "Премиум" not in fit:
+        fit.append("Премиум")
+    if price > 12000 and "Универсальные" in fit:
+        fit.remove("Универсальные")
+    return ";".join(fit)
+
+def load_enrich():
+    """candidates/enrich_*.json — результаты ручной/агентской проверки рейтингов, по имени кандидата"""
+    out = {}
+    for fn in sorted(os.listdir(CAND_DIR)):
+        if fn.startswith("enrich_") and fn.endswith(".json"):
+            try:
+                for r in json.load(open(os.path.join(CAND_DIR, fn), encoding="utf-8")):
+                    if r.get("name"):
+                        out[norm(r["name"])] = r
+            except Exception as e:
+                print(f"! {fn}: {e}", file=sys.stderr)
+    return out
+
 def cmd_merge(args):
     ex = load_exclude()
+    enrich = load_enrich()
     allrows, seen = [], {}
     for fn in sorted(os.listdir(CAND_DIR)):
-        if not fn.endswith(".json") or fn == "all.json":
+        if not fn.endswith(".json") or fn == "all.json" or fn.startswith("enrich_"):
             continue
         try:
             rows = json.load(open(os.path.join(CAND_DIR, fn), encoding="utf-8"))
@@ -225,11 +258,26 @@ def cmd_merge(args):
             seen[key] = r
             allrows.append(r)
     kept = [r for r in allrows if not r["excluded_as"]]
+    for r in kept:
+        e = enrich.get(norm(r["name"]))
+        if e:
+            for k in ("rating", "reviews", "rating_source", "gift_cert_ready", "website", "checked_at"):
+                if e.get(k) not in (None, ""):
+                    r[k] = e[k]
+            if e.get("note"):
+                r["note"] = e["note"]
+            # пересчёт приоритета по подтверждённому рейтингу
+            if r.get("rating") is not None:
+                if r["rating"] < 4.5:
+                    r["priority"] = "C"
+                elif r["rating"] >= 4.7 and (r.get("reviews") or 0) >= 50 and r.get("priority") != "A":
+                    r["priority"] = "A"
+        r["set_fit"] = set_fit(r)
     order = {"A": 0, "B": 1, "C": 2}
     kept.sort(key=lambda r: (order.get(r.get("priority"), 3), -(r.get("rating") or 0), -(r.get("reviews") or 0)))
     json.dump(kept, open(os.path.join(CAND_DIR, "all.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     cols = ["priority", "name", "city", "strategy", "category", "rating", "reviews", "price_from", "website",
-            "what", "why", "gift_cert_ready", "visual_score", "yandex_maps_query", "yandex_maps_url", "source", "confidence", "maybe_partner", "status", "comment"]
+            "what", "why", "gift_cert_ready", "visual_score", "set_fit", "rating_source", "note", "yandex_maps_query", "yandex_maps_url", "source", "confidence", "maybe_partner", "status", "comment"]
     with open(os.path.join(CAND_DIR, "all.csv"), "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore"); w.writeheader()
         for r in kept:

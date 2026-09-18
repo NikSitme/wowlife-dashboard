@@ -36,6 +36,7 @@
     <select id="strategy"><option value="">Все стратегии</option></select>
     <select id="priority"><option value="">Любой приоритет</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
     <select id="status"><option value="">Любой статус</option><option value="new">Новый</option><option value="contacted">Связались</option><option value="negotiating">Переговоры</option><option value="signed">Подключён</option><option value="rejected">Отказ</option></select>
+    <select id="setfit"><option value="">Любой набор</option><option>Для двоих</option><option>Для мужчин</option><option>Для женщин</option><option>Для детей</option><option>Премиум</option><option>Универсальные</option></select>
     <label><input type="checkbox" id="rated"> только с рейтингом</label>
   </div>
   <div class="stats" id="stats"></div>
@@ -63,11 +64,11 @@ async function load() {
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function render() {
-  const q = $('q').value.trim().toLowerCase(), city = $('city').value, st = $('strategy').value, pr = $('priority').value, status = $('status').value, rated = $('rated').checked;
+  const q = $('q').value.trim().toLowerCase(), city = $('city').value, st = $('strategy').value, pr = $('priority').value, status = $('status').value, rated = $('rated').checked, sf = $('setfit').value;
   let rows = DATA.filter(r =>
     (!q || [r.name, r.category, r.what, r.why, r.address].join(' ').toLowerCase().includes(q)) &&
     (!city || r.city === city) && (!st || String(r.strategy || '').split('|').includes(st)) &&
-    (!pr || r.priority === pr) && (!status || (r.status || 'new') === status) && (!rated || r.rating));
+    (!pr || r.priority === pr) && (!status || (r.status || 'new') === status) && (!rated || r.rating) && (!sf || String(r.set_fit || '').split(';').includes(sf)));
   const ord = { A: 0, B: 1, C: 2 };
   rows.sort((a, b) => {
     let x = a[sortK], y = b[sortK];
@@ -81,12 +82,13 @@ function render() {
     const links = [r.website && `<a href="${esc(r.website)}" target="_blank" rel="noopener">сайт</a>`,
       `<a href="https://yandex.ru/maps/?text=${encodeURIComponent(r.yandex_maps_query || (r.name + ' ' + (r.city || '')))}" target="_blank" rel="noopener">Я.Карты</a>`,
       r.source && `<a href="${esc(r.source)}" target="_blank" rel="noopener">источник</a>`].filter(Boolean).join(' · ');
-    const rating = r.rating ? `<span class="stars">★ ${r.rating}${r.reviews ? ` <span class="muted">(${r.reviews})</span>` : ''}</span>` : '<span class="muted">—</span>';
+    const rating = r.rating ? `<span class="stars" title="${esc(r.rating_source || '')}">★ ${r.rating}${r.reviews ? ` <span class="muted">(${r.reviews})</span>` : ''}</span>` : '<span class="muted">—</span>';
+    const sets = String(r.set_fit || '').split(';').filter(Boolean).map(x => `<span class="tag">${esc(x)}</span>`).join('');
     return `<tr><td><span class="pr ${esc(r.priority || 'C')}">${esc(r.priority || 'C')}</span></td>
       <td><b>${esc(r.name)}</b>${r.gift_cert_ready ? ' <span class="tag" title="есть подарочные сертификаты">🎁</span>' : ''}${r.visual_score >= 4 ? ' <span class="tag" title="визуально сильный">📸</span>' : ''}<div class="muted">${esc(r.address || '')}</div></td>
-      <td class="hide-m">${esc(r.city || '')}</td><td>${strat}<div class="muted">${esc(r.category || '')}</div></td>
+      <td class="hide-m">${esc(r.city || '')}</td><td>${strat}<div class="muted">${esc(r.category || '')}</div><div>${sets}</div></td>
       <td>${rating}</td><td class="hide-m">${r.price_from ? esc(r.price_from) + ' ₽' : '<span class="muted">—</span>'}</td>
-      <td class="why">${esc(r.what || '')}<div class="muted">${esc(r.why || '')}</div></td>
+      <td class="why">${esc(r.what || '')}<div class="muted">${esc(r.why || '')}</div>${r.note ? `<div class="ex">${esc(r.note)}</div>` : ''}</td>
       <td class="hide-m">${links}</td><td class="hide-m">${esc(r.status || 'new')}${r.comment ? `<div class="muted">${esc(r.comment)}</div>` : ''}</td></tr>`;
   }).join('');
 }

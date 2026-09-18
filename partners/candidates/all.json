@@ -18,7 +18,8 @@
   "confidence": "high",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": "ROOMS"
+  "maybe_partner": "ROOMS",
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "MAG Aero (полёты над Москвой)",
@@ -39,7 +40,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Moscow Dream Cars",
@@ -60,7 +62,8 @@
   "confidence": "high",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Relaxiya (центр спа-релаксации и флоатинга)",
@@ -81,7 +84,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Vorya Club",
@@ -102,7 +106,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Охта Кай (OHTAKAI)",
@@ -123,7 +128,8 @@
   "confidence": "high",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Siberia (банный спа-комплекс)",
@@ -144,7 +150,8 @@
   "confidence": "high",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Зооферма Шихово",
@@ -165,7 +172,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для детей;Универсальные"
  },
  {
   "name": "Respace prime Wellness & SPA",
@@ -186,7 +194,8 @@
   "confidence": "high",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Процесс (чайный клуб)",
@@ -207,7 +216,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Big Wall (Бигвол) скалодром",
@@ -228,7 +238,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Surf Brothers Skolkovo",
@@ -249,7 +260,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "CULINARYON — детские кулинарные мастер-классы",
@@ -270,7 +282,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "МИР РА (студия гонг-медитаций)",
@@ -291,7 +304,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Skypark Moscow (Zipline на Воробьёвых горах)",
@@ -312,7 +326,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Say A-A-A! (роупджампинг)",
@@ -333,7 +348,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "ПитерКаяк (PiterKayak)",
@@ -354,7 +370,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Парусная Академия",
@@ -375,7 +392,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Сила ветра",
@@ -396,7 +414,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Molchanova School (школа фридайвинга)",
@@ -417,7 +436,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Drop Park VDNH (вейк-парк)",
@@ -438,7 +458,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Flow Moscow (волна + аэротруба)",
@@ -459,7 +480,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Клуб воздухоплавания «Аэронавт»",
@@ -480,7 +502,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Dream Aero (авиатренажёр Boeing 737 / A320)",
@@ -501,7 +524,8 @@
   "confidence": "high",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Арена Дронов",
@@ -522,7 +546,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Luminar (иммерсивное арт-пространство, ВДНХ)",
@@ -543,7 +568,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "KSEBE (авторская семейная баня)",
@@ -564,7 +590,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Perfume Project (парфюмерная студия)",
@@ -585,7 +612,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "ЗАБЕЙ Ковёр",
@@ -606,7 +634,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "ТАФТИ",
@@ -627,7 +656,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Школа парфюмерии «Я творю»",
@@ -648,7 +678,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Первая Кузня",
@@ -669,7 +700,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "GlassBaker",
@@ -690,7 +722,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Московская Школа Мозаики (МШМ)",
@@ -711,7 +744,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "CANVAS арт-студия",
@@ -732,7 +766,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Кузня на Неве (КУЗНЕЦЪ)",
@@ -753,7 +788,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Glass Knight (стеклодувная ЭКО-мастерская)",
@@ -774,7 +810,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Rings Atelier",
@@ -795,7 +832,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Wine Project — школа сомелье на Патриарших",
@@ -816,7 +854,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Школа сомелье CavaCava",
@@ -837,7 +876,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Сыроварня Джея",
@@ -858,7 +898,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Московская Пивоваренная Компания (MOSBREW)",
@@ -879,7 +920,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Гастротеатр Chef's Table (Владимир Мухин)",
@@ -900,7 +942,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "SAVVA — Chef's Table",
@@ -921,7 +964,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Novikov Space — кулинарная школа",
@@ -942,7 +986,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Ramen Moscow (рамэн-студия)",
@@ -963,7 +1008,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Студия Юлии Высоцкой",
@@ -984,7 +1030,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Для детей;Универсальные"
  },
  {
   "name": "Ресторан «В темноте?!»",
@@ -1005,7 +1052,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Академия Вина — школа сомелье",
@@ -1026,7 +1074,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Сырное ателье «Менестрель»",
@@ -1047,7 +1096,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "WK White Kitchen (+ Vokzal 1853)",
@@ -1068,7 +1118,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "KOZA family — Chef's Table",
@@ -1089,7 +1140,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Dans le Noir? (ужин в темноте)",
@@ -1110,7 +1162,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Scratch DJ School",
@@ -1131,7 +1184,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "ФотоСецессион — тёмная комната",
@@ -1152,7 +1206,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Школа диджеинга бара «Юнион»",
@@ -1173,7 +1228,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Точка Импро",
@@ -1194,7 +1250,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Stand-Up School by Igor Meerson",
@@ -1215,7 +1272,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Format Film Lab",
@@ -1236,7 +1294,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Особняк «Дашков 5» — иммерсивный театр",
@@ -1257,7 +1316,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "«Заблудшие» — иммерсивное шоу",
@@ -1278,7 +1338,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Театр «Морфеус»",
@@ -1299,7 +1360,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Ферма «Российские альпаки»",
@@ -1320,7 +1382,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Хаски-парк «Сокольники» (Большое приключение)",
@@ -1341,7 +1404,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для детей;Универсальные"
  },
  {
   "name": "Музей занимательных наук «Экспериментаниум»",
@@ -1362,7 +1426,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Парк альпак «Симба» (Мистолово, Охта Парк)",
@@ -1383,7 +1448,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Оленья ферма «Дикая Земля»",
@@ -1404,7 +1470,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для детей;Универсальные"
  },
  {
   "name": "Театр Dreamville",
@@ -1425,7 +1492,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "7SKY — свидание на крыше под куполом",
@@ -1446,7 +1514,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "One Love — свидание под куполом на крыше",
@@ -1467,7 +1536,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Глэмпинг Green Point — купол с чаном для двоих",
@@ -1488,7 +1558,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "База отдыха «Берёзовая роща»",
@@ -1509,7 +1580,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Термы Gremm",
@@ -1530,7 +1602,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Термы Мореон",
@@ -1551,7 +1624,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Blokpost (лазертаг)",
@@ -1572,7 +1646,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Это тебе (eto-tebe.com) — свидание и ужин на крыше",
@@ -1593,7 +1668,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Luna & Nova (студии флоатинга)",
@@ -1614,7 +1690,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Sтанция 2025 (лазертаг-арена)",
@@ -1635,7 +1712,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Скалодром TOKYO",
@@ -1656,7 +1734,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Резиденция Активного Отдыха (rao.moscow)",
@@ -1677,7 +1756,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Прокат багги «На мотике» (база Зубровник, Токсово)",
@@ -1698,7 +1778,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Spora GT (дрифт-такси)",
@@ -1719,7 +1800,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Скалодром «Северная Стена»",
@@ -1740,7 +1822,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Skycenter DZ Пущино",
@@ -1761,7 +1844,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Премиум"
  },
  {
   "name": "Flyboard Серебряный Бор",
@@ -1782,7 +1866,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "КаякСПБ (kayakspb.ru)",
@@ -1803,7 +1888,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": "KAYAKMOSCOW"
+  "maybe_partner": "KAYAKMOSCOW",
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Первая Яхтенная Школа",
@@ -1824,7 +1910,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Дети Океана (фридайвинг)",
@@ -1845,7 +1932,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Station Club (крытый вейк-парк)",
@@ -1866,7 +1954,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": "FLYSTATION"
+  "maybe_partner": "FLYSTATION",
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Surf SPB (искусственная волна на Крестовском)",
@@ -1887,7 +1976,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "FlotPitera (прокат гидроциклов)",
@@ -1908,7 +1998,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Воздухоплавательный клуб «Аэровальс»",
@@ -1929,7 +2020,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "ParaDrive (полёты в тандеме)",
@@ -1950,7 +2042,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Планерный клуб «Щёкино» (аэродром Малино)",
@@ -1971,7 +2064,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Do-neba.ru (вертолётные прогулки над Петербургом)",
@@ -1992,7 +2086,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "TouchSky (аэродром Сиворицы, Гатчина)",
@@ -2013,7 +2108,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "DroneLife (FPV на Кордодроме)",
@@ -2034,7 +2130,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "DroneStation (Дрон-станция у Дубровки)",
@@ -2055,7 +2152,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Garage (симрейсинг-клуб Dudarev Motorsport)",
@@ -2076,7 +2174,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "ZAGA-GAME (VR-арена)",
@@ -2097,7 +2196,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "ZoomRacing (симрейсинг-клуб)",
@@ -2118,7 +2218,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Another World (VR-арены)",
@@ -2139,7 +2240,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Жар-Птица (бани)",
@@ -2160,7 +2262,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Огниво (гастробаня)",
@@ -2181,7 +2284,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Трёхгорные бани",
@@ -2202,7 +2306,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "GREMM Ice Baths",
@@ -2223,7 +2328,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "МПара (банный клуб)",
@@ -2244,7 +2350,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Termoland Пулковский",
@@ -2265,7 +2372,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "MR.RIGHT (барбершоп на Патриарших)",
@@ -2286,7 +2394,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Asia Beauty SPA",
@@ -2307,7 +2416,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "СПА-комплекс отеля «Легенда»",
@@ -2328,7 +2438,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Radisson Collection Fitness & Spa",
@@ -2349,7 +2460,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Ляг Спиной (студия массажа)",
@@ -2370,7 +2482,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Ляг Спиной (студия массажа)",
@@ -2391,7 +2504,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Студия массажа на Корпусной",
@@ -2412,7 +2526,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "ONLYIMAGE (имидж-студия Елены Ашмариной)",
@@ -2433,7 +2548,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "CavaCava (школа сомелье)",
@@ -2454,7 +2570,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Москоу Кантри Клаб (гольф)",
@@ -2475,7 +2592,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": "Moscow Improv Club (MIC)"
+  "maybe_partner": "Moscow Improv Club (MIC)",
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Академия гольфа ПИРогово",
@@ -2496,7 +2614,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Территория Полета",
@@ -2517,7 +2636,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "DayDream (аренда премиум-авто)",
@@ -2538,7 +2658,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Гольф-клуб «Петергоф»",
@@ -2559,7 +2680,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "VIPFLOT (аренда яхт)",
@@ -2580,7 +2702,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Yahmur (центр релаксации и звуковых медитаций)",
@@ -2601,7 +2724,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Душа в чаю (чайный клуб)",
@@ -2622,7 +2746,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Aroma Lab (парфюмерная лаборатория)",
@@ -2643,7 +2768,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Veta Perfume (студия Елизаветы Томиловой)",
@@ -2664,7 +2790,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Парфюмерное ателье «Аромаобраз»",
@@ -2685,7 +2812,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "SMOG ювелирная мастерская",
@@ -2706,7 +2834,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Мастерская и школа стекла на ВДНХ",
@@ -2727,7 +2856,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Glass Academy Russia",
@@ -2748,7 +2878,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин"
  },
  {
   "name": "Study Calligraphy (скрипторий)",
@@ -2769,7 +2900,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Арт-студия «Чёрный квадрат»",
@@ -2790,7 +2922,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Столярная школа «Кедросад Мастер» (КЕДР)",
@@ -2811,7 +2944,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Столярная школа Rubankov",
@@ -2832,7 +2966,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Мастерская «Творческий порядок»",
@@ -2853,7 +2988,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Ковруа (Kovrua)",
@@ -2874,7 +3010,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "MyHyggeBox",
@@ -2895,7 +3032,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Истринская сыроварня Олега Сироты",
@@ -2916,7 +3054,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Сыроварня «Ясно Поле»",
@@ -2937,7 +3076,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Eastbrew Coffee Lab",
@@ -2958,7 +3098,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Cacao Temple",
@@ -2979,7 +3120,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Grizzly Nuts",
@@ -3000,7 +3142,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "CHEFS Eatertainment",
@@ -3021,7 +3164,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Пивоварня «Полночный проект» (кластер «Степан Разин»)",
@@ -3042,7 +3186,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Универсальные"
  },
  {
   "name": "Smile Theater — театральная школа",
@@ -3063,7 +3208,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "StandupSchool.ru",
@@ -3084,7 +3230,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Король говорит!",
@@ -3105,7 +3252,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Oratoris — школа ораторского искусства",
@@ -3126,7 +3274,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для женщин;Универсальные"
  },
  {
   "name": "Клаустрофобия — иммерсивные квесты",
@@ -3147,7 +3296,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Московский планетарий — полнокупольный спектакль «Коперник»",
@@ -3168,7 +3318,8 @@
   "confidence": "high",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": "Планетарий №1"
+  "maybe_partner": "Планетарий №1",
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Фондовая оранжерея Главного ботанического сада РАН",
@@ -3189,7 +3340,8 @@
   "confidence": "low",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Иммерсивная выставка «Алиса в Зазеркалье» (ТРК «Планета Нептун»)",
@@ -3210,7 +3362,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Планетарий Санкт-Петербурга (Александровский парк)",
@@ -3231,7 +3384,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": "Планетарий №1"
+  "maybe_partner": "Планетарий №1",
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Беседка Chef's Table — WE LODGE",
@@ -3252,7 +3406,8 @@
   "confidence": "medium",
   "source_file": "C_craft_gastro_learn_visual.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Horseka Resort",
@@ -3273,7 +3428,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "DinoSkazka (Динопарк в парке «Сказка»)",
@@ -3294,7 +3450,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Accademia del Gusto",
@@ -3315,7 +3472,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Кулинарная студия «ВкусоТеррия»",
@@ -3336,7 +3494,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Студия BestMemories — фотосессия с животными",
@@ -3357,7 +3516,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Семейная ферма «Континент»",
@@ -3378,7 +3538,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Парк «Озорные белки»",
@@ -3399,7 +3560,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Интерактивный театр «Сказкин Дом»",
@@ -3420,7 +3582,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Парк «Волшебная Миля» — интерактивные спектакли",
@@ -3441,7 +3604,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для детей;Универсальные"
  },
  {
   "name": "Высотный Город",
@@ -3462,7 +3626,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Для детей;Универсальные"
  },
  {
   "name": "Igloobar — свидание в прозрачном куполе на крыше",
@@ -3483,7 +3648,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Оранжерея Таврического сада (кафе и аренда)",
@@ -3504,7 +3670,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Парк альпак «Симба» + Охта Парк",
@@ -3525,7 +3692,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Экспериментаниум — научный спектакль",
@@ -3546,7 +3714,8 @@
   "confidence": "high",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Термбург",
@@ -3567,7 +3736,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Octane Club",
@@ -3588,7 +3758,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Спортинг Клуб Москва (СКМ)",
@@ -3609,7 +3780,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Клуб Rope-Jumper (СПб)",
@@ -3630,7 +3802,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "RedPoint (мастер-класс по ледолазанию)",
@@ -3651,7 +3824,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Ерино Родео (мотопрокат)",
@@ -3672,7 +3846,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "GT Driving (школа экстремального вождения)",
@@ -3693,7 +3868,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Igels Live Club",
@@ -3714,7 +3890,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Friends Team (спелеотур в Сьяны)",
@@ -3735,7 +3912,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Аэроклуб «Стриж»",
@@ -3756,7 +3934,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Sport Yachts (СПб)",
@@ -3777,7 +3956,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Costa Wake (Новая Москва)",
@@ -3798,7 +3978,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Клуб Para-pilot",
@@ -3819,7 +4000,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Аэротруба «Аэродинамика»",
@@ -3840,7 +4022,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "YouFly (аэротруба у Дубровки)",
@@ -3861,7 +4044,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "AeroDream (аэротруба, ТРК Питер Радуга)",
@@ -3882,7 +4066,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Центр Полётов (авиатренажёры Boeing 737 / A320 / Cessna)",
@@ -3903,7 +4088,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Универсальные"
  },
  {
   "name": "Proba Club (SimRacing VR)",
@@ -3924,7 +4110,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Baza VR",
@@ -3945,7 +4132,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "VK Play Арена (Yota Arena) / клуб VP Bearloga",
@@ -3966,7 +4154,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "Hi-Racing (автосимуляторы)",
@@ -3987,7 +4176,8 @@
   "confidence": "medium",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "VRoom Games",
@@ -4008,7 +4198,8 @@
   "confidence": "low",
   "source_file": "A_extreme_water_air_tech.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  },
  {
   "name": "SKADI CRYO",
@@ -4029,7 +4220,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "Sul Mare (флоат-клуб)",
@@ -4050,7 +4242,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин;Универсальные"
  },
  {
   "name": "FIRM Барбершоп",
@@ -4071,7 +4264,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "First & Only Fitness & Wellness",
@@ -4092,7 +4286,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "FaceRoom",
@@ -4113,7 +4308,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Время Spa",
@@ -4134,7 +4330,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Pokrovka SPA",
@@ -4155,7 +4352,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Whisky Loft",
@@ -4176,7 +4374,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Для женщин;Премиум;Универсальные"
  },
  {
   "name": "Делюкс-авто (ретро-автомобили с водителем)",
@@ -4197,7 +4396,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "КатерФлот (яхты с капитаном)",
@@ -4218,7 +4418,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "Sound Healing Center",
@@ -4239,7 +4440,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Железный Феникс (чайный клуб)",
@@ -4260,7 +4462,8 @@
   "confidence": "medium",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "NYM (студия дживамукти-йоги)",
@@ -4281,7 +4484,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Звенигородская астрономическая обсерватория",
@@ -4302,7 +4506,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Wim Hof Method Russia (сертифицированный инструктор)",
@@ -4323,7 +4528,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Yoga Insight (гонг-медитации)",
@@ -4344,7 +4550,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для женщин"
  },
  {
   "name": "Wine Education Hub / SimpleWine Events",
@@ -4365,7 +4572,8 @@
   "confidence": "low",
   "source_file": "B_relax_beauty_premium.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих;Для мужчин;Премиум"
  },
  {
   "name": "HaskiPark",
@@ -4386,7 +4594,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Bogdo Studio — фотосессия с лошадьми",
@@ -4407,7 +4616,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "«Приют Белоснежки»",
@@ -4428,7 +4638,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Верёвочный парк TreeToTree",
@@ -4449,7 +4660,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для детей;Универсальные"
  },
  {
   "name": "Ради Любви — свидание на крыше с куполом",
@@ -4470,7 +4682,8 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Гостевые домики «Пятый сезон»",
@@ -4491,7 +4704,8 @@
   "confidence": "medium",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для двоих"
  },
  {
   "name": "Иммерсивная выставка «Секреты Джузеппе Арчимбольдо»",
@@ -4512,6 +4726,7 @@
   "confidence": "low",
   "source_file": "D_family_romance_country_season.json",
   "excluded_as": null,
-  "maybe_partner": null
+  "maybe_partner": null,
+  "set_fit": "Для мужчин;Универсальные"
  }
 ]
