@@ -266,6 +266,8 @@ def cmd_merge(args):
                     r[k] = e[k]
             if e.get("note"):
                 r["note"] = e["note"]
+                if re.search(r"закрыл|не работает|прекратил", e["note"], re.I):
+                    r["priority"] = "C"
             # пересчёт приоритета по подтверждённому рейтингу
             if r.get("rating") is not None:
                 if r["rating"] < 4.5:
