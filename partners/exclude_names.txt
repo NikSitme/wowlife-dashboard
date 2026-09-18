@@ -7,11 +7,14 @@ AquaPhotostudia
 AutoDrom
 BAZAR FAMILY
 BBQ Boats
+BackYard
 Ballers Street
 Bannoe Wake
 Barre 1
+BeFit
 Berry Floral Занятие по флористике
 Big Foot
+Black Boat
 Boattrip
 Born2fly
 Bortneva
@@ -21,11 +24,13 @@ Cerami'Co
 Cessna Club
 City Float не работаем
 Craft hall
+Crazy Drive
 Dawinchi Park Вейкборд
 Dive Planet Spb
 Diy Академия
 Double Ride
 Double bus
+Duck Fly
 Dvinina-shwert
 Dz Putilovo
 EV77
@@ -46,8 +51,10 @@ Follow your guide
 Forest Glamp
 Freezone
 Fresh Stretching
+FriendsBoat
 GRAFFIN
 Ginza Project
+Glide Park
 Golden Horses
 Grand Float
 Gravitycider
@@ -59,6 +66,8 @@ IslandBoats
 Jean Vallon
 KAYAKMOSCOW
 KRAMER'S HOME
+Kamenskiy Racing School
+Kite Piter
 Kvadrotinger
 Lab of Art
 Land Tour
@@ -67,8 +76,10 @@ Laser ProLab
 Let's drift
 Lime Stone
 LookBox
+Lua Clinic
 Lucky Drive
 MOTO RU
+Mafdrive
 Magichands
 Makeup Kitchen
 MetaRacing
@@ -77,6 +88,7 @@ MosWake
 Moscow Improv Club
 My Tree Camp
 Nekolesnik
+Newwave Shipping
 Norway Park
 OLFACTORY LAB
 Ochey Мск
@@ -85,9 +97,11 @@ Osteria Amici/TAO
 Ostrov Camp
 Padel Point
 PitPiter
+Pitbike Enduro Club
 PiterGame
 Portal VR
 Primo Karting
+Prive (катер без капитана)
 Pro-kvad24.ru
 Prosto Leti
 QuadRider
@@ -230,6 +244,7 @@ Zuart
 МОТОВОЯЖ
 Макаровские бани
 Мастерская Карла
+Мираж Синема
 Море внутри
 Морская гавань
 Мос-Шарик
@@ -306,6 +321,7 @@ Zuart
 Спорт-клуб Наутилус
 СпортАвиаСервис
 Спортивно-стрелковый клуб "Русское оружие"
+Стилист консультация СПб
 Стрелковый клуб "Специалист"
 Стрелковый клуб №1
 Стрельба из лука
@@ -337,6 +353,7 @@ Zuart
 Школа раскрепощения Станислава Миронова
 Шоу Тайм
 Эко-отель «Хоббитлэнд»
+Эко-отель Лес
 Эко-ферма Егорово поместье
 Энергия Высоты
 Юрий Катера

@@ -35,12 +35,19 @@ STOP = {"ооо","ип","клуб","студия","школа","центр","к�
         "hotel","база","отдыха","загородный","спа","spa","парк","park","тур","tour","travel","тревел","мастерская","арт","art","прокат",
         "аренда","комплекс","кулинарная","кулинарный","организация","surf","сёрф","серф","серфинг","wake","вейк","академия","лаборатория","lab","пространство","салон","бар","bar","кафе","cafe","россия","russia","official"}
 
+STATUS_RX = re.compile(r"(не работа\w*|не сотрудн\w*|закрыл\w*|не записыва\w*|неактуальн\w*|не актуальн\w*|временно|выключ\w+ на сайте|"
+                       r"работа\w* (только )?по старым сертификатам|карточк\w+ скрыт\w+|более не работа\w*|записыва\w+ в исключительн\w+ случа\w+).*$")
+
 def norm(name: str) -> str:
     s = name.lower().replace("ё", "е")
     s = re.sub(r"[\(\[].*?[\)\]]", " ", s)          # скобки
     s = re.split(r"\s[-–—]\s", s)[0]                  # « - не работаем»
+    s = STATUS_RX.sub(" ", s)                          # статусные пометки без дефиса
     s = re.sub(r"[^a-zа-я0-9 ]+", " ", s)
-    toks = [t for t in s.split() if t not in STOP and (len(t) > 1 or t.isascii() and t.isalpha())]
+    alltoks = [t for t in s.split() if len(t) > 1 or t.isascii() and t.isalpha()]
+    toks = [t for t in alltoks if t not in STOP]
+    if not toks:                                        # название целиком из «родовых» слов (Surf Club, Гончарная студия №1)
+        toks = alltoks
     toks = ["".join(TRANSLIT.get(ch, ch) for ch in t) for t in toks]
     return " ".join(sorted(toks))
 

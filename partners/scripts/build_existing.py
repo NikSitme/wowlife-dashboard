@@ -43,5 +43,12 @@ for name, x in g.items():
 rows.sort(key=lambda r: -r["revenue"])
 with open(os.path.join(ROOT, "existing_partners.csv"), "w", newline="", encoding="utf-8-sig") as f:
     w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
-open(os.path.join(ROOT, "exclude_names.txt"), "w", encoding="utf-8").write("\n".join(sorted(set(r["name_clean"] for r in rows if r["name_clean"]))) + "\n")
+names = set(r["name_clean"] for r in rows if r["name_clean"])
+extra = os.path.join(ROOT, "extra_partners.txt")   # партнёры из других источников (таблица Никиты и т.п.)
+if os.path.exists(extra):
+    for line in open(extra, encoding="utf-8"):
+        line = line.strip()
+        if line and not line.startswith("#"):
+            names.add(re.split(r"\s+[\-–—]\s+", line)[0].strip())
+open(os.path.join(ROOT, "exclude_names.txt"), "w", encoding="utf-8").write("\n".join(sorted(names)) + "\n")
 print(f"generated_at={data['generated_at']} partners={len(rows)} " + str(collections.Counter(r['status'] for r in rows)))

@@ -1,0 +1,20 @@
+# Партнёры, которых нет в данных дашборда, но есть в таблице Никиты (Google Sheets, лист активаций/услуг/контрагентов):
+# https://docs.google.com/spreadsheets/d/1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M
+# build_existing.py добавляет их в exclude_names.txt. Одно название на строку, статус можно указать через « - ».
+BackYard - не работаем
+BeFit
+Black Boat - не сотрудничаем
+Crazy Drive
+Duck Fly
+FriendsBoat - не работаем
+Glide Park - не работаем
+Kamenskiy Racing School
+Kite Piter
+Lua Clinic
+Mafdrive - не сотрудничаем
+Newwave Shipping - не сотрудничаем
+Pitbike Enduro Club - не работаем
+Prive (катер без капитана) - не работаем
+Мираж Синема
+Стилист консультация СПб
+Эко-отель Лес - выключили на сайте
