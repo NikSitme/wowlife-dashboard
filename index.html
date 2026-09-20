@@ -336,6 +336,7 @@
     <button class="tabbtn" data-tab="salesact" type="button">Продажи и активации</button>
     <button class="tabbtn" data-tab="wowsales" type="button">Аналитика продаж</button>
     <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
+    <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
   </div>
 
   <div class="tabpanel" data-panel="opiu">
@@ -3357,6 +3358,61 @@ window.__salesActSetData = function(newData){
 
   </div>
 
+  <div class="tabpanel" data-panel="fot" hidden>
+<style>
+  .fot-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .fot-tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .fot-tile .fhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .fot-tile .fname { font-size: 13px; font-weight: 650; }
+  .fot-tile .fval { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .fot-tile .fsub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .fot-tile .fnote { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .fot-tile svg { display: block; margin-top: 8px; }
+  .fot-tile .rmom.good { color: var(--good); font-weight: 600; }
+  .fot-tile .rmom.bad { color: var(--bad); font-weight: 600; }
+  .fot-badge { font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .fot-badge.front { background: color-mix(in srgb, var(--s1) 16%, transparent); color: var(--s1); }
+  .fot-badge.back { background: color-mix(in srgb, var(--s2) 16%, transparent); color: var(--s2); }
+  .fot-split { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .fot-split b { font-weight: 650; }
+  .fot-group-title { font-size: 12px; font-weight: 650; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .03em; margin: 4px 0 10px; }
+</style>
+
+  <div class="card">
+    <div class="filters">
+      <label>Период</label>
+      <div class="presets" id="fotPeriodPresets"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="rev-lbl">ФОТ ЗА ПЕРИОД</div>
+    <div class="rev-big" id="fotTotalVal"></div>
+    <div class="rev-sub" id="fotTotalSub"></div>
+    <div class="fot-split" id="fotSplit"></div>
+  </div>
+
+  <div class="card">
+    <h2>ФОТ по месяцам</h2>
+    <p class="cap">Весь год, факт по Адеску (раздел «Расходы по персоналу»). Front-office — отдел заботы (продажи + активация) и администраторы; всё остальное — back-office. Текущий месяц неполный.</p>
+    <div class="legend">
+      <span class="item"><span class="dot" style="background:var(--s1)"></span>Front-office</span>
+      <span class="item"><span class="dot" style="background:var(--s2)"></span>Back-office</span>
+    </div>
+    <div class="chart-wrap" id="fotYearWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2>ФОТ по отделам</h2>
+    <p class="cap">Сумма за выбранный период · доля от всего ФОТ · изменение к предыдущему такому же периоду · линия — динамика отдела за год</p>
+    <div class="fot-group-title">Front-office</div>
+    <div class="fot-tiles" id="fotTilesFront"></div>
+    <div class="fot-group-title" style="margin-top:18px;">Back-office</div>
+    <div class="fot-tiles" id="fotTilesBack"></div>
+  </div>
+
+  </div>
+
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
 
 <script>
@@ -4861,6 +4917,7 @@ window.__salesActSetData = function(newData){
       if (target === "wowsales" && window.__wowSalesRerender) window.__wowSalesRerender();
       if (target === "wowsales" && window.__leadCertRerender) window.__leadCertRerender();
       if (target === "kreditorka" && window.__kreditorkaRerender) window.__kreditorkaRerender();
+      if (target === "fot" && window.__fotRerender) window.__fotRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
   });
@@ -4940,7 +4997,192 @@ window.__salesActSetData = function(newData){
     markPreset(0);
     render();
     if (window.__kreditorkaRerender) window.__kreditorkaRerender();
+    if (window.__fotRerender) window.__fotRerender();
   };
+})();
+</script>
+<script>
+(function(){
+  // Отделы собраны из официальных групп раздела «Расходы по персоналу» Адеска — сумма всех
+  // плашек всегда равна personnel_total (остаток, если появится новая группа, уйдёт в «Не распределено»).
+  var FOT_DEPTS = [
+    { name: "Отдел заботы",       office: "front", labels: ["ФОТ ОП", "Отдел активации"], note: "продажи (РОП, МОП) + менеджеры активации" },
+    { name: "Администраторы",     office: "front", labels: ["ФОТ ОЗ:"],                  note: "Алина, Марина" },
+    { name: "Продукт и партнёры", office: "back",  labels: ["ФОТ отдела продукта"],      note: "руководитель продукта, менеджеры по партнёрам, контент-менеджер" },
+    { name: "Маркетинг",          office: "back",  labels: ["ФОТ Маркетинга"],           note: "СММ, директолог, таргетолог" },
+    { name: "Разработка",         office: "back",  labels: ["ФОТ разработки"],           note: "руководитель разработки, сопровождение сайта" },
+    { name: "Административный",   office: "back",  labels: ["ФОТ Административный"],     note: "операционный директор, ассистенты, бухгалтерия" },
+    { name: "Маркетплейсы",       office: "back",  labels: ["Отдел м-плейсов"],          note: "менеджер маркетплейсов" }
+  ];
+  var PERIOD_OPTS = [["cur","Текущий месяц"],["prev","Прошлый месяц"],["3m","3 мес"],["all","Весь год"]];
+  var fotState = { period: "prev" };
+  var MONTHS_RU = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+
+  function data(){ return window.__opiuData || []; }
+  function mLabel(m){ var p = m.date.split("-"); return MONTHS_RU[parseInt(p[1],10)-1] + " " + p[0].slice(2); }
+  function fmtRub(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtCompact(n){
+    var a = Math.abs(n);
+    if (a >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,"") + " млн ₽";
+    if (a >= 1000) return Math.round(n/1000) + " тыс ₽";
+    return Math.round(n) + " ₽";
+  }
+  function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
+
+  function deptValue(dept, m){
+    return dept.labels.reduce(function(a, l){ return a + pick(m.personnel_breakdown, l); }, 0);
+  }
+  function deptsWithOther(){
+    // если в Адеске появится новая группа ФОТ, которой нет в конфиге — покажем её остатком, а не потеряем
+    var D = data(), hasOther = D.some(function(m){
+      var known = FOT_DEPTS.reduce(function(a, d){ return a + deptValue(d, m); }, 0);
+      return Math.abs((m.personnel_total || 0) - known) > 1;
+    });
+    if (!hasOther) return FOT_DEPTS;
+    return FOT_DEPTS.concat([{ name: "Не распределено", office: "back", labels: null, note: "новая группа ФОТ в Адеске, не отнесённая к отделу" }]);
+  }
+  function valueOf(dept, m){
+    if (dept.labels) return deptValue(dept, m);
+    return (m.personnel_total || 0) - FOT_DEPTS.reduce(function(a, d){ return a + deptValue(d, m); }, 0);
+  }
+
+  function range(){
+    var n = data().length, to = n - 1, from = to;
+    if (fotState.period === "prev"){ to = Math.max(0, n - 2); from = to; }
+    else if (fotState.period === "3m"){ from = Math.max(0, n - 3); }
+    else if (fotState.period === "all"){ from = 0; }
+    return { from: from, to: to };
+  }
+  function sumRange(fn, from, to){
+    var D = data(), s = 0;
+    for (var i = from; i <= to; i++){ if (D[i]) s += fn(D[i]); }
+    return s;
+  }
+  function prevRange(r){
+    var len = r.to - r.from + 1;
+    if (r.from - len < 0) return null;
+    return { from: r.from - len, to: r.from - 1 };
+  }
+  function pctChange(cur, prev){ if (!prev) return null; return (cur - prev) / Math.abs(prev) * 100; }
+  function deltaHtml(p, big){
+    if (p === null) return "";
+    var cls = p <= 0 ? "good" : "bad", arrow = p <= 0 ? "↓" : "↑";
+    return ' <span class="rmom ' + (big ? "big " : "") + cls + '">' + arrow + " " + (p >= 0 ? "+" : "") + p.toFixed(0) + "%</span>";
+  }
+
+  function initPeriod(){
+    var c = document.getElementById("fotPeriodPresets");
+    if (!c || c.dataset.built) return;
+    c.dataset.built = "1";
+    PERIOD_OPTS.forEach(function(opt){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip" + (fotState.period === opt[0] ? " active" : "");
+      b.textContent = opt[1];
+      b.addEventListener("click", function(){
+        fotState.period = opt[0];
+        Array.prototype.forEach.call(c.children, function(x){ x.classList.toggle("active", x === b); });
+        renderFot();
+      });
+      c.appendChild(b);
+    });
+  }
+
+  function renderHeadline(){
+    var D = data(), r = range(), pr = prevRange(r);
+    var total = sumRange(function(m){ return m.personnel_total || 0; }, r.from, r.to);
+    var prevTotal = pr ? sumRange(function(m){ return m.personnel_total || 0; }, pr.from, pr.to) : null;
+    var depts = deptsWithOther();
+    var front = 0, back = 0;
+    depts.forEach(function(d){
+      var v = sumRange(function(m){ return valueOf(d, m); }, r.from, r.to);
+      if (d.office === "front") front += v; else back += v;
+    });
+    var revenue = sumRange(function(m){ return m.revenue_total || 0; }, r.from, r.to);
+    document.getElementById("fotTotalVal").innerHTML = fmtRub(total) + deltaHtml(pr ? pctChange(total, prevTotal) : null, true);
+    var lbl = r.from === r.to ? mLabel(D[r.from]) : (mLabel(D[r.from]) + " – " + mLabel(D[r.to]));
+    document.getElementById("fotTotalSub").textContent = "Факт за " + lbl + (revenue ? " · ФОТ к выручке: " + (total / revenue * 100).toFixed(1) + "%" : "");
+    function share(v){ return total ? (v / total * 100).toFixed(0) + "%" : "0%"; }
+    document.getElementById("fotSplit").innerHTML =
+      '<span><span class="fot-badge front">Front</span> <b>' + fmtRub(front) + '</b> · ' + share(front) + '</span>' +
+      '<span><span class="fot-badge back">Back</span> <b>' + fmtRub(back) + '</b> · ' + share(back) + '</span>';
+  }
+
+  function renderYear(){
+    var wrap = document.getElementById("fotYearWrap");
+    var D = data();
+    if (!wrap) return;
+    if (!D.length){ wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных</p>'; return; }
+    var depts = deptsWithOther(), r = range();
+    var fronts = D.map(function(m){ return depts.reduce(function(a, d){ return a + (d.office === "front" ? valueOf(d, m) : 0); }, 0); });
+    var backs = D.map(function(m){ return depts.reduce(function(a, d){ return a + (d.office === "back" ? valueOf(d, m) : 0); }, 0); });
+    var totals = D.map(function(m, i){ return fronts[i] + backs[i]; });
+    var w = Math.max(wrap.clientWidth || 600, 300), h = 260, padL = 56, padB = 28, padT = 22, padR = 14;
+    var plotW = w - padL - padR, plotH = h - padT - padB, n = D.length;
+    var maxVal = Math.max.apply(null, totals.concat([0])) * 1.12 || 1;
+    function y(v){ return padT + plotH - (v / maxVal) * plotH; }
+    var groupW = plotW / n, barW = Math.min(46, groupW * 0.55), parts = [];
+    for (var s = 0; s <= 4; s++){
+      var gv = maxVal * s / 4, gy = y(gv);
+      parts.push('<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" stroke="var(--surface-2)" stroke-width="1"/>');
+      parts.push('<text x="' + (padL - 8) + '" y="' + (gy + 3).toFixed(1) + '" text-anchor="end" class="axis-label" style="font-size:10px">' + fmtCompact(gv) + '</text>');
+    }
+    D.forEach(function(m, i){
+      var cx = padL + groupW * i + groupW / 2, bx = cx - barW / 2;
+      var inSel = i >= r.from && i <= r.to, op = inSel ? 1 : 0.4;
+      var yBack = y(backs[i]), yTop = y(totals[i]), y0 = y(0);
+      var tip = mLabel(m) + ": всего " + fmtRub(totals[i]) + " · front " + fmtRub(fronts[i]) + " · back " + fmtRub(backs[i]);
+      parts.push('<g opacity="' + op + '"><title>' + tip + '</title>' +
+        '<rect x="' + bx.toFixed(1) + '" y="' + yBack.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(y0 - yBack, 0).toFixed(1) + '" fill="var(--s2)"/>' +
+        '<rect x="' + bx.toFixed(1) + '" y="' + yTop.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(yBack - yTop - 1, 0).toFixed(1) + '" rx="3" fill="var(--s1)"/>' +
+        '</g>');
+      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (yTop - 6).toFixed(1) + '" text-anchor="middle" fill="var(--text-secondary)" style="font-size:10.5px;font-weight:600">' + fmtCompact(totals[i]).replace(" ₽", "") + '</text>');
+      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" class="axis-label" style="font-size:10px' + (inSel ? ';fill:var(--text-primary);font-weight:650' : '') + '">' + mLabel(m) + '</text>');
+    });
+    wrap.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + parts.join("") + '</svg>';
+  }
+
+  function sparkline(vals, color){
+    var w = 200, h = 30, n = vals.length;
+    var max = Math.max.apply(null, vals.concat([1]));
+    var step = n > 1 ? w / (n - 1) : 0;
+    var d = vals.map(function(v, i){ return (i ? "L" : "M") + (i * step).toFixed(1) + "," + (h - 3 - (v / max) * (h - 6)).toFixed(1); }).join(" ");
+    return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none"><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  function renderTiles(){
+    var D = data(), r = range(), pr = prevRange(r);
+    var frontEl = document.getElementById("fotTilesFront"), backEl = document.getElementById("fotTilesBack");
+    if (!frontEl || !backEl) return;
+    frontEl.innerHTML = ""; backEl.innerHTML = "";
+    var total = sumRange(function(m){ return m.personnel_total || 0; }, r.from, r.to);
+    deptsWithOther().map(function(d){
+      return { d: d, v: sumRange(function(m){ return valueOf(d, m); }, r.from, r.to) };
+    }).sort(function(a, b){ return b.v - a.v; }).forEach(function(x){
+      var d = x.d, v = x.v;
+      var pv = pr ? sumRange(function(m){ return valueOf(d, m); }, pr.from, pr.to) : null;
+      var series = D.map(function(m){ return valueOf(d, m); });
+      var el = document.createElement("div");
+      el.className = "fot-tile";
+      el.innerHTML =
+        '<div class="fhead"><span class="fname">' + d.name + '</span><span class="fot-badge ' + d.office + '">' + (d.office === "front" ? "Front" : "Back") + '</span></div>' +
+        '<div class="fval">' + fmtRub(v) + '</div>' +
+        '<div class="fsub">' + (total ? (v / total * 100).toFixed(0) : 0) + '% от ФОТ' + deltaHtml(pr ? pctChange(v, pv) : null, false) + '</div>' +
+        sparkline(series, d.office === "front" ? "var(--s1)" : "var(--s2)") +
+        '<div class="fnote">' + d.note + '</div>';
+      (d.office === "front" ? frontEl : backEl).appendChild(el);
+    });
+  }
+
+  function renderFot(){
+    if (!data().length) return;
+    initPeriod();
+    renderHeadline();
+    renderYear();
+    renderTiles();
+  }
+  window.__fotRerender = renderFot;
+  renderFot();
+  window.addEventListener("resize", renderYear);
 })();
 </script>
 
