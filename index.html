@@ -3375,6 +3375,14 @@ window.__salesActSetData = function(newData){
   .fot-badge.back { background: color-mix(in srgb, var(--s2) 16%, transparent); color: var(--s2); }
   .fot-split { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
   .fot-split b { font-weight: 650; }
+  .fot-main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 720px) { .fot-main { grid-template-columns: 1fr; } }
+  .fot-main .fot-tile { padding: 20px; border-radius: 14px; }
+  .fot-main .fot-tile.front { border-top: 3px solid var(--s1); }
+  .fot-main .fot-tile.back { border-top: 3px solid var(--s2); }
+  .fot-main .fname { font-size: 15px; }
+  .fot-main .fval { font-size: 30px; }
+  .fot-main .fsub { font-size: 13px; }
   .fot-group-title { font-size: 12px; font-weight: 650; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .03em; margin: 4px 0 10px; }
 </style>
 
@@ -3388,9 +3396,10 @@ window.__salesActSetData = function(newData){
   <div class="card">
     <div class="rev-lbl">ФОТ ЗА ПЕРИОД</div>
     <div class="rev-big" id="fotTotalVal"></div>
-    <div class="rev-sub" id="fotTotalSub"></div>
-    <div class="fot-split" id="fotSplit"></div>
+    <div class="rev-sub" id="fotTotalSub" style="margin-bottom:0"></div>
   </div>
+
+  <div class="fot-main" id="fotMain"></div>
 
   <div class="card">
     <h2>ФОТ по месяцам</h2>
@@ -3405,10 +3414,7 @@ window.__salesActSetData = function(newData){
   <div class="card">
     <h2>ФОТ по отделам</h2>
     <p class="cap">Сумма за выбранный период · доля от всего ФОТ · изменение к предыдущему такому же периоду · линия — динамика отдела за год</p>
-    <div class="fot-group-title">Front-office</div>
-    <div class="fot-tiles" id="fotTilesFront"></div>
-    <div class="fot-group-title" style="margin-top:18px;">Back-office</div>
-    <div class="fot-tiles" id="fotTilesBack"></div>
+    <div class="fot-tiles" id="fotTiles"></div>
   </div>
 
   </div>
@@ -5090,20 +5096,30 @@ window.__salesActSetData = function(newData){
     var D = data(), r = range(), pr = prevRange(r);
     var total = sumRange(function(m){ return m.personnel_total || 0; }, r.from, r.to);
     var prevTotal = pr ? sumRange(function(m){ return m.personnel_total || 0; }, pr.from, pr.to) : null;
-    var depts = deptsWithOther();
-    var front = 0, back = 0;
-    depts.forEach(function(d){
-      var v = sumRange(function(m){ return valueOf(d, m); }, r.from, r.to);
-      if (d.office === "front") front += v; else back += v;
-    });
     var revenue = sumRange(function(m){ return m.revenue_total || 0; }, r.from, r.to);
     document.getElementById("fotTotalVal").innerHTML = fmtRub(total) + deltaHtml(pr ? pctChange(total, prevTotal) : null, true);
     var lbl = r.from === r.to ? mLabel(D[r.from]) : (mLabel(D[r.from]) + " – " + mLabel(D[r.to]));
     document.getElementById("fotTotalSub").textContent = "Факт за " + lbl + (revenue ? " · ФОТ к выручке: " + (total / revenue * 100).toFixed(1) + "%" : "");
-    function share(v){ return total ? (v / total * 100).toFixed(0) + "%" : "0%"; }
-    document.getElementById("fotSplit").innerHTML =
-      '<span><span class="fot-badge front">Front</span> <b>' + fmtRub(front) + '</b> · ' + share(front) + '</span>' +
-      '<span><span class="fot-badge back">Back</span> <b>' + fmtRub(back) + '</b> · ' + share(back) + '</span>';
+  }
+
+  function renderMain(){
+    var el = document.getElementById("fotMain");
+    if (!el) return;
+    var D = data(), r = range(), pr = prevRange(r), depts = deptsWithOther();
+    var total = sumRange(function(m){ return m.personnel_total || 0; }, r.from, r.to);
+    function officeVal(office, m){ return depts.reduce(function(a, d){ return a + (d.office === office ? valueOf(d, m) : 0); }, 0); }
+    el.innerHTML = [["front", "Front-office", "var(--s1)"], ["back", "Back-office", "var(--s2)"]].map(function(o){
+      var v = sumRange(function(m){ return officeVal(o[0], m); }, r.from, r.to);
+      var pv = pr ? sumRange(function(m){ return officeVal(o[0], m); }, pr.from, pr.to) : null;
+      var names = depts.filter(function(d){ return d.office === o[0]; }).map(function(d){ return d.name; }).join(", ");
+      return '<div class="fot-tile ' + o[0] + '">' +
+        '<div class="fhead"><span class="fname">' + o[1] + '</span><span class="fot-badge ' + o[0] + '">' + (o[0] === "front" ? "Front" : "Back") + '</span></div>' +
+        '<div class="fval">' + fmtRub(v) + '</div>' +
+        '<div class="fsub">' + (total ? (v / total * 100).toFixed(0) : 0) + '% от ФОТ' + deltaHtml(pr ? pctChange(v, pv) : null, false) + '</div>' +
+        sparkline(D.map(function(m){ return officeVal(o[0], m); }), o[2]) +
+        '<div class="fnote">' + names + '</div>' +
+        '</div>';
+    }).join("");
   }
 
   function renderYear(){
@@ -5150,9 +5166,9 @@ window.__salesActSetData = function(newData){
 
   function renderTiles(){
     var D = data(), r = range(), pr = prevRange(r);
-    var frontEl = document.getElementById("fotTilesFront"), backEl = document.getElementById("fotTilesBack");
-    if (!frontEl || !backEl) return;
-    frontEl.innerHTML = ""; backEl.innerHTML = "";
+    var tilesEl = document.getElementById("fotTiles");
+    if (!tilesEl) return;
+    tilesEl.innerHTML = "";
     var total = sumRange(function(m){ return m.personnel_total || 0; }, r.from, r.to);
     deptsWithOther().map(function(d){
       return { d: d, v: sumRange(function(m){ return valueOf(d, m); }, r.from, r.to) };
@@ -5168,7 +5184,7 @@ window.__salesActSetData = function(newData){
         '<div class="fsub">' + (total ? (v / total * 100).toFixed(0) : 0) + '% от ФОТ' + deltaHtml(pr ? pctChange(v, pv) : null, false) + '</div>' +
         sparkline(series, d.office === "front" ? "var(--s1)" : "var(--s2)") +
         '<div class="fnote">' + d.note + '</div>';
-      (d.office === "front" ? frontEl : backEl).appendChild(el);
+      tilesEl.appendChild(el);
     });
   }
 
@@ -5176,6 +5192,7 @@ window.__salesActSetData = function(newData){
     if (!data().length) return;
     initPeriod();
     renderHeadline();
+    renderMain();
     renderYear();
     renderTiles();
   }
