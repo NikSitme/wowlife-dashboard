@@ -323,6 +323,10 @@
   #opiuFullTable thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-1); font-weight: 600; color: var(--text-secondary); }
   #opiuFullTable th:first-child, #opiuFullTable td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-1); min-width: 360px; border-right: 1px solid var(--border); }
   #opiuFullTable thead th:first-child { z-index: 4; }
+  #opiuFullTable th.os-cum, #opiuFullTable td.os-cum { position: sticky; left: var(--os-col1, 400px); z-index: 2; background: var(--surface-1);
+    border-right: 2px solid var(--border); box-shadow: 6px 0 8px -6px rgba(0,0,0,0.25); font-weight: 700; }
+  #opiuFullTable thead th.os-cum { z-index: 4; line-height: 1.25; }
+  #opiuFullTable tr.os-header td.os-cum, #opiuFullTable tr.os-subtotal td.os-cum, #opiuFullTable tr.os-pct td.os-cum, #opiuFullTable tr.os-leaf td.os-cum { background: inherit; }
   #opiuFullTable tr { --os-accent: var(--text-muted); }
   #opiuFullTable tr.os-rev { --os-accent: var(--s1); }
   #opiuFullTable tr.os-var { --os-accent: var(--s2); }
@@ -4476,16 +4480,23 @@ window.__salesActSetData = function(newData){
     return DATA.map(function(m){ return g.items.reduce(function(a, l){ return a + osRowVal(m, l); }, 0); });
   }
   function osNonZero(vals){ return vals.some(function(v){ return Math.abs(v) >= 0.5; }); }
-  function osCells(vals, neg, pct){
-    return vals.map(function(v){
-      if (pct){
-        if (v === null) return '<td class="num"><span class="os-pill dash">—</span></td>';
-        return '<td class="num"><span class="os-pill' + (v < 0 ? " bad" : "") + '">' + (v * 100).toFixed(1).replace(".", ",") + " %</span></td>";
-      }
-      var shown = Math.round(neg ? -v : v);
-      var cls = shown < 0 ? " os-neg" : (shown === 0 ? " os-zero" : "");
-      return '<td class="num' + cls + '">' + (shown === 0 ? "—" : shown.toLocaleString("ru-RU") + " ₽") + '</td>';
-    }).join("");
+  // ячейки строки: первая — накопленный итог по всем месяцам (закреплена), дальше по месяцам
+  function osMoneyCell(v, neg, extraCls){
+    var shown = Math.round(neg ? -v : v);
+    var cls = shown < 0 ? " os-neg" : (shown === 0 ? " os-zero" : "");
+    return '<td class="num' + cls + (extraCls || "") + '">' + (shown === 0 ? "—" : shown.toLocaleString("ru-RU") + " ₽") + '</td>';
+  }
+  function osPctCell(v, extraCls){
+    if (v === null) return '<td class="num' + (extraCls || "") + '"><span class="os-pill dash">—</span></td>';
+    return '<td class="num' + (extraCls || "") + '"><span class="os-pill' + (v < 0 ? " bad" : "") + '">' + (v * 100).toFixed(1).replace(".", ",") + " %</span></td>";
+  }
+  function osCells(vals, neg){
+    var total = vals.reduce(function(a, v){ return a + v; }, 0);
+    return osMoneyCell(total, neg, " os-cum") + vals.map(function(v){ return osMoneyCell(v, neg); }).join("");
+  }
+  function osPctCells(num, den){
+    var sn = num.reduce(function(a, v){ return a + v; }, 0), sd = den.reduce(function(a, v){ return a + v; }, 0);
+    return osPctCell(sd ? sn / sd : null, " os-cum") + num.map(function(v, i){ return osPctCell(den[i] ? v / den[i] : null); }).join("");
   }
   function osUnallocated(){
     var used = {};
@@ -4498,19 +4509,30 @@ window.__salesActSetData = function(newData){
     DATA.forEach(function(m){ Object.keys(m.rows || {}).forEach(function(l){ if (!used[l]) extra[l] = 1; }); });
     return Object.keys(extra);
   }
-  function renderOpiuFullTable(){
+  function renderOpiuFullTable(keepScroll){
     var head = document.getElementById("opiuFullTableHead");
     var body = document.getElementById("opiuFullTableBody");
     if (!head || !body) return;
-    head.innerHTML = '<th>Статья</th>' + DATA.map(function(m){ return '<th class="num">' + monthLabel(m) + '</th>'; }).join("");
+    var table = head.closest("table"), wrap = table.parentElement;
+    var savedScroll = wrap.scrollLeft;
+    osFillTable(head, body);
+    // ширина первой колонки — смещение закреплённой колонки «накопленный итог»
+    var th0 = head.querySelector("th");
+    if (th0) table.style.setProperty("--os-col1", th0.getBoundingClientRect().width + "px");
+    // по умолчанию таблица прокручена к текущему (последнему) месяцу, чтобы не листать вправо
+    wrap.scrollLeft = keepScroll ? savedScroll : wrap.scrollWidth;
+  }
+  function osFillTable(head, body){
+    var cumLabel = DATA.length ? "Накопленный итог<br><span class=\"os-note\" style=\"margin:0\">" + monthLabel(DATA[0]) + " – " + monthLabel(DATA[DATA.length - 1]) + "</span>" : "Накопленный итог";
+    head.innerHTML = '<th>Статья</th><th class="num os-cum">' + cumLabel + '</th>' + DATA.map(function(m){ return '<th class="num">' + monthLabel(m) + '</th>'; }).join("");
     if (!DATA.some(function(m){ return m.rows; })){
-      body.innerHTML = '<tr><td colspan="' + (DATA.length + 1) + '" class="cap" style="padding:14px 10px;">Постатейные данные появятся после обновления — нажмите «Обновить данные» вверху страницы.</td></tr>';
+      body.innerHTML = '<tr><td colspan="' + (DATA.length + 2) + '" class="cap" style="padding:14px 10px;">Постатейные данные появятся после обновления — нажмите «Обновить данные» вверху страницы.</td></tr>';
       return;
     }
     var zero = DATA.map(function(){ return 0; });
     function add(a, b){ return a.map(function(v, i){ return v + b[i]; }); }
     function sub(a, b){ return a.map(function(v, i){ return v - b[i]; }); }
-    function ratio(a, b){ return a.map(function(v, i){ return b[i] ? v / b[i] : null; }); }
+
     var html = [];
     var accent = "";  // css-класс текущего блока (цвет акцента)
     function rowHtml(cls, indent, label, cells, key, hasKids, extra){
@@ -4555,7 +4577,7 @@ window.__salesActSetData = function(newData){
       return total;
     }
     function subtotal(label, vals, chipText){ accent = "os-profit"; rowHtml("os-subtotal", 0, label, osCells(vals), null, false, chip(chipText)); }
-    function pctRow(label, vals){ accent = "os-profit"; rowHtml("os-pct", 0, label, osCells(vals, false, true)); }
+    function pctRow(label, num, den){ accent = "os-profit"; rowHtml("os-pct", 0, label, osPctCells(num, den)); }
     var rev = renderBlock(OS_BLOCKS[0]);
     var ret = renderBlock(OS_BLOCKS[1]);                       // отрицательные значения
     var netRev = add(rev, ret);
@@ -4563,15 +4585,15 @@ window.__salesActSetData = function(newData){
     var variable = renderBlock(OS_BLOCKS[2]);
     var margin = add(netRev, variable);
     subtotal("Маржинальная прибыль", margin, "чистая выручка − переменные");
-    pctRow("Рентабельность по маржинальному доходу", ratio(margin, netRev));
+    pctRow("Рентабельность по маржинальному доходу", margin, netRev);
     var fixed = renderBlock(OS_BLOCKS[3]);
     var op = add(margin, fixed);
     subtotal("Операционная прибыль", op, "маржа − постоянные");
-    pctRow("Рентабельность по операционной прибыли", ratio(op, netRev));
+    pctRow("Рентабельность по операционной прибыли", op, netRev);
     var tax = renderBlock(OS_BLOCKS[4]);
     var net = add(op, tax);
     subtotal("Чистая прибыль", net, "после процентов и налогов");
-    pctRow("Рентабельность по чистой прибыли", ratio(net, netRev));
+    pctRow("Рентабельность по чистой прибыли", net, netRev);
     var unalloc = osUnallocated();
     if (unalloc.length){
       var uv = DATA.map(function(m){ return unalloc.reduce(function(a, l){ return a + osRowVal(m, l); }, 0); });
@@ -4594,7 +4616,7 @@ window.__salesActSetData = function(newData){
     if (body) body.addEventListener("click", function(e){
       var tr = e.target.closest("tr.os-can"); if (!tr || !tr.dataset.key) return;
       osExpanded[tr.dataset.key] = !osExpanded[tr.dataset.key];
-      renderOpiuFullTable();
+      renderOpiuFullTable(true);
     });
     function setAll(on){
       osExpanded = {};
@@ -4605,7 +4627,7 @@ window.__salesActSetData = function(newData){
         }); });
         osExpanded["unalloc"] = true;
       }
-      renderOpiuFullTable();
+      renderOpiuFullTable(true);
     }
     var ea = document.getElementById("opiuStructExpandAll"), ca = document.getElementById("opiuStructCollapseAll");
     if (ea) ea.addEventListener("click", function(){ setAll(true); });
