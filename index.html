@@ -155,6 +155,11 @@
   .presets { display: flex; gap: 6px; flex-wrap: wrap; }
   .range-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
   .range-wrap[hidden] { display: none; }
+  .range-wrap input[type="date"] {
+    font: inherit; font-size: 13px; color: var(--text-primary);
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px;
+  }
+  .range-note { font-size: 12px; color: var(--text-muted); }
   .chip {
     font: inherit;
     font-size: 12.5px;
@@ -365,9 +370,10 @@
       <div class="presets" id="presets"></div>
       <div class="range-wrap" id="rangeWrap" hidden>
         <label>Период с</label>
-        <select id="fromSel"></select>
+        <input type="date" id="fromDate">
         <label>по</label>
-        <select id="toSel"></select>
+        <input type="date" id="toDate">
+        <span class="range-note" id="rangeNote"></span>
       </div>
     </div>
   </div>
@@ -3818,16 +3824,36 @@ window.__salesActSetData = function(newData){
   };
 
   var root = document.currentScript.parentElement;
-  var fromSel = root.querySelector("#fromSel");
-  var toSel = root.querySelector("#toSel");
+  var fromDate = root.querySelector("#fromDate");
+  var toDate = root.querySelector("#toDate");
+  var rangeNote = root.querySelector("#rangeNote");
   var presetsEl = root.querySelector("#presets");
 
-  DATA.forEach(function(m, i){
-    var o1 = document.createElement("option"); o1.value = i; o1.textContent = monthLabel(m);
-    fromSel.appendChild(o1);
-    var o2 = document.createElement("option"); o2.value = i; o2.textContent = monthLabel(m);
-    toSel.appendChild(o2);
-  });
+  // ОПиУ в Адеске есть только по месяцам, поэтому выбранные даты округляются до целых
+  // месяцев: «с» — к началу своего месяца, «по» — к концу своего месяца.
+  function monthStart(m){ return m.label + "-01"; }
+  function monthEnd(m){
+    var y = parseInt(m.label.slice(0, 4), 10), mo = parseInt(m.label.slice(5, 7), 10);
+    var last = new Date(y, mo, 0).getDate();
+    return m.label + "-" + String(last).padStart(2, "0");
+  }
+  function monthIndexForDate(iso){
+    if (!iso) return -1;
+    var lab = iso.slice(0, 7);
+    for (var i = 0; i < DATA.length; i++){ if (DATA[i].label === lab) return i; }
+    if (lab < DATA[0].label) return 0;
+    return DATA.length - 1;
+  }
+  function fmtDayRu(iso){
+    var p = iso.split("-");
+    return parseInt(p[2], 10) + " " + MONTHS_RU[parseInt(p[1], 10) - 1] + " " + p[0];
+  }
+  function setDateBounds(){
+    if (!DATA.length) return;
+    fromDate.min = toDate.min = monthStart(DATA[0]);
+    fromDate.max = toDate.max = monthEnd(DATA[DATA.length - 1]);
+  }
+  setDateBounds();
 
   var state = { from: DATA.length - 1, to: DATA.length - 1 };
 
@@ -3878,18 +3904,28 @@ window.__salesActSetData = function(newData){
       el.classList.toggle("active", i === activeIdx);
     });
   }
-  function syncSelects(){ fromSel.value = state.from; toSel.value = state.to; }
-
-  fromSel.addEventListener("change", function(){
-    state.from = parseInt(fromSel.value, 10);
-    if (state.from > state.to) state.to = state.from;
-    syncSelects(); markPreset(CUSTOM_IDX); render();
-  });
-  toSel.addEventListener("change", function(){
-    state.to = parseInt(toSel.value, 10);
-    if (state.to < state.from) state.from = state.to;
-    syncSelects(); markPreset(CUSTOM_IDX); render();
-  });
+  function syncSelects(){
+    if (!DATA.length) return;
+    fromDate.value = monthStart(DATA[state.from]);
+    toDate.value = monthEnd(DATA[state.to]);
+    rangeNote.textContent = "";
+  }
+  function onDateChange(){
+    var fi = monthIndexForDate(fromDate.value), ti = monthIndexForDate(toDate.value);
+    if (fi < 0 && ti < 0) return;
+    if (fi >= 0) state.from = fi;
+    if (ti >= 0) state.to = ti;
+    if (state.from > state.to){ if (fi >= 0 && ti >= 0) state.to = state.from; else state.from = state.to; }
+    var rounded = fromDate.value !== monthStart(DATA[state.from]) || toDate.value !== monthEnd(DATA[state.to]);
+    fromDate.value = monthStart(DATA[state.from]);
+    toDate.value = monthEnd(DATA[state.to]);
+    rangeNote.textContent = rounded
+      ? "ОПиУ считается по месяцам — взят период " + fmtDayRu(fromDate.value) + " – " + fmtDayRu(toDate.value)
+      : "";
+    markPreset(CUSTOM_IDX); render();
+  }
+  fromDate.addEventListener("change", onDateChange);
+  toDate.addEventListener("change", onDateChange);
 
   function fmt(n){
     n = Math.round(n);
@@ -5017,14 +5053,7 @@ window.__salesActSetData = function(newData){
     DATA = newData;
     decorateMonths(DATA);
     window.__opiuData = DATA;
-    fromSel.innerHTML = "";
-    toSel.innerHTML = "";
-    DATA.forEach(function(m, i){
-      var o1 = document.createElement("option"); o1.value = i; o1.textContent = monthLabel(m);
-      fromSel.appendChild(o1);
-      var o2 = document.createElement("option"); o2.value = i; o2.textContent = monthLabel(m);
-      toSel.appendChild(o2);
-    });
+    setDateBounds();
     state.from = DATA.length - 1;
     state.to = DATA.length - 1;
     syncSelects();
