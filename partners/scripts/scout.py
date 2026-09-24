@@ -198,12 +198,12 @@ def cmd_search(args):
         print(f"  -> {path}: {len(keep)} кандидатов (исключено текущих партнёров: {dropped})")
 
 SETS = {  # к каким наборам сайта подходит кандидат (по стратегии и чеку)
-    "Для двоих": {"romance", "relax", "gastro", "visual", "country", "premium", "mindful", "beauty", "water", "air"},
+    "Для двоих": {"romance", "relax", "gastro", "visual", "country", "premium", "mindful", "beauty", "water", "air", "viral"},
     "Для мужчин": {"extreme", "tech", "water", "air", "gastro", "craft", "premium", "season"},
-    "Для женщин": {"relax", "beauty", "craft", "mindful", "visual", "gastro", "learn"},
+    "Для женщин": {"relax", "beauty", "craft", "mindful", "visual", "gastro", "learn", "viral"},
     "Для детей": {"family"},
     "Премиум": {"premium"},
-    "Универсальные": {"extreme", "water", "air", "tech", "relax", "craft", "gastro", "learn", "visual", "season", "family"},
+    "Универсальные": {"extreme", "water", "air", "tech", "relax", "craft", "gastro", "learn", "visual", "season", "family", "viral"},
 }
 
 def set_fit(r):
@@ -279,7 +279,7 @@ def cmd_merge(args):
     kept.sort(key=lambda r: (order.get(r.get("priority"), 3), -(r.get("rating") or 0), -(r.get("reviews") or 0)))
     json.dump(kept, open(os.path.join(CAND_DIR, "all.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     cols = ["priority", "name", "city", "strategy", "category", "rating", "reviews", "price_from", "website",
-            "what", "why", "gift_cert_ready", "visual_score", "set_fit", "rating_source", "note", "yandex_maps_query", "yandex_maps_url", "source", "confidence", "maybe_partner", "status", "comment"]
+            "what", "why", "gift_cert_ready", "visual_score", "set_fit", "social", "followers", "rating_source", "note", "yandex_maps_query", "yandex_maps_url", "source", "confidence", "maybe_partner", "status", "comment"]
     with open(os.path.join(CAND_DIR, "all.csv"), "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore"); w.writeheader()
         for r in kept:

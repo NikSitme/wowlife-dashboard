@@ -81,6 +81,7 @@ function render() {
     const strat = String(r.strategy || '').split('|').map(s => `<span class="tag">${esc(STRAT[s] || s)}</span>`).join('');
     const links = [r.website && `<a href="${esc(r.website)}" target="_blank" rel="noopener">сайт</a>`,
       `<a href="https://yandex.ru/maps/?text=${encodeURIComponent(r.yandex_maps_query || (r.name + ' ' + (r.city || '')))}" target="_blank" rel="noopener">Я.Карты</a>`,
+      r.social && `<a href="${esc(r.social)}" target="_blank" rel="noopener">соцсети${r.followers ? ' ' + esc(r.followers) : ''}</a>`,
       r.source && `<a href="${esc(r.source)}" target="_blank" rel="noopener">источник</a>`].filter(Boolean).join(' · ');
     const rating = r.rating ? `<span class="stars" title="${esc(r.rating_source || '')}">★ ${r.rating}${r.reviews ? ` <span class="muted">(${r.reviews})</span>` : ''}</span>` : '<span class="muted">—</span>';
     const sets = String(r.set_fit || '').split(';').filter(Boolean).map(x => `<span class="tag">${esc(x)}</span>`).join('');
