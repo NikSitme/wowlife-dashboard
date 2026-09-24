@@ -491,36 +491,6 @@
   </div>
 
   <div class="card">
-    <h2>Выручка, расходы и чистая прибыль по месяцам</h2>
-    <p class="cap">Столбцы — выручка и расходы (прямые + операционные), линия — чистая прибыль</p>
-    <div class="legend">
-      <span class="item"><span class="key" style="background:var(--s1)"></span>Выручка</span>
-      <span class="item"><span class="key" style="background:var(--s2)"></span>Расходы</span>
-      <span class="item"><span class="key" style="background:var(--s3)"></span>Чистая прибыль</span>
-    </div>
-    <div class="chart-wrap" id="trendWrap"></div>
-  </div>
-
-  <div class="card">
-    <h2>Все статьи за период</h2>
-    <p class="cap">Клик по заголовку — сортировка. Доходы и расходы, факт по Адеск.</p>
-    <div class="table-scroll">
-      <table id="statyiTable">
-        <thead>
-          <tr>
-            <th data-k="cat">Категория</th>
-            <th data-k="name">Статья</th>
-            <th data-k="type">Тип</th>
-            <th class="num" data-k="value">Сумма, ₽</th>
-            <th class="num" data-k="share">Доля</th>
-          </tr>
-        </thead>
-        <tbody id="statyiBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
     <h2>ОПиУ — управленческая структура</h2>
     <p class="cap">Все статьи «сборки ОПиУ» Адеска, перегруппированные по правилам: возвраты вычитаются из выручки; переменные расходы — то, что растёт с числом сертификатов (себестоимость, комиссии МП, эквайринг, упаковка, доставка, сдельная ЗП); постоянные — ФОТ, маркетинг, связь, сервисы, офис, банк; налоги ИП — в блоке налогов; тело кредита и дивиденды — справочно. Строки с нулями скрыты, статьи раскрываются по клику, ФОТ — одной строкой с разбивкой по отделам. Сервисы разработки включены в «Сервисы» (в Адеске они вне итога).</p>
     <div class="opiu-struct-tools">
@@ -4255,6 +4225,7 @@ window.__salesActSetData = function(newData){
   function hideTip(){ tooltip.classList.remove("show"); }
 
   function renderTrend(){
+    if (!trendWrap) return; // блок «по месяцам» убран со страницы (2026-09-24)
     var months = DATA.slice(state.from, state.to+1);
     var n = months.length;
     var w = Math.max(560, trendWrap.parentElement.clientWidth - 40);
@@ -4407,6 +4378,7 @@ window.__salesActSetData = function(newData){
 
   function renderTable(agg){
     window.__lastAgg = agg;
+    if (!tbody) return; // блок «Все статьи за период» убран со страницы (2026-09-24)
     var rows = buildRows(agg);
     rows.sort(function(a,b){
       var k = sortState.k;
