@@ -336,8 +336,8 @@
   #opiuFullTable tr.os-subtotal td:first-child { box-shadow: inset 4px 0 0 var(--os-accent); }
   #opiuFullTable tr.os-pct td { color: var(--text-muted); background: color-mix(in srgb, var(--os-accent) 5%, var(--surface-1)); }
   #opiuFullTable tr.os-group td:first-child { cursor: default; user-select: none; }
-  #opiuFullTable tr.os-group.os-can td:first-child { cursor: pointer; }
-  #opiuFullTable tr.os-group.os-can:hover td:first-child { color: var(--os-accent); }
+  #opiuFullTable tr.os-can td:first-child { cursor: pointer; }
+  #opiuFullTable tr.os-can:hover td:first-child { color: var(--os-accent); }
   #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 12.5px; }
   #opiuFullTable tr.os-leaf td:first-child { background: color-mix(in srgb, var(--surface-2) 60%, var(--surface-1)); }
   #opiuFullTable tr.os-leaf td:first-child::before { content: "·"; color: var(--os-accent); margin-right: 8px; font-weight: 700; }
@@ -492,7 +492,7 @@
 
   <div class="card">
     <h2>ОПиУ — управленческая структура</h2>
-    <p class="cap">Все статьи «сборки ОПиУ» Адеска, перегруппированные по правилам: возвраты вычитаются из выручки; переменные расходы — то, что растёт с числом сертификатов (себестоимость, комиссии МП, эквайринг, упаковка, доставка, сдельная ЗП); постоянные — ФОТ, маркетинг, связь, сервисы, офис, банк; налоги ИП — в блоке налогов; тело кредита и дивиденды — справочно. Строки с нулями скрыты, статьи раскрываются по клику, ФОТ — одной строкой с разбивкой по отделам. Сервисы разработки включены в «Сервисы» (в Адеске они вне итога).</p>
+    <p class="cap">Все статьи «сборки ОПиУ» Адеска, перегруппированные по правилам: возвраты вычитаются из выручки; переменные расходы — то, что растёт с числом сертификатов (себестоимость, комиссии МП, эквайринг, упаковка, доставка, сдельная ЗП); постоянные — ФОТ, маркетинг, связь, сервисы, офис, банк; налоги ИП — в блоке налогов; тело кредита и дивиденды — справочно. Строки с нулями скрыты; блоки и группы статей раскрываются по клику (по умолчанию видны только итоги блоков), ФОТ — одной строкой с разбивкой по отделам. Сервисы разработки включены в «Сервисы» (в Адеске они вне итога).</p>
     <div class="opiu-struct-tools">
       <button type="button" class="chip" id="opiuStructExpandAll">Раскрыть всё</button><button type="button" class="chip" id="opiuStructCollapseAll">Свернуть всё</button>
       <div class="opiu-struct-legend">
@@ -4548,14 +4548,15 @@ window.__salesActSetData = function(newData){
         rowHtml("os-header", 0, b.label, osCells(total, neg), null, false, chip(b.chip) + note(b.note));
         return total;
       }
-      rowHtml("os-header", 0, b.label, osCells(total, neg), null, false, chip(b.chip) + note(b.note));
-      b.groups.forEach(function(g){ renderGroup(g, 1, b.key); });
+      // блок целиком раскрывается по клику на шапку (по умолчанию свёрнут — видна только сумма блока)
+      var bkey = "block/" + b.key;
+      rowHtml("os-header", 0, b.label, osCells(total, neg), bkey, true, chip(b.chip) + chip(b.groups.length + " групп") + note(b.note));
+      if (osExpanded[bkey]) b.groups.forEach(function(g){ renderGroup(g, 1, b.key); });
       return total;
     }
     function subtotal(label, vals, chipText){ accent = "os-profit"; rowHtml("os-subtotal", 0, label, osCells(vals), null, false, chip(chipText)); }
     function pctRow(label, vals){ accent = "os-profit"; rowHtml("os-pct", 0, label, osCells(vals, false, true)); }
     var rev = renderBlock(OS_BLOCKS[0]);
-    subtotal("Выручка с НДС", rev);
     var ret = renderBlock(OS_BLOCKS[1]);                       // отрицательные значения
     var netRev = add(rev, ret);
     subtotal("Чистая выручка", netRev, "после возвратов");
@@ -4591,14 +4592,14 @@ window.__salesActSetData = function(newData){
   (function(){
     var body = document.getElementById("opiuFullTableBody");
     if (body) body.addEventListener("click", function(e){
-      var tr = e.target.closest("tr.os-group.os-can"); if (!tr || !tr.dataset.key) return;
+      var tr = e.target.closest("tr.os-can"); if (!tr || !tr.dataset.key) return;
       osExpanded[tr.dataset.key] = !osExpanded[tr.dataset.key];
       renderOpiuFullTable();
     });
     function setAll(on){
       osExpanded = {};
       if (on){
-        OS_BLOCKS.forEach(function(b){ b.groups.forEach(function(g){
+        OS_BLOCKS.forEach(function(b){ osExpanded["block/" + b.key] = true; b.groups.forEach(function(g){
           osExpanded[b.key + "/" + g.label] = true;
           (g.children || []).forEach(function(c){ osExpanded[b.key + "/" + g.label + "/" + c.label] = true; });
         }); });
