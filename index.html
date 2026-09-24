@@ -314,14 +314,44 @@
     user-select: none;
   }
   thead th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .opiu-struct-tools { display: flex; gap: 6px; margin: -4px 0 10px; }
-  #opiuFullTable tr.os-header td { font-weight: 700; background: var(--surface-2); }
-  #opiuFullTable tr.os-subtotal td { font-weight: 700; border-top: 1px solid var(--border); }
-  #opiuFullTable tr.os-pct td { color: var(--text-muted); font-style: italic; }
-  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); }
-  #opiuFullTable tr.os-group td:first-child { cursor: pointer; user-select: none; }
-  #opiuFullTable .os-tg { display: inline-block; width: 14px; color: var(--text-muted); font-size: 11px; }
-  #opiuFullTable .os-neg { color: var(--text-muted); }
+  .opiu-struct-tools { display: flex; gap: 6px; margin: -4px 0 10px; flex-wrap: wrap; align-items: center; }
+  .opiu-struct-legend { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  /* управленческая структура ОПиУ: широкие колонки, прокрутка вбок, липкие шапка и первая колонка */
+  #opiuFullTable { width: auto; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  #opiuFullTable th, #opiuFullTable td { padding: 8px 22px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  #opiuFullTable th.num, #opiuFullTable td.num { min-width: 160px; }
+  #opiuFullTable thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-1); font-weight: 600; color: var(--text-secondary); }
+  #opiuFullTable th:first-child, #opiuFullTable td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-1); min-width: 360px; border-right: 1px solid var(--border); }
+  #opiuFullTable thead th:first-child { z-index: 4; }
+  #opiuFullTable tr { --os-accent: var(--text-muted); }
+  #opiuFullTable tr.os-rev { --os-accent: var(--s1); }
+  #opiuFullTable tr.os-var { --os-accent: var(--s2); }
+  #opiuFullTable tr.os-fixed { --os-accent: var(--s4); }
+  #opiuFullTable tr.os-tax { --os-accent: #8b5cf6; }
+  #opiuFullTable tr.os-fin { --os-accent: var(--text-muted); }
+  #opiuFullTable tr.os-profit { --os-accent: var(--s3); }
+  #opiuFullTable tr.os-header td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 9%, var(--surface-1)); color: var(--text-primary); }
+  #opiuFullTable tr.os-header td:first-child { box-shadow: inset 4px 0 0 var(--os-accent); }
+  #opiuFullTable tr.os-subtotal td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 12%, var(--surface-1)); border-top: 2px solid var(--os-accent); }
+  #opiuFullTable tr.os-subtotal td:first-child { box-shadow: inset 4px 0 0 var(--os-accent); }
+  #opiuFullTable tr.os-pct td { color: var(--text-muted); background: color-mix(in srgb, var(--os-accent) 5%, var(--surface-1)); }
+  #opiuFullTable tr.os-group td:first-child { cursor: default; user-select: none; }
+  #opiuFullTable tr.os-group.os-can td:first-child { cursor: pointer; }
+  #opiuFullTable tr.os-group.os-can:hover td:first-child { color: var(--os-accent); }
+  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 12.5px; }
+  #opiuFullTable tr.os-leaf td:first-child { background: color-mix(in srgb, var(--surface-2) 60%, var(--surface-1)); }
+  #opiuFullTable tr.os-leaf td:first-child::before { content: "·"; color: var(--os-accent); margin-right: 8px; font-weight: 700; }
+  #opiuFullTable .os-tg { display: inline-block; width: 16px; color: var(--os-accent); font-size: 11px; }
+  #opiuFullTable .os-neg { color: var(--bad); }
+  #opiuFullTable .os-zero { color: var(--text-muted); }
+  .os-chip { display: inline-block; font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: 1px;
+    background: color-mix(in srgb, var(--os-accent, var(--text-muted)) 16%, transparent); color: var(--os-accent, var(--text-muted)); }
+  .os-chip.legend { margin-left: 0; }
+  .os-note { font-size: 11px; color: var(--text-muted); margin-left: 8px; font-weight: 400; }
+  .os-pill { display: inline-block; min-width: 56px; text-align: center; padding: 2px 8px; border-radius: 999px; font-weight: 650; font-size: 12px;
+    background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+  .os-pill.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+  .os-pill.dash { background: transparent; color: var(--text-muted); }
   tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
   tbody tr:hover { background: var(--surface-2); }
   .table-scroll { max-height: 420px; overflow-y: auto; border-radius: 8px; }
@@ -493,7 +523,16 @@
   <div class="card">
     <h2>ОПиУ — управленческая структура</h2>
     <p class="cap">Все статьи «сборки ОПиУ» Адеска, перегруппированные по правилам: возвраты вычитаются из выручки; переменные расходы — то, что растёт с числом сертификатов (себестоимость, комиссии МП, эквайринг, упаковка, доставка, сдельная ЗП); постоянные — ФОТ, маркетинг, связь, сервисы, офис, банк; налоги ИП — в блоке налогов; тело кредита и дивиденды — справочно. Строки с нулями скрыты, статьи раскрываются по клику, ФОТ — одной строкой с разбивкой по отделам. Сервисы разработки включены в «Сервисы» (в Адеске они вне итога).</p>
-    <div class="opiu-struct-tools"><button type="button" class="chip" id="opiuStructExpandAll">Раскрыть всё</button><button type="button" class="chip" id="opiuStructCollapseAll">Свернуть всё</button></div>
+    <div class="opiu-struct-tools">
+      <button type="button" class="chip" id="opiuStructExpandAll">Раскрыть всё</button><button type="button" class="chip" id="opiuStructCollapseAll">Свернуть всё</button>
+      <div class="opiu-struct-legend">
+        <span class="os-chip legend" style="--os-accent:var(--s1)">выручка</span>
+        <span class="os-chip legend" style="--os-accent:var(--s2)">переменные</span>
+        <span class="os-chip legend" style="--os-accent:var(--s4)">постоянные</span>
+        <span class="os-chip legend" style="--os-accent:#8b5cf6">проценты и налоги</span>
+        <span class="os-chip legend" style="--os-accent:var(--s3)">прибыль</span>
+      </div>
+    </div>
     <div class="table-scroll" style="overflow-x:auto; max-height:640px;">
       <table id="opiuFullTable">
         <thead><tr id="opiuFullTableHead"></tr></thead>
@@ -4419,7 +4458,7 @@ window.__salesActSetData = function(newData){
       osG("Выручка маркетплейсов", ["Выручка ВБ  СПБ","Выручка ВБ  МСК","Выручка ОЗОН СПБ","Выручка ОЗОН МСК","Выручка ЯМ СПБ","Выручка ЯМ МСК","Выручка Flowwow_СПБ","Выручка Flowwow_МСК"]),
       osG("B2B выручка", ["B2B выручка"])
     ]},
-    { key: "returns", label: "− Возвраты", groups: [ osG("Возвраты", ["Возвраты"], { neg: true }) ] },
+    { key: "returns", label: "− Возвраты", single: true, groups: [ osG("Возвраты", ["Возвраты"], { neg: true }) ] },
     { key: "var", label: "2. Переменные расходы", groups: [
       osG("Себестоимость сертификата", ["Активация"], { neg: true, note: "статья «Активация»" }),
       osG("Комиссии и логистика маркетплейсов", ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"], { neg: true }),
@@ -4452,9 +4491,8 @@ window.__salesActSetData = function(newData){
       osG("УСН", ["УСН 1% от выручки с сайта","УСН по маркетплейсам"], { neg: true }),
       osG("Налоги ИП", ["1% за регистрацию","Страховые взносы ИП","Налоги и пошлины"], { neg: true })
     ]},
-    { key: "below", label: "Справочно, ниже черты (движение денег, не ОПиУ)", groups: [
-      osG("Тело кредита", ["Тело кредита"], { neg: true }),
-      osG("Вывод дивидендов", ["Вывод дивидендов"], { neg: true })
+    { key: "fin", label: "Фин. расходы", single: true, chip: "тело кредита + дивиденды", note: "движение денег, не ОПиУ", groups: [
+      osG("Тело кредита и дивиденды", ["Тело кредита","Вывод дивидендов"], { neg: true })
     ]}
   ];
   var osExpanded = {};   // ключ строки → раскрыта ли
@@ -4468,9 +4506,13 @@ window.__salesActSetData = function(newData){
   function osNonZero(vals){ return vals.some(function(v){ return Math.abs(v) >= 0.5; }); }
   function osCells(vals, neg, pct){
     return vals.map(function(v){
-      if (pct) return '<td class="num">' + (v === null ? "—" : (v * 100).toFixed(1) + "%") + '</td>';
-      var shown = neg ? -v : v;
-      return '<td class="num' + (shown < 0 ? " os-neg" : "") + '">' + fmtCompact(shown) + '</td>';
+      if (pct){
+        if (v === null) return '<td class="num"><span class="os-pill dash">—</span></td>';
+        return '<td class="num"><span class="os-pill' + (v < 0 ? " bad" : "") + '">' + (v * 100).toFixed(1).replace(".", ",") + " %</span></td>";
+      }
+      var shown = Math.round(neg ? -v : v);
+      var cls = shown < 0 ? " os-neg" : (shown === 0 ? " os-zero" : "");
+      return '<td class="num' + cls + '">' + (shown === 0 ? "—" : shown.toLocaleString("ru-RU") + " ₽") + '</td>';
     }).join("");
   }
   function osUnallocated(){
@@ -4498,17 +4540,22 @@ window.__salesActSetData = function(newData){
     function sub(a, b){ return a.map(function(v, i){ return v - b[i]; }); }
     function ratio(a, b){ return a.map(function(v, i){ return b[i] ? v / b[i] : null; }); }
     var html = [];
+    var accent = "";  // css-класс текущего блока (цвет акцента)
     function rowHtml(cls, indent, label, cells, key, hasKids, extra){
       var tg = hasKids ? '<span class="os-tg">' + (osExpanded[key] ? "▾" : "▸") + '</span>' : '<span class="os-tg"></span>';
-      html.push('<tr class="' + cls + '"' + (key ? ' data-key="' + key + '"' : "") + '><td style="padding-left:' + (8 + indent * 16) + 'px; white-space:nowrap;">' + tg + label + (extra || "") + '</td>' + cells + '</tr>');
+      html.push('<tr class="' + cls + (hasKids ? " os-can" : "") + " " + accent + '"' + (key ? ' data-key="' + key + '"' : "") +
+        '><td style="padding-left:' + (14 + indent * 18) + 'px;">' + tg + label + (extra || "") + '</td>' + cells + '</tr>');
     }
+    function chip(text){ return text ? '<span class="os-chip">' + text + '</span>' : ""; }
+    function note(text){ return text ? '<span class="os-note">' + text + '</span>' : ""; }
     function renderGroup(g, indent, keyPrefix){
       var vals = osGroupVals(g);
       if (!osNonZero(vals)) return zero;
       var key = keyPrefix + "/" + g.label;
       // раскрывать есть смысл только у групп из нескольких статей (или с подгруппами, как ФОТ)
       var hasKids = !!(g.children && g.children.length) || (g.items && g.items.length > 1);
-      var extra = (g.note ? ' <span class="cap" style="display:inline;">(' + g.note + ')</span>' : "") + (g.badge ? ' <span class="fot-badge ' + g.badge + '">' + (g.badge === "front" ? "front" : "back") + '</span>' : "");
+      var extra = (g.badge ? ' <span class="fot-badge ' + g.badge + '">' + g.badge + '</span>' : "") + chip(g.chip) +
+        (hasKids ? chip((g.children ? g.children.length + " отд." : g.items.length + " ст.")) : "") + note(g.note);
       rowHtml("os-group", indent, g.label, osCells(vals, g.neg), key, hasKids, extra);
       if (hasKids && osExpanded[key]){
         if (g.children) g.children.forEach(function(c){ renderGroup(c, indent + 1, key); });
@@ -4520,52 +4567,59 @@ window.__salesActSetData = function(newData){
       return vals;
     }
     function renderBlock(b){
+      accent = "os-" + b.key;
       var total = zero;
-      var groupVals = b.groups.map(function(g){ return osGroupVals(g); });
-      groupVals.forEach(function(v){ total = add(total, v); });
+      b.groups.forEach(function(g){ total = add(total, osGroupVals(g)); });
       var neg = b.key !== "rev";
-      rowHtml("os-header", 0, b.label, osCells(total, neg));
+      if (b.single){
+        // блок из одной строки: без отдельной шапки, сумма прямо в строке
+        rowHtml("os-header", 0, b.label, osCells(total, neg), null, false, chip(b.chip) + note(b.note));
+        return total;
+      }
+      rowHtml("os-header", 0, b.label, osCells(total, neg), null, false, chip(b.chip) + note(b.note));
       b.groups.forEach(function(g){ renderGroup(g, 1, b.key); });
       return total;
     }
+    function subtotal(label, vals, chipText){ accent = "os-profit"; rowHtml("os-subtotal", 0, label, osCells(vals), null, false, chip(chipText)); }
+    function pctRow(label, vals){ accent = "os-profit"; rowHtml("os-pct", 0, label, osCells(vals, false, true)); }
     var rev = renderBlock(OS_BLOCKS[0]);
-    rowHtml("os-subtotal", 0, "Выручка с НДС", osCells(rev));
+    subtotal("Выручка с НДС", rev);
     var ret = renderBlock(OS_BLOCKS[1]);                       // отрицательные значения
     var netRev = add(rev, ret);
-    rowHtml("os-subtotal", 0, "Чистая выручка (после возвратов)", osCells(netRev));
+    subtotal("Чистая выручка", netRev, "после возвратов");
     var variable = renderBlock(OS_BLOCKS[2]);
     var margin = add(netRev, variable);
-    rowHtml("os-subtotal", 0, "Маржинальная прибыль", osCells(margin));
-    rowHtml("os-pct", 0, "Рентабельность по маржинальному доходу, %", osCells(ratio(margin, netRev), false, true));
+    subtotal("Маржинальная прибыль", margin, "чистая выручка − переменные");
+    pctRow("Рентабельность по маржинальному доходу", ratio(margin, netRev));
     var fixed = renderBlock(OS_BLOCKS[3]);
     var op = add(margin, fixed);
-    rowHtml("os-subtotal", 0, "Операционная прибыль", osCells(op));
-    rowHtml("os-pct", 0, "Рентабельность по операционной прибыли, %", osCells(ratio(op, netRev), false, true));
+    subtotal("Операционная прибыль", op, "маржа − постоянные");
+    pctRow("Рентабельность по операционной прибыли", ratio(op, netRev));
     var tax = renderBlock(OS_BLOCKS[4]);
     var net = add(op, tax);
-    rowHtml("os-subtotal", 0, "Чистая прибыль", osCells(net));
-    rowHtml("os-pct", 0, "Рентабельность по чистой прибыли, %", osCells(ratio(net, netRev), false, true));
+    subtotal("Чистая прибыль", net, "после процентов и налогов");
+    pctRow("Рентабельность по чистой прибыли", ratio(net, netRev));
     var unalloc = osUnallocated();
     if (unalloc.length){
       var uv = DATA.map(function(m){ return unalloc.reduce(function(a, l){ return a + osRowVal(m, l); }, 0); });
       if (osNonZero(uv)){
         var ukey = "unalloc";
-        rowHtml("os-group", 0, "Не распределено (новые статьи Адеска)", osCells(uv, true), ukey, true, ' <span class="cap" style="display:inline;">(не входят в итоги выше)</span>');
+        accent = "os-fin";
+        rowHtml("os-group", 0, "Не распределено", osCells(uv, true), ukey, true, chip("новые статьи Адеска") + note("не входят в итоги выше"));
         if (osExpanded[ukey]) unalloc.forEach(function(l){
           var lv = DATA.map(function(m){ return osRowVal(m, l); });
           if (osNonZero(lv)) rowHtml("os-leaf", 1, l, osCells(lv, true));
         });
       }
     }
-    var below = renderBlock(OS_BLOCKS[5]);
-    rowHtml("os-subtotal", 0, "Прибыль после выплаты тела кредита и дивидендов", osCells(add(net, below)));
+    var fin = renderBlock(OS_BLOCKS[5]);
+    subtotal("Прибыль после фин. расходов", add(net, fin), "чистая прибыль − тело кредита − дивиденды");
     body.innerHTML = html.join("");
   }
   (function(){
     var body = document.getElementById("opiuFullTableBody");
     if (body) body.addEventListener("click", function(e){
-      var tr = e.target.closest("tr.os-group"); if (!tr || !tr.dataset.key) return;
-      if (!tr.querySelector(".os-tg").textContent) return;
+      var tr = e.target.closest("tr.os-group.os-can"); if (!tr || !tr.dataset.key) return;
       osExpanded[tr.dataset.key] = !osExpanded[tr.dataset.key];
       renderOpiuFullTable();
     });
