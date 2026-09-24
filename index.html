@@ -318,42 +318,44 @@
   .opiu-struct-legend { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
   /* управленческая структура ОПиУ: широкие колонки, прокрутка вбок, липкие шапка и первая колонка */
   #opiuFullTable { width: auto; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
-  #opiuFullTable th, #opiuFullTable td { padding: 8px 22px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  #opiuFullTable th, #opiuFullTable td { padding: 12px 22px; white-space: nowrap; border-bottom: 1px solid var(--border); }
   #opiuFullTable th.num, #opiuFullTable td.num { min-width: 160px; }
   #opiuFullTable thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-1); font-weight: 600; color: var(--text-secondary); }
   #opiuFullTable th:first-child, #opiuFullTable td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-1); min-width: 360px; border-right: 1px solid var(--border); }
   #opiuFullTable thead th:first-child { z-index: 4; }
-  #opiuFullTable th.os-cum, #opiuFullTable td.os-cum { border-left: 2px solid var(--border); font-weight: 700; background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-1)); }
+  #opiuFullTable th.os-cum, #opiuFullTable td.os-cum { border-left: 2px solid var(--border); font-weight: 700; color: var(--text-primary) !important; }
+  #opiuFullTable td.os-cum .os-pill { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
   #opiuFullTable thead th.os-cum { line-height: 1.25; }
   #opiuFullTable tr { --os-accent: var(--text-muted); }
-  #opiuFullTable tr.os-rev { --os-accent: var(--s1); }
-  #opiuFullTable tr.os-var { --os-accent: var(--s2); }
-  #opiuFullTable tr.os-fixed { --os-accent: var(--s4); }
-  #opiuFullTable tr.os-tax { --os-accent: #8b5cf6; }
+  /* акценты приглушены: цвет блока смешан с серым */
+  #opiuFullTable tr.os-rev { --os-accent: color-mix(in srgb, var(--s1) 60%, var(--text-muted)); }
+  #opiuFullTable tr.os-var { --os-accent: color-mix(in srgb, var(--s2) 60%, var(--text-muted)); }
+  #opiuFullTable tr.os-fixed { --os-accent: color-mix(in srgb, var(--s4) 60%, var(--text-muted)); }
+  #opiuFullTable tr.os-tax { --os-accent: color-mix(in srgb, #8b5cf6 60%, var(--text-muted)); }
   #opiuFullTable tr.os-fin { --os-accent: var(--text-muted); }
-  #opiuFullTable tr.os-profit { --os-accent: var(--s3); }
-  #opiuFullTable tr.os-header td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 9%, var(--surface-1)); color: var(--text-primary); }
-  #opiuFullTable tr.os-header td:first-child { box-shadow: inset 4px 0 0 var(--os-accent); }
-  #opiuFullTable tr.os-subtotal td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 12%, var(--surface-1)); border-top: 2px solid var(--os-accent); }
-  #opiuFullTable tr.os-subtotal td:first-child { box-shadow: inset 4px 0 0 var(--os-accent); }
-  #opiuFullTable tr.os-pct td { color: var(--text-muted); background: color-mix(in srgb, var(--os-accent) 5%, var(--surface-1)); }
+  #opiuFullTable tr.os-profit { --os-accent: color-mix(in srgb, var(--s3) 60%, var(--text-muted)); }
+  #opiuFullTable tr.os-header td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 6%, var(--surface-1)); color: var(--text-primary); }
+  #opiuFullTable tr.os-header td:first-child { box-shadow: inset 3px 0 0 var(--os-accent); }
+  #opiuFullTable tr.os-subtotal td { font-weight: 700; background: color-mix(in srgb, var(--os-accent) 8%, var(--surface-1)); border-top: 1px solid var(--os-accent); }
+  #opiuFullTable tr.os-subtotal td:first-child { box-shadow: inset 3px 0 0 var(--os-accent); }
+  #opiuFullTable tr.os-pct td { color: var(--text-muted); background: color-mix(in srgb, var(--os-accent) 4%, var(--surface-1)); }
   #opiuFullTable tr.os-group td:first-child { cursor: default; user-select: none; }
   #opiuFullTable tr.os-can td:first-child { cursor: pointer; }
   #opiuFullTable tr.os-can:hover td:first-child { color: var(--os-accent); }
-  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 11.5px; padding-top: 4px; padding-bottom: 4px; }
-  #opiuFullTable tr.os-group.os-nested td { font-size: 12px; padding-top: 6px; padding-bottom: 6px; }
+  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 10.5px; padding-top: 6px; padding-bottom: 6px; }
+  #opiuFullTable tr.os-group.os-nested td { font-size: 11px; padding-top: 8px; padding-bottom: 8px; }
   #opiuFullTable tr.os-leaf td:first-child { background: color-mix(in srgb, var(--surface-2) 60%, var(--surface-1)); }
   #opiuFullTable tr.os-leaf td:first-child::before { content: "·"; color: var(--os-accent); margin-right: 8px; font-weight: 700; }
   #opiuFullTable .os-tg { display: inline-block; width: 16px; color: var(--os-accent); font-size: 11px; }
   #opiuFullTable .os-neg { color: var(--bad); }
   #opiuFullTable .os-zero { color: var(--text-muted); }
   .os-chip { display: inline-block; font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: 1px;
-    background: color-mix(in srgb, var(--os-accent, var(--text-muted)) 16%, transparent); color: var(--os-accent, var(--text-muted)); }
+    background: color-mix(in srgb, var(--os-accent, var(--text-muted)) 11%, transparent); color: var(--os-accent, var(--text-muted)); }
   .os-chip.legend { margin-left: 0; }
   .os-note { font-size: 11px; color: var(--text-muted); margin-left: 8px; font-weight: 400; }
   .os-pill { display: inline-block; min-width: 56px; text-align: center; padding: 2px 8px; border-radius: 999px; font-weight: 650; font-size: 12px;
-    background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
-  .os-pill.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+    background: color-mix(in srgb, var(--good) 10%, transparent); color: color-mix(in srgb, var(--good) 75%, var(--text-muted)); }
+  .os-pill.bad { background: color-mix(in srgb, var(--bad) 10%, transparent); color: color-mix(in srgb, var(--bad) 75%, var(--text-muted)); }
   .os-pill.dash { background: transparent; color: var(--text-muted); }
   tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
   tbody tr:hover { background: var(--surface-2); }
@@ -506,7 +508,7 @@
         <span class="os-chip legend" style="--os-accent:var(--s3)">прибыль</span>
       </div>
     </div>
-    <div class="table-scroll" style="overflow-x:auto; max-height:1100px;">
+    <div class="table-scroll" style="overflow-x:auto; max-height:1700px;">
       <table id="opiuFullTable">
         <thead><tr id="opiuFullTableHead"></tr></thead>
         <tbody id="opiuFullTableBody"></tbody>
@@ -4625,6 +4627,8 @@ window.__salesActSetData = function(newData){
       }
       renderOpiuFullTable(true);
     }
+    // ?expand=1 в адресе — открыть таблицу полностью (для проверки вёрстки и печати)
+    if (/[?&]expand=1/.test(location.search)) setAll(true);
     var ea = document.getElementById("opiuStructExpandAll"), ca = document.getElementById("opiuStructCollapseAll");
     if (ea) ea.addEventListener("click", function(){ setAll(true); });
     if (ca) ca.addEventListener("click", function(){ setAll(false); });
