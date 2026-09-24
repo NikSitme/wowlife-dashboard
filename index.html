@@ -152,7 +152,9 @@
     border-radius: 7px;
     padding: 6px 10px;
   }
-  .presets { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .range-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
+  .range-wrap[hidden] { display: none; }
   .chip {
     font: inherit;
     font-size: 12.5px;
@@ -360,11 +362,13 @@
 
   <div class="card">
     <div class="filters">
-      <label>Период с</label>
-      <select id="fromSel"></select>
-      <label>по</label>
-      <select id="toSel"></select>
       <div class="presets" id="presets"></div>
+      <div class="range-wrap" id="rangeWrap" hidden>
+        <label>Период с</label>
+        <select id="fromSel"></select>
+        <label>по</label>
+        <select id="toSel"></select>
+      </div>
     </div>
   </div>
 
@@ -3832,19 +3836,43 @@ window.__salesActSetData = function(newData){
     { label: "Прошлый месяц", get: function(){ var i = Math.max(0, DATA.length-2); return [i, i]; } },
     { label: "Последние 3 мес", get: function(){ return [Math.max(0, DATA.length-3), DATA.length-1]; } },
     { label: "Последние 6 мес", get: function(){ return [Math.max(0, DATA.length-6), DATA.length-1]; } },
-    { label: "Последний год", get: function(){ return [Math.max(0, DATA.length-12), DATA.length-1]; } },
-    { label: "Весь период", get: function(){ return [0, DATA.length-1]; } }
+    // календарный год последнего месяца в данных: с января по текущий месяц
+    { label: "Текущий год", get: function(){
+        var year = (DATA[DATA.length-1] || {label:""}).label.slice(0, 4);
+        var from = 0;
+        for (var i = 0; i < DATA.length; i++){ if (DATA[i].label.slice(0, 4) === year){ from = i; break; } }
+        return [from, DATA.length-1];
+    } },
+    // произвольный диапазон: раскрывает выбор «с … по …», сам период не меняет
+    { label: "Выбрать диапазон", custom: true }
   ];
+  var CUSTOM_IDX = PRESETS.length - 1;
+  var rangeWrap = root.querySelector("#rangeWrap");
   PRESETS.forEach(function(p, idx){
     var b = document.createElement("button");
     b.className = "chip"; b.textContent = p.label; b.type = "button";
     b.addEventListener("click", function(){
+      if (p.custom){
+        rangeWrap.hidden = !rangeWrap.hidden;
+        markPreset(rangeWrap.hidden ? currentPresetIdx() : idx);
+        return;
+      }
+      rangeWrap.hidden = true;
       var r = p.get();
       state.from = r[0]; state.to = r[1];
       syncSelects(); markPreset(idx); render();
     });
     presetsEl.appendChild(b);
   });
+  // какому пресету соответствует текущий диапазон (для подсветки после закрытия выбора)
+  function currentPresetIdx(){
+    for (var i = 0; i < PRESETS.length; i++){
+      if (PRESETS[i].custom) continue;
+      var r = PRESETS[i].get();
+      if (r[0] === state.from && r[1] === state.to) return i;
+    }
+    return CUSTOM_IDX;
+  }
   function markPreset(activeIdx){
     Array.prototype.forEach.call(presetsEl.children, function(el, i){
       el.classList.toggle("active", i === activeIdx);
@@ -3855,12 +3883,12 @@ window.__salesActSetData = function(newData){
   fromSel.addEventListener("change", function(){
     state.from = parseInt(fromSel.value, 10);
     if (state.from > state.to) state.to = state.from;
-    syncSelects(); markPreset(-1); render();
+    syncSelects(); markPreset(CUSTOM_IDX); render();
   });
   toSel.addEventListener("change", function(){
     state.to = parseInt(toSel.value, 10);
     if (state.to < state.from) state.from = state.to;
-    syncSelects(); markPreset(-1); render();
+    syncSelects(); markPreset(CUSTOM_IDX); render();
   });
 
   function fmt(n){
@@ -5000,6 +5028,7 @@ window.__salesActSetData = function(newData){
     state.from = DATA.length - 1;
     state.to = DATA.length - 1;
     syncSelects();
+    rangeWrap.hidden = true;
     markPreset(0);
     render();
     if (window.__kreditorkaRerender) window.__kreditorkaRerender();
