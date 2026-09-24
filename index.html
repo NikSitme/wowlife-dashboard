@@ -342,8 +342,12 @@
   #opiuFullTable tr.os-group td:first-child { cursor: default; user-select: none; }
   #opiuFullTable tr.os-can td:first-child { cursor: pointer; }
   #opiuFullTable tr.os-can:hover td:first-child { color: var(--os-accent); }
-  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 10.5px; padding-top: 6px; padding-bottom: 6px; }
-  #opiuFullTable tr.os-group.os-nested td { font-size: 11px; padding-top: 8px; padding-bottom: 8px; }
+  /* размер шрифта убывает с уровнем вложенности: блок → группа → подгруппа → статья */
+  #opiuFullTable tr.os-header td, #opiuFullTable tr.os-subtotal td { font-size: 13.5px; }
+  #opiuFullTable tr.os-group.os-i1 td { font-size: 12px; padding-top: 9px; padding-bottom: 9px; }
+  #opiuFullTable tr.os-group.os-i2 td { font-size: 11px; padding-top: 7px; padding-bottom: 7px; }
+  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); font-size: 10.5px; padding-top: 5px; padding-bottom: 5px; }
+  #opiuFullTable tr.os-leaf.os-i3 td { font-size: 10px; }
   #opiuFullTable tr.os-leaf td:first-child { background: color-mix(in srgb, var(--surface-2) 60%, var(--surface-1)); }
   #opiuFullTable tr.os-leaf td:first-child::before { content: "·"; color: var(--os-accent); margin-right: 8px; font-weight: 700; }
   #opiuFullTable .os-tg { display: inline-block; width: 16px; color: var(--os-accent); font-size: 11px; }
@@ -4535,7 +4539,7 @@ window.__salesActSetData = function(newData){
     var accent = "";  // css-класс текущего блока (цвет акцента)
     function rowHtml(cls, indent, label, cells, key, hasKids, extra){
       var tg = hasKids ? '<span class="os-tg">' + (osExpanded[key] ? "▾" : "▸") + '</span>' : '<span class="os-tg"></span>';
-      html.push('<tr class="' + cls + (hasKids ? " os-can" : "") + " " + accent + '"' + (key ? ' data-key="' + key + '"' : "") +
+      html.push('<tr class="' + cls + (hasKids ? " os-can" : "") + " os-i" + indent + " " + accent + '"' + (key ? ' data-key="' + key + '"' : "") +
         '><td style="padding-left:' + (14 + indent * 18) + 'px;">' + tg + label + (extra || "") + '</td>' + cells + '</tr>');
     }
     function chip(text){ return text ? '<span class="os-chip">' + text + '</span>' : ""; }
