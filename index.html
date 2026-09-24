@@ -3855,7 +3855,108 @@ window.__salesActSetData = function(newData){
   }
   setDateBounds();
 
-  var state = { from: DATA.length - 1, to: DATA.length - 1 };
+  var state = { from: DATA.length - 1, to: DATA.length - 1, daily: null };
+
+  // ---- дневной режим: операции Адеска по дням + дерево статей (приходят из скрипта обновления) ----
+  // Принцип: месячные суммы ОПиУ (истина) раскладываются по дням пропорционально операциям соответствующих
+  // статей; где операций нет (маркетплейсы, расчётные налоги) — поровну по календарным дням.
+  // Любой диапазон из целых месяцев даёт ровно те же цифры, что помесячный режим.
+  var OPS_INDEX = null, OPS_TREE = null; // OPS_INDEX[статья][YYYY-MM] = { days: {iso: сумма}, total }
+  window.__opiuSetDaily = function(ops, tree){
+    OPS_TREE = tree || null; OPS_INDEX = null;
+    if (ops && ops.length){
+      OPS_INDEX = {};
+      ops.forEach(function(o){
+        var byName = OPS_INDEX[o[1]] || (OPS_INDEX[o[1]] = {});
+        var mon = o[0].slice(0, 7);
+        var e = byName[mon] || (byName[mon] = { days: {}, total: 0 });
+        e.days[o[0]] = (e.days[o[0]] || 0) + o[2];
+        e.total += o[2];
+      });
+    }
+    if (state.daily && !dailyAvailable()) state.daily = null;
+    updateRangeNote(false);
+    render();
+  };
+  function dailyAvailable(){ return !!(OPS_INDEX && OPS_TREE); }
+  function daysInMonth(label){ return new Date(+label.slice(0,4), +label.slice(5,7), 0).getDate(); }
+  function isoAddDays(iso, n){ var d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
+  function daysBetween(a, b){ return Math.round((new Date(b + "T00:00:00Z") - new Date(a + "T00:00:00Z")) / 86400000) + 1; }
+  // доля месяца m, попадающая в [from, to]: по профилю операций статей names, иначе по календарным дням
+  function monthFraction(m, names, from, to){
+    var label = m.label, dim = daysInMonth(label);
+    var mStart = label + "-01", mEnd = label + "-" + String(dim).padStart(2, "0");
+    var a = from > mStart ? from : mStart, b = to < mEnd ? to : mEnd;
+    if (a > b) return 0;
+    if (a === mStart && b === mEnd) return 1;
+    var even = daysBetween(a, b) / dim;
+    if (!names || !names.length) return even;
+    var total = 0, inRange = 0;
+    names.forEach(function(n){
+      var e = OPS_INDEX[n] && OPS_INDEX[n][label]; if (!e) return;
+      total += e.total;
+      Object.keys(e.days).forEach(function(d){ if (d >= a && d <= b) inRange += e.days[d]; });
+    });
+    if (Math.abs(total) < 1) return even;
+    var f = inRange / total;
+    return f < 0 ? 0 : (f > 1 ? 1 : f);
+  }
+  var SITE_NAMES = ["Wowlife МСК выручка", "Wowlife СПБ Выручка"];
+  function namesFor(label){ return (OPS_TREE && OPS_TREE[label]) || [label]; }
+  // расчётные налоги (5%/1% от выручки сайта) следуют за выручкой сайта; налоги по маркетплейсам — поровну по дням
+  function taxNames(label){ return label === "Налоги и пошлины" ? [label] : (label.indexOf("с сайта") >= 0 ? SITE_NAMES : []); }
+  var DAILY_FIELD_NAMES = {
+    interest: ["Проценты по кредитам и займам"], loan_principal: ["Тело кредита"], dividends: ["Вывод дивидендов"],
+    dev_services: null, product_lead: ["Руководитель отдела продукта"], partner_mgr_new: ["Менеджер по новым партнерам"],
+    partner_mgr_current: ["Менеджер по текущим партнерам (Настя Карпова)"], partner_mgr_other: ["Менеджер по партнёрам (Серёжа)"],
+    content_mgr_katya: ["Контент-менеджер сайта (Катя)"]
+  };
+  function buildRangeAgg(from, to){
+    var months = DATA.filter(function(m){ return m.label >= from.slice(0, 7) && m.label <= to.slice(0, 7); });
+    var obj = { date: from, label: from.slice(0, 7) };
+    [["revenue_breakdown", namesFor], ["direct_breakdown", namesFor], ["personnel_breakdown", namesFor], ["indirect_breakdown", namesFor],
+     ["admin_breakdown", namesFor], ["product_creation_breakdown", namesFor], ["taxes_breakdown", taxNames]].forEach(function(bd){
+      var key = bd[0], fn = bd[1], acc = {}, order = [];
+      months.forEach(function(m){
+        (m[key] || []).forEach(function(it){
+          if (!(it.name in acc)){ acc[it.name] = 0; order.push(it.name); }
+          acc[it.name] += it.value * monthFraction(m, fn(it.name), from, to);
+        });
+      });
+      obj[key] = order.map(function(n){ return { name: n, value: acc[n] }; });
+    });
+    Object.keys(DAILY_FIELD_NAMES).forEach(function(k){
+      var names = k === "dev_services" ? namesFor("Сервисы разработки") : DAILY_FIELD_NAMES[k];
+      obj[k] = months.reduce(function(a, m){ return a + (m[k] || 0) * monthFraction(m, names, from, to); }, 0);
+    });
+    function sumBd(key){ return obj[key].reduce(function(a, x){ return a + x.value; }, 0); }
+    obj.revenue_total = sumBd("revenue_breakdown");
+    obj.direct_costs_total = sumBd("direct_breakdown");
+    obj.personnel_total = sumBd("personnel_breakdown");
+    obj.indirect_total = sumBd("indirect_breakdown");
+    obj.admin_total = sumBd("admin_breakdown");
+    obj.taxes = sumBd("taxes_breakdown");
+    obj.gross_profit = obj.revenue_total - obj.direct_costs_total;
+    obj.operating_total = obj.personnel_total + obj.indirect_total + obj.admin_total;
+    obj.ebitda = obj.gross_profit - obj.operating_total;
+    obj.net_profit = obj.ebitda - obj.interest - obj.taxes;
+    obj.final_profit = obj.net_profit - obj.loan_principal - obj.dividends;
+    decorateMonths([obj]);
+    var agg = aggregateMonths([obj]);
+    agg.months = months; agg.daily = true; agg.from = from; agg.to = to;
+    return agg;
+  }
+  function currentAgg(){ return state.daily ? buildRangeAgg(state.daily.from, state.daily.to) : aggregate(state.from, state.to); }
+  // записи карты CRM за выбранный период: по дням в дневном режиме (если карта по дням есть), иначе по месяцам
+  function crmPeriodEntries(monthMap, dayMap){
+    var out = [];
+    if (state.daily && dayMap){
+      for (var d = state.daily.from; d <= state.daily.to; d = isoAddDays(d, 1)){ if (dayMap[d]) out.push(dayMap[d]); }
+      return out;
+    }
+    for (var i = state.from; i <= state.to; i++){ var m = monthMap && monthMap[DATA[i].label]; if (m) out.push(m); }
+    return out;
+  }
 
   var PRESETS = [
     { label: "Текущий месяц", get: function(){ return [DATA.length-1, DATA.length-1]; } },
@@ -3885,7 +3986,7 @@ window.__salesActSetData = function(newData){
       }
       rangeWrap.hidden = true;
       var r = p.get();
-      state.from = r[0]; state.to = r[1];
+      state.from = r[0]; state.to = r[1]; state.daily = null;
       syncSelects(); markPreset(idx); render();
     });
     presetsEl.appendChild(b);
@@ -3895,7 +3996,7 @@ window.__salesActSetData = function(newData){
     for (var i = 0; i < PRESETS.length; i++){
       if (PRESETS[i].custom) continue;
       var r = PRESETS[i].get();
-      if (r[0] === state.from && r[1] === state.to) return i;
+      if (!state.daily && r[0] === state.from && r[1] === state.to) return i;
     }
     return CUSTOM_IDX;
   }
@@ -3911,18 +4012,35 @@ window.__salesActSetData = function(newData){
     rangeNote.textContent = "";
   }
   function onDateChange(){
-    var fi = monthIndexForDate(fromDate.value), ti = monthIndexForDate(toDate.value);
-    if (fi < 0 && ti < 0) return;
-    if (fi >= 0) state.from = fi;
-    if (ti >= 0) state.to = ti;
-    if (state.from > state.to){ if (fi >= 0 && ti >= 0) state.to = state.from; else state.from = state.to; }
-    var rounded = fromDate.value !== monthStart(DATA[state.from]) || toDate.value !== monthEnd(DATA[state.to]);
-    fromDate.value = monthStart(DATA[state.from]);
-    toDate.value = monthEnd(DATA[state.to]);
-    rangeNote.textContent = rounded
-      ? "ОПиУ считается по месяцам — взят период " + fmtDayRu(fromDate.value) + " – " + fmtDayRu(toDate.value)
-      : "";
+    var f = fromDate.value, t = toDate.value;
+    if (!f || !t || !DATA.length) return;
+    if (f > t){ var tmp = f; f = t; t = tmp; }
+    var minD = monthStart(DATA[0]), maxD = monthEnd(DATA[DATA.length - 1]);
+    if (f < minD) f = minD;
+    if (t > maxD) t = maxD;
+    var fi = monthIndexForDate(f), ti = monthIndexForDate(t);
+    state.from = fi; state.to = ti;
+    var aligned = f === monthStart(DATA[fi]) && t === monthEnd(DATA[ti]);
+    if (!aligned && dailyAvailable()){
+      state.daily = { from: f, to: t };
+    } else {
+      state.daily = null;
+      f = monthStart(DATA[fi]); t = monthEnd(DATA[ti]);
+    }
+    fromDate.value = f; toDate.value = t;
+    updateRangeNote(!aligned);
     markPreset(CUSTOM_IDX); render();
+  }
+  function updateRangeNote(rounded){
+    if (!rangeNote) return;
+    if (state.daily){
+      rangeNote.textContent = "По дням: операции Адеска по дате начисления, месячные итоги совпадают с ОПиУ; маркетплейсы и расчётные налоги внутри месяца — пропорционально дням";
+    } else if (rounded){
+      rangeNote.textContent = (dailyAvailable() ? "" : "Расчёт по дням недоступен (в книге-копии нет листа «Операции»). ") +
+        "Взят период " + fmtDayRu(fromDate.value) + " – " + fmtDayRu(toDate.value);
+    } else {
+      rangeNote.textContent = "";
+    }
   }
   fromDate.addEventListener("change", onDateChange);
   toDate.addEventListener("change", onDateChange);
@@ -3949,8 +4067,8 @@ window.__salesActSetData = function(newData){
     return order.map(function(n){ return { name: n, value: map[n] }; });
   }
 
-  function aggregate(from, to){
-    var months = DATA.slice(from, to+1);
+  function aggregate(from, to){ return aggregateMonths(DATA.slice(from, to+1)); }
+  function aggregateMonths(months){
     var sum = function(k){ return months.reduce(function(a,m){ return a+(m[k]||0); }, 0); };
     return {
       months: months,
@@ -4011,10 +4129,18 @@ window.__salesActSetData = function(newData){
   }
 
   function renderKPIs(){
-    var len = state.to - state.from + 1;
-    var cur = aggregate(state.from, state.to);
-    var prevFrom = state.from - len, prevTo = state.from - 1;
-    var prev = (prevFrom >= 0) ? aggregate(prevFrom, prevTo) : null;
+    var cur, prev;
+    if (state.daily){
+      cur = buildRangeAgg(state.daily.from, state.daily.to);
+      var dlen = daysBetween(state.daily.from, state.daily.to);
+      var pTo = isoAddDays(state.daily.from, -1), pFrom = isoAddDays(pTo, -(dlen - 1));
+      prev = (pFrom >= monthStart(DATA[0])) ? buildRangeAgg(pFrom, pTo) : null;
+    } else {
+      var len = state.to - state.from + 1;
+      cur = aggregate(state.from, state.to);
+      var prevFrom = state.from - len, prevTo = state.from - 1;
+      prev = (prevFrom >= 0) ? aggregate(prevFrom, prevTo) : null;
+    }
 
     kpisEl.innerHTML = "";
     KPI_DEFS.forEach(function(def){
@@ -4326,7 +4452,7 @@ window.__salesActSetData = function(newData){
 
   // ---------- master render ----------
   function render(){
-    var agg = aggregate(state.from, state.to);
+    var agg = currentAgg();
     renderKPIs();
     renderRevenueHeadline(agg);
     renderRevenueDonut(agg);
@@ -4401,6 +4527,7 @@ window.__salesActSetData = function(newData){
   // ---------- Revenue structure: site (MSK/SPB) + marketplaces (combined) + B2B ----------
   var MONTHS_RU_FULL = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
   function periodLabel(){
+    if (state.daily) return "Факт за " + fmtDayRu(state.daily.from) + " – " + fmtDayRu(state.daily.to) + " · по дням";
     var mStart = DATA[state.from], mEnd = DATA[state.to];
     if (state.from === state.to){
       var parts = mStart.date.split("-");
@@ -4796,11 +4923,9 @@ window.__salesActSetData = function(newData){
     var byChan = sa && sa.revenueByChannelMonth;
     if (!byChan) return null;
     var total = 0, any = false;
-    for (var i = state.from; i <= state.to; i++){
-      var m = byChan[DATA[i].label];
-      if (!m) continue;
+    crmPeriodEntries(byChan, sa.revenueByChannelDay).forEach(function(m){
       keys.forEach(function(k){ if (m[k]){ total += m[k].count; any = true; } });
-    }
+    });
     return any ? total : null;
   }
 
@@ -4894,14 +5019,11 @@ window.__salesActSetData = function(newData){
     if (!byType) return null;
     var field = certModeState.mode === "count" ? "count" : "sum";
     var electronic = 0, physical = 0, any = false;
-    for (var i = state.from; i <= state.to; i++){
-      var key = DATA[i].label; // "YYYY-MM"
-      var m = byType[key];
-      if (!m) continue;
+    crmPeriodEntries(byType, sa.revenueByTypeDay).forEach(function(m){
       any = true;
       electronic += (m["Электронный"] && m["Электронный"][field]) || 0;
       physical += (m["Физический"] && m["Физический"][field]) || 0;
-    }
+    });
     if (!any) return null;
     var total = electronic + physical;
     return [
@@ -5056,6 +5178,7 @@ window.__salesActSetData = function(newData){
     setDateBounds();
     state.from = DATA.length - 1;
     state.to = DATA.length - 1;
+    state.daily = null;
     syncSelects();
     rangeWrap.hidden = true;
     markPreset(0);
@@ -5514,6 +5637,44 @@ window.__salesActSetData = function(newData){
     return months;
   }
 
+  // ---- Дневная модель ОПиУ ----
+  // Дерево статей: «якорь» (статья из списков выше или отдельная строка) + подстроки под ним до следующего
+  // якоря или заголовка раздела. По нему месячные суммы ОПиУ раскладываются по дням по операциям Адеска.
+  var OPIU_TREE_ANCHORS = [].concat(REVENUE_LABELS, DIRECT_LABELS, PERSONNEL_LABELS, INDIRECT_LABELS, ADMIN_LABELS, TAXES_LABELS,
+    ["Сервисы разработки", "Проценты по кредитам и займам", "Тело кредита", "Вывод дивидендов"]);
+  var OPIU_TREE_CLOSERS = ["налоги"];
+  function computeOpiuTree(rows){
+    var anchors = {}; OPIU_TREE_ANCHORS.forEach(function(a){ anchors[a] = true; });
+    var tree = {}, cur = null;
+    rows.forEach(function(row){
+      if (!row) return;
+      var a = (row[0] || "").trim(), b = (row[1] || "").trim();
+      if (a || OPIU_TREE_CLOSERS.indexOf(b) >= 0){ cur = null; return; }
+      if (!b) return;
+      if (anchors[b]){ cur = b; if (!tree[b]) tree[b] = [b]; return; }
+      if (cur) tree[cur].push(b);
+    });
+    return tree;
+  }
+  // Лист «Операции» книги-копии: дата зачисления, статья, сумма — свод операций «выгрузки» Адеска по дням.
+  // Если листа нет, gviz молча отдаёт первый лист (Лист1) — там в первой колонке нет дат, и парсер вернёт ошибку.
+  function parseOps(rows){
+    var out = [];
+    for (var i = 1; i < rows.length; i++){
+      var r = rows[i]; if (!r) continue;
+      var ds = String(r[0] || "").trim(), d = null, m;
+      if ((m = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) d = m[1] + "-" + m[2].padStart(2,"0") + "-" + m[3].padStart(2,"0");
+      else if ((m = ds.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/))) d = m[3] + "-" + m[2].padStart(2,"0") + "-" + m[1].padStart(2,"0");
+      if (!d) continue;
+      var name = String(r[1] || "").trim();
+      var v = parseFloat(String(r[2] || "").replace(/[\s\u00a0]/g, "").replace(",", "."));
+      if (!v || !isFinite(v)) continue;
+      out.push([d, name, Math.round(v * 100) / 100]);
+    }
+    if (!out.length) throw new Error("Операции: не найдено ни одной строки — лист «Операции» отсутствует или имеет другой формат");
+    return out;
+  }
+
   // ================= Продажи и активации (таблица "Никита") =================
   var QTY_RE = /[xх](\d+)\s*(?:—|-)/i;
   function dealQty(description){
@@ -5538,6 +5699,8 @@ window.__salesActSetData = function(newData){
     var salesCount = {}, salesSum = {}, salesDates = [];
     var revenueByTypeMonth = {};
     var revenueByChannelMonth = {};
+    var revenueByTypeDay = {};    // то же, что revenueByTypeMonth, но по дням — для произвольного диапазона дат в ОПиУ
+    var revenueByChannelDay = {};
     var typeByMonthAll = {}; // электронные/физические по ВСЕМ каналам (сайт+маркетплейсы) — для "Аналитики продаж"
     var leadByMonth = {}; // доля продаж "из лида" среди всех продаж, по всем каналам
     for (var r = 1; r < mktRows.length; r++){
@@ -5561,6 +5724,9 @@ window.__salesActSetData = function(newData){
         };
         revenueByTypeMonth[monthKey][type].sum += ruNum(row[iSum]);
         revenueByTypeMonth[monthKey][type].count += qty;
+        if (!revenueByTypeDay[d]) revenueByTypeDay[d] = { "Электронный": { sum: 0, count: 0 }, "Физический": { sum: 0, count: 0 } };
+        revenueByTypeDay[d][type].sum += ruNum(row[iSum]);
+        revenueByTypeDay[d][type].count += qty;
       }
 
       if (channel){
@@ -5568,6 +5734,10 @@ window.__salesActSetData = function(newData){
         if (!revenueByChannelMonth[monthKey][channel]) revenueByChannelMonth[monthKey][channel] = { sum: 0, count: 0 };
         revenueByChannelMonth[monthKey][channel].sum += ruNum(row[iSum]);
         revenueByChannelMonth[monthKey][channel].count += qty;
+        if (!revenueByChannelDay[d]) revenueByChannelDay[d] = {};
+        if (!revenueByChannelDay[d][channel]) revenueByChannelDay[d][channel] = { sum: 0, count: 0 };
+        revenueByChannelDay[d][channel].sum += ruNum(row[iSum]);
+        revenueByChannelDay[d][channel].count += qty;
       }
 
       // электронные/физические по всем каналам (без ограничения "только сайт")
@@ -5674,6 +5844,8 @@ window.__salesActSetData = function(newData){
       monthly: { sales: monthlySales, act: monthlyAct },
       backlog: backlog,
       dow: { sales: dowSales, act: dowAct },
+      revenueByTypeDay: revenueByTypeDay,
+      revenueByChannelDay: revenueByChannelDay,
       revenueByTypeMonth: revenueByTypeMonth,
       revenueByChannelMonth: revenueByChannelMonth,
       typeByMonthAll: typeByMonthAll,
@@ -6019,6 +6191,8 @@ window.__salesActSetData = function(newData){
       safeFetch("feedList1", FEED_ID, "Лист1"),
       safeFetch("feedVygruzka", FEED_ID, "Выгрузка"),
       safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
+      // лист «Операции» необязателен (нужен только для расчёта ОПиУ по дням) — его отсутствие не считаем ошибкой
+      (async function(){ try { fetches.adeskOps = await fetchSheet(ADESK_ID, "Операции"); } catch (e) { fetches.adeskOps = null; } })(),
     ]);
 
     // OПиУ
@@ -6026,6 +6200,10 @@ window.__salesActSetData = function(newData){
       try {
         var opiuData = computeOpiu(fetches.adeskList1);
         window.__opiuSetData(opiuData);
+        var opiuTree = computeOpiuTree(fetches.adeskList1);
+        var opsData = null;
+        if (fetches.adeskOps){ try { opsData = parseOps(fetches.adeskOps); } catch (e) { opsData = null; console.warn(e.message); } }
+        if (window.__opiuSetDaily) window.__opiuSetDaily(opsData, opiuTree);
         results.opiu = "ОПиУ: " + opiuData.length + " мес., последний — " + opiuData[opiuData.length-1].label + ", выручка " + Math.round(opiuData[opiuData.length-1].revenue_total).toLocaleString("ru-RU") + " ₽";
       } catch (e) { errors.push(e.message); }
     }
@@ -6064,6 +6242,7 @@ window.__salesActSetData = function(newData){
       try {
         var cache = loadCache() || {};
         if (opiuData) cache.opiu = opiuData;
+        if (opiuTree){ cache.opiuTree = opiuTree; cache.ops = opsData || null; }
         if (saData) cache.salesact = saData;
         if (wsData){
           cache.sales = wsData.sales;
@@ -6094,6 +6273,7 @@ window.__salesActSetData = function(newData){
   function applyCache(cache){
     try {
       if (cache.opiu) window.__opiuSetData(cache.opiu);
+      if (cache.opiuTree && window.__opiuSetDaily) window.__opiuSetDaily(cache.ops || null, cache.opiuTree);
       if (cache.salesact) window.__salesActSetData(cache.salesact);
       if (cache.sales && cache.activations && cache.partners) window.__wowSalesSetData(cache.sales, cache.activations, cache.partners);
       if (cache.kreditorka) window.__kreditorkaSetData(cache.kreditorka);
