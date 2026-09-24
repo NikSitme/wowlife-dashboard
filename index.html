@@ -5379,18 +5379,31 @@ window.__salesActSetData = function(newData){
     var rPartnerMgrOther = rowByB("Менеджер по партнёрам (Серёжа)");
     var rContentMgrKatya = rowByB("Контент-менеджер сайта (Катя)");
 
-    var months = [];
-    var k = 0;
-    while (true){
-      var plan_col = 5 + 4 * k;
-      var fact_col = plan_col + 1;
-      var date_cell = cell(1, plan_col);
-      var dateIso = ddmmyyyyToIso(date_cell);
-      if (!dateIso) break;
+    // Месяцы ищем по всей строке 1, а не шагом в 4 колонки от E: в исходном листе появились
+    // колонки 2025 года и пустые промежутки между блоками (лист перестраивают), из-за чего
+    // старый обход обрывался на первом пустом блоке и дашборд «видел» только январь 2025.
+    // Блок месяца = две соседние колонки с одной и той же датой (план, факт); берём факт.
+    var header = rows[0] || [];
+    var blocks = [];
+    for (var c = 1; c <= header.length; c++){
+      var d1 = ddmmyyyyToIso(cell(1, c));
+      if (!d1) continue;
+      if (ddmmyyyyToIso(cell(1, c + 1)) !== d1) continue;
+      blocks.push({ fact_col: c + 1, date: d1 });
+      c++; // пару план/факт уже разобрали
+    }
+    var byLabel = {};
+    blocks.forEach(function(b){
+      if (v(rRevenueTotal, b.fact_col) === 0) return; // будущий месяц или незаполненный блок
+      var label = b.date.slice(0, 7);
+      if (byLabel[label]) return; // дубль месяца в шапке — берём первый заполненный
+      byLabel[label] = b;
+    });
+    var months = Object.keys(byLabel).sort().map(function(label){
+      var fact_col = byLabel[label].fact_col;
+      var dateIso = byLabel[label].date;
       var fact_revenue = v(rRevenueTotal, fact_col);
-      if (fact_revenue === 0 && k > 0) break;
-
-      months.push({
+      return {
         date: dateIso,
         label: dateIso.slice(0, 7),
         revenue_total: fact_revenue,
@@ -5420,10 +5433,8 @@ window.__salesActSetData = function(newData){
         content_mgr_katya: Math.abs(v(rContentMgrKatya, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
-      });
-      k++;
-      if (k > 60) break; // safety valve
-    }
+      };
+    });
     if (!months.length) throw new Error("ОПиУ: не удалось распознать ни одного месяца — структура листа изменилась?");
 
     var problems = [];
