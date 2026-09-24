@@ -314,6 +314,14 @@
     user-select: none;
   }
   thead th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .opiu-struct-tools { display: flex; gap: 6px; margin: -4px 0 10px; }
+  #opiuFullTable tr.os-header td { font-weight: 700; background: var(--surface-2); }
+  #opiuFullTable tr.os-subtotal td { font-weight: 700; border-top: 1px solid var(--border); }
+  #opiuFullTable tr.os-pct td { color: var(--text-muted); font-style: italic; }
+  #opiuFullTable tr.os-leaf td { color: var(--text-secondary); }
+  #opiuFullTable tr.os-group td:first-child { cursor: pointer; user-select: none; }
+  #opiuFullTable .os-tg { display: inline-block; width: 14px; color: var(--text-muted); font-size: 11px; }
+  #opiuFullTable .os-neg { color: var(--text-muted); }
   tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
   tbody tr:hover { background: var(--surface-2); }
   .table-scroll { max-height: 420px; overflow-y: auto; border-radius: 8px; }
@@ -483,9 +491,10 @@
   </div>
 
   <div class="card">
-    <h2>ОПиУ — полная структура (как в Адеске)</h2>
-    <p class="cap">Копия структуры листа Адеска: разделы и статьи в том же порядке, факт по месяцам. «Сервисы разработки» показаны там же, где лежат в самом Адеске, но не входят в официальный итог «Косвенные расходы» над ними — это уже проверено сверкой.</p>
-    <div class="table-scroll" style="overflow-x:auto; max-height:600px;">
+    <h2>ОПиУ — управленческая структура</h2>
+    <p class="cap">Все статьи «сборки ОПиУ» Адеска, перегруппированные по правилам: возвраты вычитаются из выручки; переменные расходы — то, что растёт с числом сертификатов (себестоимость, комиссии МП, эквайринг, упаковка, доставка, сдельная ЗП); постоянные — ФОТ, маркетинг, связь, сервисы, офис, банк; налоги ИП — в блоке налогов; тело кредита и дивиденды — справочно. Строки с нулями скрыты, статьи раскрываются по клику, ФОТ — одной строкой с разбивкой по отделам. Сервисы разработки включены в «Сервисы» (в Адеске они вне итога).</p>
+    <div class="opiu-struct-tools"><button type="button" class="chip" id="opiuStructExpandAll">Раскрыть всё</button><button type="button" class="chip" id="opiuStructCollapseAll">Свернуть всё</button></div>
+    <div class="table-scroll" style="overflow-x:auto; max-height:640px;">
       <table id="opiuFullTable">
         <thead><tr id="opiuFullTableHead"></tr></thead>
         <tbody id="opiuFullTableBody"></tbody>
@@ -4396,59 +4405,185 @@ window.__salesActSetData = function(newData){
   var PRODUCT_CREATION_LABELS = ["Коробки","Пакеты","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"];
   var TAXES_LABELS = ["Налоги и пошлины","НДС 5% от выручки с сайта","НДС по маркетплейсам","УСН 1% от выручки с сайта","УСН по маркетплейсам"];
 
-  var OPIU_TABLE_ROWS = [
-    { label: "Выручка с НДС", bold: true, indent: 0, field: "revenue_total" },
-    ...REVENUE_LABELS.map(function(name){ return { label: name, indent: 1, arr: "revenue_breakdown", name: name }; }),
-
-    { label: "Прямые расходы", bold: true, indent: 0, field: "direct_costs_total" },
-    ...DIRECT_LABELS.map(function(name){
-      if (name === "Создание продукта"){
-        return [
-          { label: name, indent: 1, bold: true, arr: "direct_breakdown", name: name },
-          ...PRODUCT_CREATION_LABELS.map(function(n2){ return { label: n2, indent: 2, arr: "product_creation_breakdown", name: n2 }; })
-        ];
-      }
-      return [{ label: name, indent: 1, arr: "direct_breakdown", name: name }];
-    }).reduce(function(a,b){ return a.concat(b); }, []),
-
-    { label: "валовая прибыль", bold: true, indent: 0, field: "gross_profit" },
-
-    { label: "Операционные расходы", bold: true, indent: 0, field: "operating_total" },
-    { label: "Расходы по персоналу", bold: true, indent: 1, field: "personnel_total" },
-    ...PERSONNEL_LABELS.map(function(name){ return { label: name, indent: 2, arr: "personnel_breakdown", name: name }; }),
-    { label: "Косвенные расходы", bold: true, indent: 1, field: "indirect_total" },
-    ...INDIRECT_LABELS.map(function(name){ return { label: name, indent: 2, arr: "indirect_breakdown", name: name }; }),
-    { label: "Сервисы разработки (вкл. сервер)", indent: 2, italic: true, note: "вне официального итога «Косвенные расходы» выше", field: "dev_services" },
-    { label: "Административные расходы", bold: true, indent: 1, field: "admin_total" },
-    ...ADMIN_LABELS.map(function(name){ return { label: name, indent: 2, arr: "admin_breakdown", name: name }; }),
-
-    { label: "EBITDA", bold: true, indent: 0, field: "ebitda" },
-    { label: "Проценты по кредитам и займам", indent: 1, field: "interest" },
-    { label: "Налоги", bold: true, indent: 1, field: "taxes" },
-    ...TAXES_LABELS.map(function(name){ return { label: name, indent: 2, arr: "taxes_breakdown", name: name }; }),
-
-    { label: "Чистая прибыль", bold: true, indent: 0, field: "net_profit" },
-    { label: "Тело кредита", indent: 1, field: "loan_principal" },
-    { label: "Вывод дивидендов", indent: 1, field: "dividends" },
-    { label: "Прибыль после выплаты тела кредита и дивидендов", bold: true, indent: 0, field: "final_profit" },
+  // ---------- ОПиУ: управленческая структура (по правилам из docs/2026-09-24-struktura-opiu.xlsx) ----------
+  // Каждая группа = список статей-листьев «сборки ОПиУ» (значения с исходным знаком из m.rows).
+  // Родительские строки Адеска (ФОТ отдела …, Закупка рекламы, Создание продукта, СМС, B2B, Сервисы разработки,
+  // Сервисы административные, Отдел активации/ФОТ отдела активации, налоги) намеренно не используются — только листья,
+  // иначе суммы задвоятся. Статьи, не попавшие ни в одну группу, выводятся в «Не распределено».
+  var OS_PARENTS = ["Создание продукта","ФОТ отдела продукта","ФОТ Маркетинга","ФОТ ОЗ:","ФОТ ОП","ФОТ разработки","ФОТ Административный",
+    "Отдел активации","ФОТ отдела активации","Отдел м-плейсов","Закупка рекламы","СМС","B2B","Сервисы разработки","Сервисы административные","налоги"];
+  function osG(label, items, opts){ var g = { label: label, items: items }; if (opts) Object.keys(opts).forEach(function(k){ g[k] = opts[k]; }); return g; }
+  var OS_BLOCKS = [
+    { key: "rev", label: "1. Выручка", groups: [
+      osG("Выручка сайта", ["Wowlife МСК выручка","Wowlife СПБ Выручка"]),
+      osG("Выручка маркетплейсов", ["Выручка ВБ  СПБ","Выручка ВБ  МСК","Выручка ОЗОН СПБ","Выручка ОЗОН МСК","Выручка ЯМ СПБ","Выручка ЯМ МСК","Выручка Flowwow_СПБ","Выручка Flowwow_МСК"]),
+      osG("B2B выручка", ["B2B выручка"])
+    ]},
+    { key: "returns", label: "− Возвраты", groups: [ osG("Возвраты", ["Возвраты"], { neg: true }) ] },
+    { key: "var", label: "2. Переменные расходы", groups: [
+      osG("Себестоимость сертификата", ["Активация"], { neg: true, note: "статья «Активация»" }),
+      osG("Комиссии и логистика маркетплейсов", ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"], { neg: true }),
+      osG("Эквайринг", ["Эквайринговая комиссия"], { neg: true }),
+      osG("Упаковка и вложения", ["Коробки","Пакеты","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"], { neg: true, note: "в Адеске — «Создание продукта»" }),
+      osG("Упаковка маркетплейсов", ["Упаковка м-плейсы"], { neg: true }),
+      osG("Доставка", ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"], { neg: true }),
+      osG("Сдельная часть ЗП", ["РОП (перем)","МОП (перем)","СММ менеджер (перем)"], { neg: true })
+    ]},
+    { key: "fixed", label: "3. Постоянные (операционные) расходы", groups: [
+      osG("Расходы каналов маркетплейсов", ["Менеджер маркетплейсов","Расходы м-плесов","Самовыкупы м-плейсы","Реклама м-плейсы"], { neg: true }),
+      osG("B2B", ["Менеджер B2B","Подрядчики B2B","Прочие расходы B2B"], { neg: true }),
+      osG("ФОТ", [], { neg: true, note: "без сдельной части", children: [
+        osG("Отдел заботы", ["Руководитель ОЗ","Офис-менеджер","Офис-менеджер (Марина)","Офис-менеджер (Алина)","Офис-менеджер (Лада)","РОП","РОП (Галина)","МОП","Менеджер отдела активации","Руководитель отдела активации"], { neg: true, badge: "front" }),
+        osG("Продукт и партнёры", ["Руководитель отдела продукта","Менеджер по новым партнерам","Менеджер по текущим партнерам (Настя Карпова)","Менеджер по партнёрам (Серёжа)","Контент-менеджер сайта (Катя)","Упаковщик","Соц. отчисления ОП","НДФЛ ОП"], { neg: true, badge: "back" }),
+        osG("Маркетинг", ["Маркетолог","СММ менеджер","СММ","Инфлюенс-менеджер","Директолог","Таргетолог","Дизайнер","Копирайтер","SEO","Рилсмейкер","Трафик менеджер"], { neg: true, badge: "back" }),
+        osG("Разработка", ["Руководитель отдела разработки","Сопровождение сайта","Подрядчики разработки","Разработка (тех. часть) backend","Разработчик (помощник) Frontend"], { neg: true, badge: "back" }),
+        osG("Административный", ["Операционный директор","Финансовый директор","Ассистент (Олеся)","Ассистент(Маша)","Ассистент(Анастасия)","Бухгалтерия","Соц. отчисления АО","НДФЛ АО"], { neg: true, badge: "back" })
+      ]}),
+      osG("Маркетинг (закупка рекламы и продакшн)", ["Яндекс Директ","Таргет ВК","Посевы ВК","Блогеры","СберАДС","Соавторство","Доп. аналитика","Съёмки","Монтаж","Подрядчики маркетинговые","Email рассылка","Сервисы маркетинговые"], { neg: true }),
+      osG("Связь", ["Телефония","WhatsApp/ТГ","Sms.ru"], { neg: true }),
+      osG("Сервисы", ["Сервисы продукта","Сервер","Плагин wb","AI","Прочие сервисы (разработки)","Битрикс","GPT","Zoom","VK облако","Прочие админ. сервисы"], { neg: true }),
+      osG("Офис и административные", ["Административный отдел","Аренда и содержание офиса","Аренда офиса Мск","Найм сотрудников","Расходы офиса","Подарки команде","Подарки партнерам","Прочие административные расходы","Консалтинг","Оборудование"], { neg: true }),
+      osG("Банковские комиссии", ["Банковские комиссии"], { neg: true }),
+      osG("Развитие", ["Открытие нового города"], { neg: true, note: "разовое" })
+    ]},
+    { key: "tax", label: "4. Проценты и налоги", groups: [
+      osG("Проценты по кредитам и займам", ["Проценты по кредитам и займам"], { neg: true }),
+      osG("НДС", ["НДС 5% от выручки с сайта","НДС по маркетплейсам"], { neg: true }),
+      osG("УСН", ["УСН 1% от выручки с сайта","УСН по маркетплейсам"], { neg: true }),
+      osG("Налоги ИП", ["1% за регистрацию","Страховые взносы ИП","Налоги и пошлины"], { neg: true })
+    ]},
+    { key: "below", label: "Справочно, ниже черты (движение денег, не ОПиУ)", groups: [
+      osG("Тело кредита", ["Тело кредита"], { neg: true }),
+      osG("Вывод дивидендов", ["Вывод дивидендов"], { neg: true })
+    ]}
   ];
-  function opiuTableRowValue(row, m){
-    if (row.field !== undefined) return m[row.field] || 0;
-    return pick(m[row.arr], row.name);
+  var osExpanded = {};   // ключ строки → раскрыта ли
+  var osAllExpanded = false;
+  function osRowVal(m, label){ return (m.rows && m.rows[label]) || 0; }
+  function osGroupVals(g){
+    // значения группы по месяцам (со знаком как в Адеске); ФОТ = сумма подгрупп
+    if (g.children) return DATA.map(function(m, i){ return g.children.reduce(function(a, c){ return a + osGroupVals(c)[i]; }, 0); });
+    return DATA.map(function(m){ return g.items.reduce(function(a, l){ return a + osRowVal(m, l); }, 0); });
   }
-
+  function osNonZero(vals){ return vals.some(function(v){ return Math.abs(v) >= 0.5; }); }
+  function osCells(vals, neg, pct){
+    return vals.map(function(v){
+      if (pct) return '<td class="num">' + (v === null ? "—" : (v * 100).toFixed(1) + "%") + '</td>';
+      var shown = neg ? -v : v;
+      return '<td class="num' + (shown < 0 ? " os-neg" : "") + '">' + fmtCompact(shown) + '</td>';
+    }).join("");
+  }
+  function osUnallocated(){
+    var used = {};
+    OS_BLOCKS.forEach(function(b){ b.groups.forEach(function(g){
+      (g.items || []).forEach(function(l){ used[l] = 1; });
+      (g.children || []).forEach(function(c){ c.items.forEach(function(l){ used[l] = 1; }); });
+    }); });
+    OS_PARENTS.forEach(function(l){ used[l] = 1; });
+    var extra = {};
+    DATA.forEach(function(m){ Object.keys(m.rows || {}).forEach(function(l){ if (!used[l]) extra[l] = 1; }); });
+    return Object.keys(extra);
+  }
   function renderOpiuFullTable(){
     var head = document.getElementById("opiuFullTableHead");
     var body = document.getElementById("opiuFullTableBody");
     if (!head || !body) return;
     head.innerHTML = '<th>Статья</th>' + DATA.map(function(m){ return '<th class="num">' + monthLabel(m) + '</th>'; }).join("");
-    body.innerHTML = OPIU_TABLE_ROWS.map(function(row){
-      var cells = DATA.map(function(m){ return '<td class="num">' + fmtCompact(opiuTableRowValue(row, m)) + '</td>'; }).join("");
-      var style = (row.bold ? "font-weight:700;" : "") + (row.italic ? "font-style:italic; color:var(--text-muted);" : "");
-      var label = row.label + (row.note ? ' <span class="cap" style="font-style:normal;">(' + row.note + ')</span>' : "");
-      return '<tr style="' + style + '"><td style="padding-left:' + (10 + row.indent * 16) + 'px; white-space:nowrap;">' + label + '</td>' + cells + '</tr>';
-    }).join("");
+    if (!DATA.some(function(m){ return m.rows; })){
+      body.innerHTML = '<tr><td colspan="' + (DATA.length + 1) + '" class="cap" style="padding:14px 10px;">Постатейные данные появятся после обновления — нажмите «Обновить данные» вверху страницы.</td></tr>';
+      return;
+    }
+    var zero = DATA.map(function(){ return 0; });
+    function add(a, b){ return a.map(function(v, i){ return v + b[i]; }); }
+    function sub(a, b){ return a.map(function(v, i){ return v - b[i]; }); }
+    function ratio(a, b){ return a.map(function(v, i){ return b[i] ? v / b[i] : null; }); }
+    var html = [];
+    function rowHtml(cls, indent, label, cells, key, hasKids, extra){
+      var tg = hasKids ? '<span class="os-tg">' + (osExpanded[key] ? "▾" : "▸") + '</span>' : '<span class="os-tg"></span>';
+      html.push('<tr class="' + cls + '"' + (key ? ' data-key="' + key + '"' : "") + '><td style="padding-left:' + (8 + indent * 16) + 'px; white-space:nowrap;">' + tg + label + (extra || "") + '</td>' + cells + '</tr>');
+    }
+    function renderGroup(g, indent, keyPrefix){
+      var vals = osGroupVals(g);
+      if (!osNonZero(vals)) return zero;
+      var key = keyPrefix + "/" + g.label;
+      // раскрывать есть смысл только у групп из нескольких статей (или с подгруппами, как ФОТ)
+      var hasKids = !!(g.children && g.children.length) || (g.items && g.items.length > 1);
+      var extra = (g.note ? ' <span class="cap" style="display:inline;">(' + g.note + ')</span>' : "") + (g.badge ? ' <span class="fot-badge ' + g.badge + '">' + (g.badge === "front" ? "front" : "back") + '</span>' : "");
+      rowHtml("os-group", indent, g.label, osCells(vals, g.neg), key, hasKids, extra);
+      if (hasKids && osExpanded[key]){
+        if (g.children) g.children.forEach(function(c){ renderGroup(c, indent + 1, key); });
+        else g.items.forEach(function(l){
+          var lv = DATA.map(function(m){ return osRowVal(m, l); });
+          if (osNonZero(lv)) rowHtml("os-leaf", indent + 1, l, osCells(lv, g.neg));
+        });
+      }
+      return vals;
+    }
+    function renderBlock(b){
+      var total = zero;
+      var groupVals = b.groups.map(function(g){ return osGroupVals(g); });
+      groupVals.forEach(function(v){ total = add(total, v); });
+      var neg = b.key !== "rev";
+      rowHtml("os-header", 0, b.label, osCells(total, neg));
+      b.groups.forEach(function(g){ renderGroup(g, 1, b.key); });
+      return total;
+    }
+    var rev = renderBlock(OS_BLOCKS[0]);
+    rowHtml("os-subtotal", 0, "Выручка с НДС", osCells(rev));
+    var ret = renderBlock(OS_BLOCKS[1]);                       // отрицательные значения
+    var netRev = add(rev, ret);
+    rowHtml("os-subtotal", 0, "Чистая выручка (после возвратов)", osCells(netRev));
+    var variable = renderBlock(OS_BLOCKS[2]);
+    var margin = add(netRev, variable);
+    rowHtml("os-subtotal", 0, "Маржинальная прибыль", osCells(margin));
+    rowHtml("os-pct", 0, "Рентабельность по маржинальному доходу, %", osCells(ratio(margin, netRev), false, true));
+    var fixed = renderBlock(OS_BLOCKS[3]);
+    var op = add(margin, fixed);
+    rowHtml("os-subtotal", 0, "Операционная прибыль", osCells(op));
+    rowHtml("os-pct", 0, "Рентабельность по операционной прибыли, %", osCells(ratio(op, netRev), false, true));
+    var tax = renderBlock(OS_BLOCKS[4]);
+    var net = add(op, tax);
+    rowHtml("os-subtotal", 0, "Чистая прибыль", osCells(net));
+    rowHtml("os-pct", 0, "Рентабельность по чистой прибыли, %", osCells(ratio(net, netRev), false, true));
+    var unalloc = osUnallocated();
+    if (unalloc.length){
+      var uv = DATA.map(function(m){ return unalloc.reduce(function(a, l){ return a + osRowVal(m, l); }, 0); });
+      if (osNonZero(uv)){
+        var ukey = "unalloc";
+        rowHtml("os-group", 0, "Не распределено (новые статьи Адеска)", osCells(uv, true), ukey, true, ' <span class="cap" style="display:inline;">(не входят в итоги выше)</span>');
+        if (osExpanded[ukey]) unalloc.forEach(function(l){
+          var lv = DATA.map(function(m){ return osRowVal(m, l); });
+          if (osNonZero(lv)) rowHtml("os-leaf", 1, l, osCells(lv, true));
+        });
+      }
+    }
+    var below = renderBlock(OS_BLOCKS[5]);
+    rowHtml("os-subtotal", 0, "Прибыль после выплаты тела кредита и дивидендов", osCells(add(net, below)));
+    body.innerHTML = html.join("");
   }
+  (function(){
+    var body = document.getElementById("opiuFullTableBody");
+    if (body) body.addEventListener("click", function(e){
+      var tr = e.target.closest("tr.os-group"); if (!tr || !tr.dataset.key) return;
+      if (!tr.querySelector(".os-tg").textContent) return;
+      osExpanded[tr.dataset.key] = !osExpanded[tr.dataset.key];
+      renderOpiuFullTable();
+    });
+    function setAll(on){
+      osExpanded = {};
+      if (on){
+        OS_BLOCKS.forEach(function(b){ b.groups.forEach(function(g){
+          osExpanded[b.key + "/" + g.label] = true;
+          (g.children || []).forEach(function(c){ osExpanded[b.key + "/" + g.label + "/" + c.label] = true; });
+        }); });
+        osExpanded["unalloc"] = true;
+      }
+      renderOpiuFullTable();
+    }
+    var ea = document.getElementById("opiuStructExpandAll"), ca = document.getElementById("opiuStructCollapseAll");
+    if (ea) ea.addEventListener("click", function(){ setAll(true); });
+    if (ca) ca.addEventListener("click", function(){ setAll(false); });
+  })();
 
   // ---------- master render ----------
   function render(){
@@ -5524,6 +5659,14 @@ window.__salesActSetData = function(newData){
       throw new Error("ОПиУ: не найдена ни одна из строк «" + labels.join("», «") + "» (колонка A) — структура листа изменилась?");
     }
 
+    function rowsAll(factCol){
+      var out = {};
+      Object.keys(labelRowB).forEach(function(label){
+        var val = v(labelRowB[label], factCol);
+        if (val) out[label] = val;
+      });
+      return out;
+    }
     function breakdown(labels, factCol, abs){
       return labels.map(function(name){
         var val = v(rowByB(name), factCol);
@@ -5614,6 +5757,9 @@ window.__salesActSetData = function(newData){
         content_mgr_katya: Math.abs(v(rContentMgrKatya, fact_col)),
         product_creation_breakdown: breakdown(PRODUCT_CREATION_LABELS, fact_col, true),
         taxes_breakdown: breakdown(TAXES_LABELS, fact_col, true),
+        // все строки листа (колонка B, первое вхождение метки) с исходным знаком — для управленческой
+        // структуры ОПиУ на дашборде; нули не храним, чтобы не раздувать кэш
+        rows: rowsAll(fact_col),
       };
     });
     if (!months.length) throw new Error("ОПиУ: не удалось распознать ни одного месяца — структура листа изменилась?");
