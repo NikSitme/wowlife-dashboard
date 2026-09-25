@@ -391,6 +391,7 @@
     <button class="tabbtn" data-tab="wowsales" type="button">Аналитика продаж</button>
     <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
     <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
+    <button class="tabbtn" data-tab="finmodel" type="button">Финмодель</button>
   </div>
 
   <div class="tabpanel" data-panel="opiu">
@@ -3456,6 +3457,85 @@ window.__salesActSetData = function(newData){
 
   </div>
 
+  <div class="tabpanel" data-panel="finmodel" hidden>
+<style>
+  .fm-note { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+  .fm-grid { display: grid; grid-template-columns: minmax(360px, 5fr) minmax(380px, 6fr); gap: 16px; align-items: start; }
+  @media (max-width: 980px) { .fm-grid { grid-template-columns: 1fr; } }
+  .fm-group { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .fm-group h3 { margin: 0 0 4px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .fm-group h3 .fm-tag { font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--fm-accent, var(--s1)) 14%, transparent); color: var(--fm-accent, var(--s1)); }
+  .fm-group .fm-sum { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .fm-ctl { display: grid; grid-template-columns: 1fr 120px; grid-template-areas: "lbl val" "sl sl" "base base"; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .fm-ctl:first-of-type { border-top: none; }
+  .fm-ctl .lbl { grid-area: lbl; font-size: 12.5px; align-self: center; }
+  .fm-ctl .val { grid-area: val; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .fm-ctl .val input { width: 100px; font: inherit; font-size: 12.5px; text-align: right; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .fm-ctl .val .unit { font-size: 11px; color: var(--text-muted); width: 14px; }
+  .fm-ctl input[type=range] { grid-area: sl; width: 100%; accent-color: var(--fm-accent, var(--s1)); margin: 2px 0; }
+  .fm-ctl .base { grid-area: base; font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; font-variant-numeric: tabular-nums; }
+  .fm-ctl .base .d { font-weight: 650; }
+  .fm-ctl .base .d.up { color: var(--good); } .fm-ctl .base .d.down { color: var(--bad); }
+  .fm-ctl .base .reset { cursor: pointer; text-decoration: underline dotted; margin-left: auto; }
+  .fm-ctl.changed .lbl { font-weight: 650; }
+  .fm-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  @media (max-width: 1100px) { .fm-kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .fm-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .fm-kpis .kpi .val { font-size: 18px; }
+  .fm-kpis .kpi .sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  #fmTable { width: 100%; font-size: 12.5px; }
+  #fmTable th, #fmTable td { padding: 7px 10px; white-space: nowrap; }
+  #fmTable tr.t td { font-weight: 700; border-top: 1px solid var(--border); }
+  #fmTable tr.p td { color: var(--text-muted); font-size: 11.5px; }
+  #fmTable td.up { color: var(--good); } #fmTable td.down { color: var(--bad); }
+  #fmTable tr.sub td:first-child { padding-left: 24px; color: var(--text-secondary); }
+  .fm-sens { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .fm-sens .s { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .fm-sens .s .q { font-size: 12px; color: var(--text-secondary); }
+  .fm-sens .s .a { font-size: 16px; font-weight: 650; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .fm-sens .s .a.up { color: var(--good); } .fm-sens .s .a.down { color: var(--bad); }
+  .fm-sens .s .m { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  #fmWater { display: block; width: 100%; height: auto; margin-top: 6px; }
+</style>
+
+  <div class="card">
+    <div class="filters">
+      <label>База модели</label>
+      <div class="presets" id="fmBasePresets"></div>
+      <select id="fmBaseMonth" style="margin-left:6px"></select>
+      <button type="button" class="chip" id="fmReset" style="margin-left:auto">Сбросить рычаги к базе</button>
+    </div>
+    <p class="fm-note" id="fmBaseNote">База — фактический месяц из ОПиУ Адеска. Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала.</p>
+  </div>
+
+  <div class="fm-kpis" id="fmKpis"></div>
+
+  <div class="fm-grid" style="margin-top:16px">
+    <div id="fmControls"></div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>ОПиУ модели</h2>
+        <p class="cap">В месяц · база против модели</p>
+        <table id="fmTable">
+          <thead><tr><th>Показатель</th><th class="num">База</th><th class="num">Модель</th><th class="num">Δ ₽</th><th class="num">Δ %</th></tr></thead>
+          <tbody id="fmTableBody"></tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>От выручки к остатку</h2>
+        <p class="cap">Модель: сколько остаётся после каждого блока</p>
+        <svg id="fmWater" viewBox="0 0 640 260"></svg>
+      </div>
+      <div class="card">
+        <h2>Чувствительность</h2>
+        <p class="cap">Как изменится чистая прибыль модели, если сдвинуть один рычаг</p>
+        <div class="fm-sens" id="fmSens"></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
 
 <script>
@@ -5298,9 +5378,13 @@ window.__salesActSetData = function(newData){
       if (target === "wowsales" && window.__leadCertRerender) window.__leadCertRerender();
       if (target === "kreditorka" && window.__kreditorkaRerender) window.__kreditorkaRerender();
       if (target === "fot" && window.__fotRerender) window.__fotRerender();
+      if (target === "finmodel" && window.__finmodelRerender) window.__finmodelRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
   });
+  // ?tab=<ключ> в адресе — открыть сразу нужную вкладку (для ссылок и проверки вёрстки)
+  var tabParam = (location.search.match(/[?&]tab=([a-z]+)/) || [])[1];
+  if (tabParam) tabBtns.forEach(function(b){ if (b.getAttribute("data-tab") === tabParam) b.click(); });
 
   syncSelects();
   markPreset(0);
@@ -5373,6 +5457,7 @@ window.__salesActSetData = function(newData){
     render();
     if (window.__kreditorkaRerender) window.__kreditorkaRerender();
     if (window.__fotRerender) window.__fotRerender();
+    if (window.__finmodelRerender) window.__finmodelRerender();
   };
 })();
 </script>
@@ -5568,6 +5653,304 @@ window.__salesActSetData = function(newData){
   window.__fotRerender = renderFot;
   renderFot();
   window.addEventListener("resize", renderYear);
+})();
+</script>
+<script>
+(function(){
+  // ===== Финмодель: интерактивный прототип «меняю рычаг — вижу, что будет с прибылью» =====
+  // База — факт из ОПиУ Адеска (window.__opiuData). Все расходы разложены на рычаги:
+  // выручка по каналам (₽), переменные расходы (% от выручки канала), постоянные (₽/мес), налоги и финансы.
+  var root = document.querySelector('[data-panel="finmodel"]');
+  if (!root) return;
+  var STORE_KEY = "wowlife-finmodel-v1";
+  function data(){ return window.__opiuData || []; }
+  function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
+  function sumPick(arr, names){ return names.reduce(function(a, n){ return a + pick(arr, n); }, 0); }
+  function fmtR(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtS(n){ var s = Math.round(n).toLocaleString("ru-RU"); return (n > 0 ? "+" : "") + s + " ₽"; }
+  function fmtP(x, d){ return (x * 100).toFixed(d === undefined ? 1 : d).replace(".", ",") + " %"; }
+  function fmtSP(x){ return (x > 0 ? "+" : "") + (x * 100).toFixed(1).replace(".", ",") + " %"; }
+  var MONTHS_RU = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  function mlabel(m){ return MONTHS_RU[parseInt(m.label.slice(5,7),10)-1] + " " + m.label.slice(2,4); }
+
+  // ---- разложение одного месяца ОПиУ на компоненты модели ----
+  function decompose(m){
+    var rb = m.revenue_breakdown || [];
+    function r(i){ return rb[i] ? rb[i].value : 0; }
+    var site = r(0) + r(1), mp = r(2)+r(3)+r(4)+r(5)+r(6)+r(7)+r(8)+r(9), b2b = r(10);
+    var d = m.direct_breakdown, ind = m.indirect_breakdown, tx = m.taxes_breakdown;
+    var delivery = sumPick(ind, ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"]);
+    var marketing = sumPick(ind, ["Закупка рекламы","Email рассылка","Сервисы маркетинговые","Подрядчики маркетинговые","Съёмки","Монтаж"]);
+    return {
+      site: site, mp: mp, b2b: b2b,
+      returns: pick(d, "Возвраты"), activation: pick(d, "Активация"),
+      mpFees: sumPick(d, ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"]),
+      acquiring: pick(d, "Эквайринговая комиссия"), bank: pick(d, "Банковские комиссии"), packaging: pick(d, "Создание продукта"),
+      delivery: delivery, marketing: marketing, fot: m.personnel_total || 0,
+      otherFixed: (m.indirect_total || 0) - delivery - marketing + (m.admin_total || 0) + (m.dev_services || 0),
+      interest: m.interest || 0, taxesFixed: pick(tx, "Налоги и пошлины"),
+      mpTax: sumPick(tx, ["НДС по маркетплейсам","УСН по маркетплейсам"]),
+      loan: m.loan_principal || 0, dividends: m.dividends || 0
+    };
+  }
+  function avgDecomp(months){
+    var keys = Object.keys(decompose(months[0])), out = {};
+    keys.forEach(function(k){ out[k] = months.reduce(function(a, m){ return a + decompose(m)[k]; }, 0) / months.length; });
+    return out;
+  }
+  // ---- база → входы модели ----
+  function safeDiv(a, b){ return b ? a / b : 0; }
+  function baseInputs(c){
+    var rev = c.site + c.mp + c.b2b;
+    return {
+      site: c.site, mp: c.mp, b2b: c.b2b,
+      retRate: safeDiv(c.returns, rev), actRate: safeDiv(c.activation, rev), mpFeeRate: safeDiv(c.mpFees, c.mp),
+      acqRate: safeDiv(c.acquiring, c.site), bankRate: safeDiv(c.bank, rev), packRate: safeDiv(c.packaging, rev), delivRate: safeDiv(c.delivery, c.site),
+      fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed,
+      siteVat: 0.05, siteUsn: 0.01, mpTaxRate: safeDiv(c.mpTax, c.mp), interest: c.interest, taxesFixed: c.taxesFixed,
+      loan: c.loan, dividends: c.dividends
+    };
+  }
+  // ---- расчёт ОПиУ по входам ----
+  function compute(x){
+    var rev = x.site + x.mp + x.b2b;
+    var returns = rev * x.retRate, netRev = rev - returns;
+    var act = rev * x.actRate, mpFees = x.mp * x.mpFeeRate, acq = x.site * x.acqRate, bank = rev * x.bankRate, pack = rev * x.packRate, deliv = x.site * x.delivRate;
+    var variable = act + mpFees + acq + bank + pack + deliv;
+    var margin = netRev - variable;
+    var fixed = x.fot + x.marketing + x.otherFixed;
+    var op = margin - fixed;
+    var siteTax = x.site * (x.siteVat + x.siteUsn), mpTax = x.mp * x.mpTaxRate;
+    var taxes = siteTax + mpTax + x.interest + x.taxesFixed;
+    var net = op - taxes;
+    var fin = x.loan + x.dividends;
+    var after = net - fin;
+    // точка безубыточности по выручке при той же структуре каналов
+    var ws = safeDiv(x.site, rev), wm = safeDiv(x.mp, rev);
+    var contrib = 1 - x.retRate - x.actRate - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
+    var be = contrib > 0.01 ? (fixed + x.interest + x.taxesFixed) / contrib : null;
+    return { rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
+      variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fixed: fixed, op: op, opPct: safeDiv(op, netRev),
+      siteTax: siteTax, mpTax: mpTax, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
+  }
+
+  // ---- описание рычагов ----
+  var GROUPS = [
+    { key: "rev", title: "Выручка", tag: "₽ в месяц", accent: "var(--s1)", items: [
+      ["site", "Сайт (МСК + СПБ)", "money"], ["mp", "Маркетплейсы", "money"], ["b2b", "B2B", "money"] ] },
+    { key: "var", title: "Переменные расходы", tag: "% от выручки", accent: "var(--s2)", items: [
+      ["retRate", "Возвраты, % от выручки", "pct"], ["actRate", "Себестоимость (активации), % от выручки", "pct"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
+      ["acqRate", "Эквайринг, % от выручки сайта", "pct"], ["bankRate", "Банковские комиссии, % от выручки", "pct"], ["packRate", "Упаковка и вложения, % от выручки", "pct"], ["delivRate", "Доставка, % от выручки сайта", "pct"] ] },
+    { key: "fix", title: "Постоянные расходы", tag: "₽ в месяц", accent: "var(--s4)", items: [
+      ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["otherFixed", "Прочие постоянные (связь, сервисы, офис, админ.)", "money"] ] },
+    { key: "tax", title: "Налоги и финансы", tag: "% и ₽", accent: "#8b5cf6", items: [
+      ["siteVat", "НДС, % от выручки сайта", "pct"], ["siteUsn", "УСН, % от выручки сайта", "pct"], ["mpTaxRate", "Налоги по маркетплейсам, % от выручки МП", "pct"],
+      ["interest", "Проценты по кредитам, ₽", "money"], ["taxesFixed", "Налоги и пошлины, ₽", "money"], ["loan", "Тело кредита, ₽", "money"], ["dividends", "Дивиденды, ₽", "money"] ] }
+  ];
+
+  // overrides — только те рычаги, которые двигал пользователь; остальные всегда равны базе,
+  // поэтому смена базы или обновление данных не оставляет «хвостов» от старых значений
+  var state = { basePreset: "prev", baseMonth: null, overrides: {}, inputs: null };
+  function applyOverrides(){ state.inputs = JSON.parse(JSON.stringify(base)); Object.keys(state.overrides || {}).forEach(function(k){ if (k in base) state.inputs[k] = state.overrides[k]; }); }
+  var base = null, baseC = null;
+
+  function baseMonths(){
+    var d = data(); if (!d.length) return [];
+    if (state.basePreset === "month" && state.baseMonth){ var m = d.filter(function(x){ return x.label === state.baseMonth; }); if (m.length) return m; }
+    var full = d.slice(0, Math.max(1, d.length - 1)); // без текущего неполного месяца
+    if (state.basePreset === "avg3") return full.slice(-3);
+    if (state.basePreset === "avg6") return full.slice(-6);
+    return full.slice(-1);
+  }
+  function rebuildBase(keepInputs){
+    var ms = baseMonths(); if (!ms.length) return false;
+    baseC = avgDecomp(ms); base = baseInputs(baseC);
+    if (!keepInputs) state.overrides = {};
+    applyOverrides();
+    var note = root.querySelector("#fmBaseNote");
+    var lbl = ms.length === 1 ? mlabel(ms[0]) : "средний месяц за " + mlabel(ms[0]) + " – " + mlabel(ms[ms.length-1]);
+    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %.";
+    return true;
+  }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && s.overrides) state = { basePreset: s.basePreset || "prev", baseMonth: s.baseMonth || null, overrides: s.overrides, inputs: null }; } catch (e) {} }
+
+  // ---- рендер ----
+  var PRESETS = [["prev","Прошлый месяц"],["avg3","Средний за 3 мес"],["avg6","Средний за 6 мес"],["month","Выбрать месяц"]];
+  function renderBaseBar(){
+    var box = root.querySelector("#fmBasePresets"); box.innerHTML = "";
+    PRESETS.forEach(function(p){
+      var b = document.createElement("button"); b.type = "button"; b.className = "chip" + (state.basePreset === p[0] ? " active" : ""); b.textContent = p[1];
+      b.addEventListener("click", function(){ state.basePreset = p[0]; if (p[0] === "month" && !state.baseMonth){ var d = data(); state.baseMonth = d[Math.max(0, d.length-2)].label; } rebuildBase(false); save(); renderAll(); });
+      box.appendChild(b);
+    });
+    var sel = root.querySelector("#fmBaseMonth"); sel.innerHTML = "";
+    data().forEach(function(m){ var o = document.createElement("option"); o.value = m.label; o.textContent = mlabel(m); sel.appendChild(o); });
+    sel.hidden = state.basePreset !== "month";
+    if (state.baseMonth) sel.value = state.baseMonth;
+  }
+  function ctlHtml(g, it){
+    var key = it[0], kind = it[2], v = state.inputs[key], b = base[key];
+    var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
+    var max = kind === "pct" ? Math.max(0.6, Math.min(1, b * 3 || 0.1)) : Math.max(b * 2.5, 100000);
+    var step = kind === "pct" ? 0.001 : (max > 5e6 ? 50000 : 10000);
+    var d = b ? (v - b) / Math.abs(b) : 0;
+    var dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
+    return '<div class="fm-ctl' + (changed ? " changed" : "") + '" data-key="' + key + '" data-kind="' + kind + '">' +
+      '<div class="lbl">' + it[1] + '</div>' +
+      '<div class="val"><input type="text" class="num-in" value="' + (kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU")) + '"><span class="unit">' + (kind === "pct" ? "%" : "₽") + '</span></div>' +
+      '<input type="range" min="0" max="' + max + '" step="' + step + '" value="' + v + '">' +
+      '<div class="base"><span>база: ' + (kind === "pct" ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "") + '</div>' +
+      '</div>';
+  }
+  function renderControls(){
+    var box = root.querySelector("#fmControls"); var html = "";
+    var res = compute(state.inputs);
+    var sums = { rev: fmtR(res.rev), "var": fmtR(res.variable), fix: fmtR(res.fixed), tax: fmtR(res.taxes + res.fin) };
+    GROUPS.forEach(function(g){
+      html += '<div class="fm-group" style="--fm-accent:' + g.accent + '"><h3>' + g.title + '<span class="fm-tag">' + g.tag + '</span><span class="fm-sum">' + sums[g.key] + '</span></h3>' +
+        g.items.map(function(it){ return ctlHtml(g, it); }).join("") + '</div>';
+    });
+    box.innerHTML = html;
+  }
+  function kpi(label, val, baseVal, sub, pctMode){
+    var d = val - baseVal, cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "flat");
+    var dtxt = pctMode ? fmtSP(d) : fmtS(d) + (baseVal ? " (" + fmtSP(safeDiv(d, Math.abs(baseVal))) + ")" : "");
+    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + (pctMode ? fmtP(val) : fmtR(val)) + '</div>' +
+      '<div class="delta ' + cls + '">' + (cls === "flat" ? "как в базе" : dtxt + " к базе") + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div>';
+  }
+  function renderKpis(res, bres){
+    root.querySelector("#fmKpis").innerHTML =
+      kpi("Выручка", res.rev, bres.rev) +
+      kpi("Маржинальная прибыль", res.margin, bres.margin, "рентабельность " + fmtP(res.marginPct) + " (база " + fmtP(bres.marginPct) + ")") +
+      kpi("Операционная прибыль", res.op, bres.op, "рентабельность " + fmtP(res.opPct) + " (база " + fmtP(bres.opPct) + ")") +
+      kpi("Чистая прибыль", res.net, bres.net, "рентабельность " + fmtP(res.netPct) + " (база " + fmtP(bres.netPct) + ")") +
+      kpi("После кредита и дивидендов", res.after, bres.after) +
+      (res.be !== null && bres.be !== null
+        ? kpi("Точка безубыточности", res.be, bres.be, "выручка в месяц, при которой чистая прибыль = 0")
+        : '<div class="kpi"><div class="lbl">Точка безубыточности</div><div class="val">—</div><div class="sub">переменные расходы съедают всю выручку</div></div>');
+  }
+  function renderTable(res, bres){
+    var rows = [
+      ["t", "Выручка", "rev"], ["sub", "Сайт", null, state.inputs.site, base.site], ["sub", "Маркетплейсы", null, state.inputs.mp, base.mp], ["sub", "B2B", null, state.inputs.b2b, base.b2b],
+      ["", "− Возвраты", "returns"], ["t", "Чистая выручка", "netRev"],
+      ["t", "Переменные расходы", "variable"], ["sub", "Себестоимость (активации)", "act"], ["sub", "Комиссии и логистика МП", "mpFees"], ["sub", "Эквайринг", "acq"], ["sub", "Банковские комиссии", "bank"], ["sub", "Упаковка и вложения", "pack"], ["sub", "Доставка", "deliv"],
+      ["t", "Маржинальная прибыль", "margin"], ["p", "Рентабельность по марже", "marginPct", null, null, true],
+      ["t", "Постоянные расходы", "fixed"], ["sub", "ФОТ", null, state.inputs.fot, base.fot], ["sub", "Маркетинг", null, state.inputs.marketing, base.marketing], ["sub", "Прочие постоянные", null, state.inputs.otherFixed, base.otherFixed],
+      ["t", "Операционная прибыль", "op"], ["p", "Рентабельность операционная", "opPct", null, null, true],
+      ["t", "Проценты и налоги", "taxes"], ["sub", "НДС и УСН по сайту", "siteTax"], ["sub", "Налоги по маркетплейсам", "mpTax"], ["sub", "Проценты по кредитам", null, state.inputs.interest, base.interest], ["sub", "Налоги и пошлины", null, state.inputs.taxesFixed, base.taxesFixed],
+      ["t", "Чистая прибыль", "net"], ["p", "Рентабельность по чистой прибыли", "netPct", null, null, true],
+      ["t", "Тело кредита и дивиденды", "fin"], ["t", "Остаток после фин. расходов", "after"]
+    ];
+    root.querySelector("#fmTableBody").innerHTML = rows.map(function(r){
+      var v = r[2] ? res[r[2]] : r[3], b = r[2] ? bres[r[2]] : r[4], isPct = !!r[5];
+      var d = v - b, cls = isPct ? "" : (d > 0.5 ? " up" : (d < -0.5 ? " down" : ""));
+      var isCost = /Возвраты|расходы|Проценты и налоги|Тело кредита/.test(r[1]) || r[0] === "sub" && !/Сайт|Маркетплейсы$|B2B/.test(r[1]);
+      if (isCost) cls = d > 0.5 ? " down" : (d < -0.5 ? " up" : "");
+      return '<tr class="' + r[0] + '"><td>' + r[1] + '</td><td class="num">' + (isPct ? fmtP(b) : fmtR(b)) + '</td><td class="num">' + (isPct ? fmtP(v) : fmtR(v)) + '</td>' +
+        '<td class="num' + cls + '">' + (isPct ? fmtSP(d) : (Math.abs(d) < 0.5 ? "—" : fmtS(d))) + '</td><td class="num' + cls + '">' + (isPct || !b || Math.abs(d) < 0.5 ? "—" : fmtSP(d / Math.abs(b))) + '</td></tr>';
+    }).join("");
+  }
+  function renderWater(res){
+    var steps = [["Выручка", res.rev, "total"], ["Возвраты", -res.returns], ["Переменные", -res.variable], ["Маржа", res.margin, "total"], ["Постоянные", -res.fixed], ["Опер. прибыль", res.op, "total"], ["Налоги и %", -res.taxes], ["Чистая", res.net, "total"], ["Кредит и див.", -res.fin], ["Остаток", res.after, "total"]];
+    var W = 640, H = 270, padL = 8, padR = 8, padT = 22, padB = 44, n = steps.length, bw = (W - padL - padR) / n, run = 0;
+    var vals = [], lo = 0, hi = 0;
+    steps.forEach(function(s){ var y0 = s[2] ? 0 : run, y1 = s[2] ? s[1] : run + s[1]; run = y1; vals.push([Math.min(y0,y1), Math.max(y0,y1)]); lo = Math.min(lo, y0, y1); hi = Math.max(hi, y0, y1); });
+    if (hi === lo) hi = lo + 1;
+    function y(v){ return padT + (hi - v) / (hi - lo) * (H - padT - padB); }
+    var svg = '<line x1="0" x2="' + W + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="var(--baseline)" stroke-width="1"/>';
+    steps.forEach(function(s, i){
+      var x = padL + i * bw + bw * 0.12, w = bw * 0.76, top = y(vals[i][1]), bot = y(vals[i][0]);
+      var color = s[2] ? (s[1] >= 0 ? "var(--s3)" : "var(--bad)") : (s[1] >= 0 ? "var(--s3)" : "var(--s2)");
+      svg += '<rect x="' + x + '" y="' + top + '" width="' + w + '" height="' + Math.max(1, bot - top) + '" rx="3" fill="' + color + '" opacity="' + (s[2] ? 0.9 : 0.55) + '"/>';
+      var lab = Math.round(s[1] / 1000).toLocaleString("ru-RU") + " т.";
+      svg += '<text x="' + (x + w/2) + '" y="' + (top - 5) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + lab + '</text>';
+      // подписи в шахматном порядке в две строки, чтобы не налезали друг на друга
+      svg += '<text x="' + (x + w/2) + '" y="' + (H - (i % 2 ? 6 : 20)) + '" text-anchor="middle" font-size="10" fill="var(--text-muted)">' + s[0] + '</text>';
+    });
+    root.querySelector("#fmWater").innerHTML = svg;
+  }
+  function renderSens(res){
+    var x = state.inputs;
+    function withPatch(p){ var y = JSON.parse(JSON.stringify(x)); Object.keys(p).forEach(function(k){ y[k] = p[k]; }); return compute(y).net - res.net; }
+    var cases = [
+      ["Сайт +10 %", { site: x.site * 1.1 }, "выручка сайта +" + fmtR(x.site * 0.1)],
+      ["Маркетплейсы +10 %", { mp: x.mp * 1.1 }, "выручка МП +" + fmtR(x.mp * 0.1)],
+      ["B2B +500 000 ₽", { b2b: x.b2b + 500000 }, "при тех же % расходов"],
+      ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))],
+      ["Комиссии МП −5 п.п.", { mpFeeRate: Math.max(0, x.mpFeeRate - 0.05) }, fmtP(x.mpFeeRate) + " → " + fmtP(Math.max(0, x.mpFeeRate - 0.05))],
+      ["Маркетинг −20 %", { marketing: x.marketing * 0.8 }, "−" + fmtR(x.marketing * 0.2) + " в месяц"],
+      ["ФОТ −10 %", { fot: x.fot * 0.9 }, "−" + fmtR(x.fot * 0.1) + " в месяц"],
+      ["Возвраты −1 п.п.", { retRate: Math.max(0, x.retRate - 0.01) }, fmtP(x.retRate) + " → " + fmtP(Math.max(0, x.retRate - 0.01))]
+    ];
+    root.querySelector("#fmSens").innerHTML = cases.map(function(c){
+      var d = withPatch(c[1]); var cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "");
+      return '<div class="s"><div class="q">' + c[0] + '</div><div class="a ' + cls + '">' + fmtS(d) + '</div><div class="m">' + c[2] + '</div></div>';
+    }).join("");
+  }
+  function renderAll(){
+    if (!base) return;
+    renderBaseBar();
+    var res = compute(state.inputs), bres = compute(base);
+    renderKpis(res, bres); renderControls(); renderTable(res, bres); renderWater(res); renderSens(res);
+  }
+  function renderResults(){
+    var res = compute(state.inputs), bres = compute(base);
+    renderKpis(res, bres); renderTable(res, bres); renderWater(res); renderSens(res);
+    // суммы в заголовках групп и пометки «изменено» — без перерисовки полей ввода
+    root.querySelectorAll(".fm-ctl").forEach(function(el){
+      var key = el.dataset.key, kind = el.dataset.kind, v = state.inputs[key], b = base[key];
+      var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
+      el.classList.toggle("changed", changed);
+      var d = b ? (v - b) / Math.abs(b) : 0, dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
+      el.querySelector(".base").innerHTML = '<span>база: ' + (kind === "pct" ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "");
+    });
+    var sums = { rev: fmtR(res.rev), "var": fmtR(res.variable), fix: fmtR(res.fixed), tax: fmtR(res.taxes + res.fin) };
+    root.querySelectorAll(".fm-group").forEach(function(g, i){ g.querySelector(".fm-sum").textContent = sums[GROUPS[i].key]; });
+  }
+  function parseNum(s){ return parseFloat(String(s).replace(/[\s ₽%]/g, "").replace(",", ".")); }
+
+  // ---- события ----
+  var controls = root.querySelector("#fmControls");
+  controls.addEventListener("input", function(e){
+    var ctl = e.target.closest(".fm-ctl"); if (!ctl) return;
+    var key = ctl.dataset.key, kind = ctl.dataset.kind;
+    if (e.target.type === "range"){
+      var v = parseFloat(e.target.value); state.inputs[key] = v; state.overrides[key] = v;
+      ctl.querySelector(".num-in").value = kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU");
+      renderResults(); save();
+    }
+  });
+  controls.addEventListener("change", function(e){
+    var ctl = e.target.closest(".fm-ctl"); if (!ctl || !e.target.classList.contains("num-in")) return;
+    var key = ctl.dataset.key, kind = ctl.dataset.kind, v = parseNum(e.target.value);
+    if (isNaN(v)) { renderAll(); return; }
+    if (kind === "pct") v = v / 100;
+    v = Math.max(0, v); state.inputs[key] = v; state.overrides[key] = v;
+    var r = ctl.querySelector('input[type=range]'); if (v > parseFloat(r.max)) r.max = v * 1.2; r.value = v;
+    e.target.value = kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU");
+    renderResults(); save();
+  });
+  controls.addEventListener("click", function(e){
+    var rs = e.target.closest("[data-reset]"); if (!rs) return;
+    var key = rs.dataset.reset; state.inputs[key] = base[key]; delete state.overrides[key];
+    var ctl = controls.querySelector('.fm-ctl[data-key="' + key + '"]');
+    ctl.querySelector('input[type=range]').value = base[key];
+    ctl.querySelector(".num-in").value = ctl.dataset.kind === "pct" ? (base[key]*100).toFixed(1).replace(".", ",") : Math.round(base[key]).toLocaleString("ru-RU");
+    renderResults(); save();
+  });
+  root.querySelector("#fmReset").addEventListener("click", function(){ state.overrides = {}; applyOverrides(); save(); renderAll(); });
+  root.querySelector("#fmBaseMonth").addEventListener("change", function(e){ state.baseMonth = e.target.value; state.basePreset = "month"; rebuildBase(false); save(); renderAll(); });
+
+  var inited = false;
+  function renderFinmodel(){
+    if (!data().length) return;
+    if (!inited){ load(); inited = true; rebuildBase(true); }
+    else rebuildBase(true);
+    renderAll();
+  }
+  window.__finmodelRerender = renderFinmodel;
+  renderFinmodel();
 })();
 </script>
 
@@ -6398,6 +6781,16 @@ window.__salesActSetData = function(newData){
     if (fetches.adeskList1){
       try {
         var opiuData = computeOpiu(fetches.adeskList1);
+        // Защита от «полупустого» снимка: IMPORTRANGE в книге-копии иногда отдаёт часть ячеек нулями,
+        // пока тяжёлая исходная книга пересчитывается. Если по уже известному месяцу выручка упала
+        // больше чем вдвое — считаем снимок битым и оставляем прошлые данные.
+        var prevData = window.__opiuData || [];
+        var broken = [];
+        opiuData.forEach(function(nm){
+          var om = prevData.filter(function(x){ return x.label === nm.label; })[0];
+          if (om && om.revenue_total > 0 && nm.revenue_total < om.revenue_total * 0.5 && om.label < opiuData[opiuData.length-1].label) broken.push(nm.label);
+        });
+        if (broken.length) throw new Error("ОПиУ: источник вернул неполные данные (" + broken.join(", ") + " — выручка меньше половины прежней); оставлены прошлые данные, повторите обновление позже");
         window.__opiuSetData(opiuData);
         var opiuTree = computeOpiuTree(fetches.adeskList1);
         var opsData = null;
