@@ -5707,7 +5707,8 @@ window.__salesActSetData = function(newData){
     var rev = c.site + c.mp + c.b2b;
     return {
       site: c.site, mp: c.mp, b2b: c.b2b,
-      retRate: safeDiv(c.returns, rev), actRate: safeDiv(c.activation, rev), actAbs: c.activation, actMode: "pct", mpFeeRate: safeDiv(c.mpFees, c.mp),
+      retRate: safeDiv(c.returns, rev), retAbs: c.returns, retMode: "abs",
+      actRate: safeDiv(c.activation, rev), actAbs: c.activation, actMode: "abs", mpFeeRate: safeDiv(c.mpFees, c.mp),
       acqRate: safeDiv(c.acquiring, c.site), bankRate: safeDiv(c.bank, rev), packRate: safeDiv(c.packaging, rev), delivRate: safeDiv(c.delivery, c.site),
       fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed,
       siteVat: 0.05, siteUsn: 0.01, mpTaxRate: safeDiv(c.mpTax, c.mp), interest: c.interest, taxesFixed: c.taxesFixed,
@@ -5717,7 +5718,8 @@ window.__salesActSetData = function(newData){
   // ---- расчёт ОПиУ по входам ----
   function compute(x){
     var rev = x.site + x.mp + x.b2b;
-    var returns = rev * x.retRate, netRev = rev - returns;
+    var retIsAbs = x.retMode === "abs";
+    var returns = retIsAbs ? x.retAbs : rev * x.retRate, netRev = rev - returns;
     var actIsAbs = x.actMode === "abs";
     var act = actIsAbs ? x.actAbs : rev * x.actRate, mpFees = x.mp * x.mpFeeRate, acq = x.site * x.acqRate, bank = rev * x.bankRate, pack = rev * x.packRate, deliv = x.site * x.delivRate;
     var variable = act + mpFees + acq + bank + pack + deliv;
@@ -5731,8 +5733,8 @@ window.__salesActSetData = function(newData){
     var after = net - fin;
     // точка безубыточности по выручке при той же структуре каналов
     var ws = safeDiv(x.site, rev), wm = safeDiv(x.mp, rev);
-    var contrib = 1 - x.retRate - (actIsAbs ? 0 : x.actRate) - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
-    var be = contrib > 0.01 ? (fixed + (actIsAbs ? x.actAbs : 0) + x.interest + x.taxesFixed) / contrib : null;
+    var contrib = 1 - (retIsAbs ? 0 : x.retRate) - (actIsAbs ? 0 : x.actRate) - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
+    var be = contrib > 0.01 ? (fixed + (actIsAbs ? x.actAbs : 0) + (retIsAbs ? x.retAbs : 0) + x.interest + x.taxesFixed) / contrib : null;
     return { rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
       variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fixed: fixed, op: op, opPct: safeDiv(op, netRev),
       siteTax: siteTax, mpTax: mpTax, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
@@ -5743,7 +5745,7 @@ window.__salesActSetData = function(newData){
     { key: "rev", title: "Выручка", tag: "₽ в месяц", accent: "var(--s1)", items: [
       ["site", "Сайт (МСК + СПБ)", "money"], ["mp", "Маркетплейсы", "money"], ["b2b", "B2B", "money"] ] },
     { key: "var", title: "Переменные расходы", tag: "% от выручки", accent: "var(--s2)", items: [
-      ["retRate", "Возвраты, % от выручки", "pct"], ["act", "Себестоимость (активации)", "act"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
+      ["ret", "Возвраты", "dual"], ["act", "Себестоимость (активации)", "dual"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
       ["acqRate", "Эквайринг, % от выручки сайта", "pct"], ["bankRate", "Банковские комиссии, % от выручки", "pct"], ["packRate", "Упаковка и вложения, % от выручки", "pct"], ["delivRate", "Доставка, % от выручки сайта", "pct"] ] },
     { key: "fix", title: "Постоянные расходы", tag: "₽ в месяц", accent: "var(--s4)", items: [
       ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["otherFixed", "Прочие постоянные (связь, сервисы, офис, админ.)", "money"] ] },
@@ -5773,7 +5775,7 @@ window.__salesActSetData = function(newData){
     applyOverrides();
     var note = root.querySelector("#fmBaseNote");
     var lbl = ms.length === 1 ? mlabel(ms[0]) : "средний месяц за " + mlabel(ms[0]) + " – " + mlabel(ms[ms.length-1]);
-    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %. Себестоимость (активации) можно задать и фиксированной суммой, как в ОПиУ — по факту оплат партнёрам.";
+    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %. Возвраты и себестоимость (активации) по умолчанию заданы суммой в месяц, как в ОПиУ — по факту; переключатель у рычага переводит их в % от выручки.";
     return true;
   }
   function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
@@ -5793,15 +5795,19 @@ window.__salesActSetData = function(newData){
     sel.hidden = state.basePreset !== "month";
     if (state.baseMonth) sel.value = state.baseMonth;
   }
-  var ACT_TOGGLE = '<span class="fm-mode"><button type="button" data-actmode="pct">% от выручки</button><button type="button" data-actmode="abs">₽ в месяц</button></span>';
+  // рычаги с двумя режимами: % от выручки или фиксированная сумма в месяц (по умолчанию — сумма, как в ОПиУ:
+  // возвраты и активации учитываются по факту, сертификаты активируют с задержкой до 2 лет)
+  var DUAL = { ret: { pct: "retRate", abs: "retAbs", mode: "retMode" }, act: { pct: "actRate", abs: "actAbs", mode: "actMode" } };
+  function modeToggle(dk, cur){
+    return '<span class="fm-mode" data-dual="' + dk + '"><button type="button" data-mode="abs"' + (cur === "abs" ? ' class="on"' : "") + '>₽ в месяц</button>' +
+      '<button type="button" data-mode="pct"' + (cur === "pct" ? ' class="on"' : "") + '>% от выручки</button></span>';
+  }
   function ctlHtml(g, it){
     var key = it[0], kind = it[2], label = it[1];
-    if (kind === "act"){
-      // себестоимость: либо % от выручки, либо фиксированная сумма (факт оплат партнёрам за месяц) —
-      // активируют сертификаты с задержкой до 2 лет, поэтому в ОПиУ берётся факт оплат, а не доля от продаж
-      var abs = state.inputs.actMode === "abs";
-      key = abs ? "actAbs" : "actRate"; kind = abs ? "money" : "pct";
-      label = "Себестоимость (активации), " + (abs ? "₽ в месяц" : "% от выручки") + " " + ACT_TOGGLE.replace('data-actmode="' + (abs ? "abs" : "pct") + '"', 'data-actmode="' + (abs ? "abs" : "pct") + '" class="on"');
+    if (kind === "dual"){
+      var dd = DUAL[key], cur = state.inputs[dd.mode] === "pct" ? "pct" : "abs";
+      key = dd[cur]; kind = cur === "abs" ? "money" : "pct";
+      label = it[1] + ", " + (cur === "abs" ? "₽ в месяц" : "% от выручки") + " " + modeToggle(it[0], cur);
     }
     var v = state.inputs[key], b = base[key];
     var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
@@ -5890,13 +5896,15 @@ window.__salesActSetData = function(newData){
       ["Сайт +10 %", { site: x.site * 1.1 }, "выручка сайта +" + fmtR(x.site * 0.1)],
       ["Маркетплейсы +10 %", { mp: x.mp * 1.1 }, "выручка МП +" + fmtR(x.mp * 0.1)],
       ["B2B +500 000 ₽", { b2b: x.b2b + 500000 }, "при тех же % расходов"],
-      (x.actMode === "abs"
-        ? ["Активации −10 %", { actAbs: x.actAbs * 0.9 }, "оплаты партнёрам −" + fmtR(x.actAbs * 0.1) + " в месяц"]
-        : ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))]),
+      (x.actMode === "pct"
+        ? ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))]
+        : ["Активации −10 %", { actAbs: x.actAbs * 0.9 }, "оплаты партнёрам −" + fmtR(x.actAbs * 0.1) + " в месяц"]),
       ["Комиссии МП −5 п.п.", { mpFeeRate: Math.max(0, x.mpFeeRate - 0.05) }, fmtP(x.mpFeeRate) + " → " + fmtP(Math.max(0, x.mpFeeRate - 0.05))],
       ["Маркетинг −20 %", { marketing: x.marketing * 0.8 }, "−" + fmtR(x.marketing * 0.2) + " в месяц"],
       ["ФОТ −10 %", { fot: x.fot * 0.9 }, "−" + fmtR(x.fot * 0.1) + " в месяц"],
-      ["Возвраты −1 п.п.", { retRate: Math.max(0, x.retRate - 0.01) }, fmtP(x.retRate) + " → " + fmtP(Math.max(0, x.retRate - 0.01))]
+      (x.retMode === "pct"
+        ? ["Возвраты −1 п.п.", { retRate: Math.max(0, x.retRate - 0.01) }, fmtP(x.retRate) + " → " + fmtP(Math.max(0, x.retRate - 0.01))]
+        : ["Возвраты −20 %", { retAbs: x.retAbs * 0.8 }, "−" + fmtR(x.retAbs * 0.2) + " в месяц"])
     ];
     root.querySelector("#fmSens").innerHTML = cases.map(function(c){
       var d = withPatch(c[1]); var cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "");
@@ -5947,10 +5955,11 @@ window.__salesActSetData = function(newData){
     renderResults(); save();
   });
   controls.addEventListener("click", function(e){
-    var mt = e.target.closest("[data-actmode]");
+    var mt = e.target.closest("[data-mode]");
     if (mt){
-      state.inputs.actMode = mt.dataset.actmode;
-      if (state.inputs.actMode === base.actMode) delete state.overrides.actMode; else state.overrides.actMode = state.inputs.actMode;
+      var dd = DUAL[mt.closest("[data-dual]").dataset.dual], mode = mt.dataset.mode;
+      state.inputs[dd.mode] = mode;
+      if (mode === base[dd.mode]) delete state.overrides[dd.mode]; else state.overrides[dd.mode] = mode;
       save(); renderAll(); return;
     }
     var rs = e.target.closest("[data-reset]"); if (!rs) return;
