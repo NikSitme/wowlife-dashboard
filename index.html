@@ -3478,6 +3478,9 @@ window.__salesActSetData = function(newData){
   .fm-ctl .base .d.up { color: var(--good); } .fm-ctl .base .d.down { color: var(--bad); }
   .fm-ctl .base .reset { cursor: pointer; text-decoration: underline dotted; margin-left: auto; }
   .fm-ctl.changed .lbl { font-weight: 650; }
+  .fm-mode { display: inline-flex; margin-left: 8px; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; vertical-align: middle; }
+  .fm-mode button { font: inherit; font-size: 10.5px; padding: 2px 8px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+  .fm-mode button.on { background: color-mix(in srgb, var(--fm-accent, var(--s1)) 18%, transparent); color: var(--fm-accent, var(--s1)); font-weight: 650; }
   .fm-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
   @media (max-width: 1100px) { .fm-kpis { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 600px) { .fm-kpis { grid-template-columns: repeat(2, 1fr); } }
@@ -5704,7 +5707,7 @@ window.__salesActSetData = function(newData){
     var rev = c.site + c.mp + c.b2b;
     return {
       site: c.site, mp: c.mp, b2b: c.b2b,
-      retRate: safeDiv(c.returns, rev), actRate: safeDiv(c.activation, rev), mpFeeRate: safeDiv(c.mpFees, c.mp),
+      retRate: safeDiv(c.returns, rev), actRate: safeDiv(c.activation, rev), actAbs: c.activation, actMode: "pct", mpFeeRate: safeDiv(c.mpFees, c.mp),
       acqRate: safeDiv(c.acquiring, c.site), bankRate: safeDiv(c.bank, rev), packRate: safeDiv(c.packaging, rev), delivRate: safeDiv(c.delivery, c.site),
       fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed,
       siteVat: 0.05, siteUsn: 0.01, mpTaxRate: safeDiv(c.mpTax, c.mp), interest: c.interest, taxesFixed: c.taxesFixed,
@@ -5715,7 +5718,8 @@ window.__salesActSetData = function(newData){
   function compute(x){
     var rev = x.site + x.mp + x.b2b;
     var returns = rev * x.retRate, netRev = rev - returns;
-    var act = rev * x.actRate, mpFees = x.mp * x.mpFeeRate, acq = x.site * x.acqRate, bank = rev * x.bankRate, pack = rev * x.packRate, deliv = x.site * x.delivRate;
+    var actIsAbs = x.actMode === "abs";
+    var act = actIsAbs ? x.actAbs : rev * x.actRate, mpFees = x.mp * x.mpFeeRate, acq = x.site * x.acqRate, bank = rev * x.bankRate, pack = rev * x.packRate, deliv = x.site * x.delivRate;
     var variable = act + mpFees + acq + bank + pack + deliv;
     var margin = netRev - variable;
     var fixed = x.fot + x.marketing + x.otherFixed;
@@ -5727,8 +5731,8 @@ window.__salesActSetData = function(newData){
     var after = net - fin;
     // точка безубыточности по выручке при той же структуре каналов
     var ws = safeDiv(x.site, rev), wm = safeDiv(x.mp, rev);
-    var contrib = 1 - x.retRate - x.actRate - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
-    var be = contrib > 0.01 ? (fixed + x.interest + x.taxesFixed) / contrib : null;
+    var contrib = 1 - x.retRate - (actIsAbs ? 0 : x.actRate) - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
+    var be = contrib > 0.01 ? (fixed + (actIsAbs ? x.actAbs : 0) + x.interest + x.taxesFixed) / contrib : null;
     return { rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
       variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fixed: fixed, op: op, opPct: safeDiv(op, netRev),
       siteTax: siteTax, mpTax: mpTax, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
@@ -5739,7 +5743,7 @@ window.__salesActSetData = function(newData){
     { key: "rev", title: "Выручка", tag: "₽ в месяц", accent: "var(--s1)", items: [
       ["site", "Сайт (МСК + СПБ)", "money"], ["mp", "Маркетплейсы", "money"], ["b2b", "B2B", "money"] ] },
     { key: "var", title: "Переменные расходы", tag: "% от выручки", accent: "var(--s2)", items: [
-      ["retRate", "Возвраты, % от выручки", "pct"], ["actRate", "Себестоимость (активации), % от выручки", "pct"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
+      ["retRate", "Возвраты, % от выручки", "pct"], ["act", "Себестоимость (активации)", "act"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
       ["acqRate", "Эквайринг, % от выручки сайта", "pct"], ["bankRate", "Банковские комиссии, % от выручки", "pct"], ["packRate", "Упаковка и вложения, % от выручки", "pct"], ["delivRate", "Доставка, % от выручки сайта", "pct"] ] },
     { key: "fix", title: "Постоянные расходы", tag: "₽ в месяц", accent: "var(--s4)", items: [
       ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["otherFixed", "Прочие постоянные (связь, сервисы, офис, админ.)", "money"] ] },
@@ -5769,7 +5773,7 @@ window.__salesActSetData = function(newData){
     applyOverrides();
     var note = root.querySelector("#fmBaseNote");
     var lbl = ms.length === 1 ? mlabel(ms[0]) : "средний месяц за " + mlabel(ms[0]) + " – " + mlabel(ms[ms.length-1]);
-    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %.";
+    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %. Себестоимость (активации) можно задать и фиксированной суммой, как в ОПиУ — по факту оплат партнёрам.";
     return true;
   }
   function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
@@ -5789,15 +5793,24 @@ window.__salesActSetData = function(newData){
     sel.hidden = state.basePreset !== "month";
     if (state.baseMonth) sel.value = state.baseMonth;
   }
+  var ACT_TOGGLE = '<span class="fm-mode"><button type="button" data-actmode="pct">% от выручки</button><button type="button" data-actmode="abs">₽ в месяц</button></span>';
   function ctlHtml(g, it){
-    var key = it[0], kind = it[2], v = state.inputs[key], b = base[key];
+    var key = it[0], kind = it[2], label = it[1];
+    if (kind === "act"){
+      // себестоимость: либо % от выручки, либо фиксированная сумма (факт оплат партнёрам за месяц) —
+      // активируют сертификаты с задержкой до 2 лет, поэтому в ОПиУ берётся факт оплат, а не доля от продаж
+      var abs = state.inputs.actMode === "abs";
+      key = abs ? "actAbs" : "actRate"; kind = abs ? "money" : "pct";
+      label = "Себестоимость (активации), " + (abs ? "₽ в месяц" : "% от выручки") + " " + ACT_TOGGLE.replace('data-actmode="' + (abs ? "abs" : "pct") + '"', 'data-actmode="' + (abs ? "abs" : "pct") + '" class="on"');
+    }
+    var v = state.inputs[key], b = base[key];
     var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
     var max = kind === "pct" ? Math.max(0.6, Math.min(1, b * 3 || 0.1)) : Math.max(b * 2.5, 100000);
     var step = kind === "pct" ? 0.001 : (max > 5e6 ? 50000 : 10000);
     var d = b ? (v - b) / Math.abs(b) : 0;
     var dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
     return '<div class="fm-ctl' + (changed ? " changed" : "") + '" data-key="' + key + '" data-kind="' + kind + '">' +
-      '<div class="lbl">' + it[1] + '</div>' +
+      '<div class="lbl">' + label + '</div>' +
       '<div class="val"><input type="text" class="num-in" value="' + (kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU")) + '"><span class="unit">' + (kind === "pct" ? "%" : "₽") + '</span></div>' +
       '<input type="range" min="0" max="' + max + '" step="' + step + '" value="' + v + '">' +
       '<div class="base"><span>база: ' + (kind === "pct" ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "") + '</div>' +
@@ -5877,7 +5890,9 @@ window.__salesActSetData = function(newData){
       ["Сайт +10 %", { site: x.site * 1.1 }, "выручка сайта +" + fmtR(x.site * 0.1)],
       ["Маркетплейсы +10 %", { mp: x.mp * 1.1 }, "выручка МП +" + fmtR(x.mp * 0.1)],
       ["B2B +500 000 ₽", { b2b: x.b2b + 500000 }, "при тех же % расходов"],
-      ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))],
+      (x.actMode === "abs"
+        ? ["Активации −10 %", { actAbs: x.actAbs * 0.9 }, "оплаты партнёрам −" + fmtR(x.actAbs * 0.1) + " в месяц"]
+        : ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))]),
       ["Комиссии МП −5 п.п.", { mpFeeRate: Math.max(0, x.mpFeeRate - 0.05) }, fmtP(x.mpFeeRate) + " → " + fmtP(Math.max(0, x.mpFeeRate - 0.05))],
       ["Маркетинг −20 %", { marketing: x.marketing * 0.8 }, "−" + fmtR(x.marketing * 0.2) + " в месяц"],
       ["ФОТ −10 %", { fot: x.fot * 0.9 }, "−" + fmtR(x.fot * 0.1) + " в месяц"],
@@ -5932,6 +5947,12 @@ window.__salesActSetData = function(newData){
     renderResults(); save();
   });
   controls.addEventListener("click", function(e){
+    var mt = e.target.closest("[data-actmode]");
+    if (mt){
+      state.inputs.actMode = mt.dataset.actmode;
+      if (state.inputs.actMode === base.actMode) delete state.overrides.actMode; else state.overrides.actMode = state.inputs.actMode;
+      save(); renderAll(); return;
+    }
     var rs = e.target.closest("[data-reset]"); if (!rs) return;
     var key = rs.dataset.reset; state.inputs[key] = base[key]; delete state.overrides[key];
     var ctl = controls.querySelector('.fm-ctl[data-key="' + key + '"]');
