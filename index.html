@@ -5699,19 +5699,28 @@ window.__salesActSetData = function(newData){
   var DELIV = ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"];
   var MKT = ["Закупка рекламы","Email рассылка","Сервисы маркетинговые","Подрядчики маркетинговые","Съёмки","Монтаж"];
   var MPFEES = ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"];
+  // постоянные расходы кроме ФОТ и маркетинга — три блока: регулярные сервисы и связь, офис, и редкие/разовые
+  // статьи, которые в большинстве месяцев равны нулю
+  var COMM = ["Телефония","СМС","Сервисы разработки (вкл. сервер)","Сервисы административные"];
+  var OFFICE = ["Аренда офиса Мск","Аренда и содержание офиса","Расходы офиса","Найм сотрудников","Подарки команде"];
+  var REG = "1% за регистрацию";
   function decompose(m){
     var rb = m.revenue_breakdown || [];
     function r(i){ return rb[i] ? rb[i].value : 0; }
     var d = m.direct_breakdown || [], ind = m.indirect_breakdown || [], adm = m.admin_breakdown || [], tx = m.taxes_breakdown || [];
     var pers = m.personnel_breakdown || [], pc = m.product_creation_breakdown || [];
     var otherItems = ind.filter(function(x){ return DELIV.indexOf(x.name) < 0 && MKT.indexOf(x.name) < 0; })
-      .concat(adm).concat([{ name: "Сервисы разработки (вкл. сервер)", value: m.dev_services || 0 }]);
+      .concat(adm.filter(function(x){ return x.name !== REG; })).concat([{ name: "Сервисы разработки (вкл. сервер)", value: m.dev_services || 0 }]);
+    var commItems = otherItems.filter(function(x){ return COMM.indexOf(x.name) >= 0; });
+    var officeItems = otherItems.filter(function(x){ return OFFICE.indexOf(x.name) >= 0; });
+    var rareItems = otherItems.filter(function(x){ return COMM.indexOf(x.name) < 0 && OFFICE.indexOf(x.name) < 0; });
     var mpItems = rb.slice(2, 10).map(function(x){ return { name: x.name.replace(/^Выручка /, "").replace(/\s+/g, " "), value: x.value }; });
     return {
       site: r(0) + r(1), mp: r(2)+r(3)+r(4)+r(5)+r(6)+r(7)+r(8)+r(9), b2b: r(10),
       returns: pick(d, "Возвраты"), activation: pick(d, "Активация"),
       mpFees: sumPick(d, MPFEES), acquiring: pick(d, "Эквайринговая комиссия"), bank: pick(d, "Банковские комиссии"), packaging: pick(d, "Создание продукта"),
-      delivery: sumPick(ind, DELIV), marketing: sumPick(ind, MKT), fot: m.personnel_total || 0, otherFixed: sumItems(otherItems),
+      delivery: sumPick(ind, DELIV), marketing: sumPick(ind, MKT), fot: m.personnel_total || 0,
+      comm: sumItems(commItems), office: sumItems(officeItems), rare: sumItems(rareItems), reg: Math.abs(pick(adm, REG)),
       interest: m.interest || 0, mpTax: sumPick(tx, ["НДС по маркетплейсам","УСН по маркетплейсам"]), loan: m.loan_principal || 0, dividends: m.dividends || 0,
       children: {
         site: [{ name: "Сайт МСК", value: r(0) }, { name: "Сайт СПБ", value: r(1) }],
@@ -5721,7 +5730,9 @@ window.__salesActSetData = function(newData){
         deliv: DELIV.map(function(n){ return { name: n, value: pick(ind, n) }; }),
         fot: pers.map(function(x){ return { name: x.name, value: x.value }; }),
         marketing: MKT.map(function(n){ return { name: n, value: pick(ind, n) }; }),
-        otherFixed: otherItems.map(function(x){ return { name: x.name, value: x.value }; })
+        comm: commItems.map(function(x){ return { name: x.name, value: x.value }; }),
+        office: officeItems.map(function(x){ return { name: x.name, value: x.value }; }),
+        rare: rareItems.map(function(x){ return { name: x.name, value: x.value }; })
       }
     };
   }
@@ -5741,10 +5752,11 @@ window.__salesActSetData = function(newData){
   var DUALS = {
     ret: { baseOf: "rev", src: "returns" }, act: { baseOf: "rev", src: "activation" }, mpFee: { baseOf: "mp", src: "mpFees" },
     acq: { baseOf: "site", src: "acquiring" }, bank: { baseOf: "rev", src: "bank" }, pack: { baseOf: "rev", src: "packaging" }, deliv: { baseOf: "site", src: "delivery" },
-    siteVat: { baseOf: "site", fixedRate: 0.05 }, siteUsn: { baseOf: "site", fixedRate: 0.01 }, mpTax: { baseOf: "mp", src: "mpTax" }
+    siteVat: { baseOf: "site", fixedRate: 0.05 }, siteUsn: { baseOf: "site", fixedRate: 0.01 }, mpTax: { baseOf: "mp", src: "mpTax" },
+    reg: { baseOf: "rev", src: "reg" }
   };
   var ABS_BY_DEFAULT = { ret: 1, act: 1 };
-  var CHILD_OF = { site: "site", mp: "mp", mpFee: "mpFee", pack: "pack", deliv: "deliv", fot: "fot", marketing: "marketing", otherFixed: "otherFixed" };
+  var CHILD_OF = { site: "site", mp: "mp", mpFee: "mpFee", pack: "pack", deliv: "deliv", fot: "fot", marketing: "marketing", comm: "comm", office: "office", rare: "rare" };
   var BASE_LABEL = { rev: "от выручки", site: "от выручки сайта", mp: "от выручки МП" };
   var GROUPS = [
     { key: "rev", title: "Выручка", tag: "₽ в месяц", accent: "var(--s1)", items: [
@@ -5753,9 +5765,10 @@ window.__salesActSetData = function(newData){
       ["ret", "Возвраты", "dual"], ["act", "Себестоимость (активации)", "dual"], ["mpFee", "Комиссии и логистика МП", "dual"],
       ["acq", "Эквайринг", "dual"], ["bank", "Банковские комиссии", "dual"], ["pack", "Упаковка и вложения", "dual"], ["deliv", "Доставка", "dual"] ] },
     { key: "fix", title: "Постоянные расходы", tag: "₽ в месяц", accent: "var(--s4)", items: [
-      ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["otherFixed", "Прочие постоянные (связь, сервисы, офис, админ.)", "money"] ] },
+      ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["comm", "Связь и сервисы", "money"],
+      ["office", "Офис и администрирование", "money"], ["rare", "Редкие и разовые (обычно 0)", "money"] ] },
     { key: "tax", title: "Налоги и финансы", tag: "% или ₽", accent: "#8b5cf6", items: [
-      ["siteVat", "НДС", "dual"], ["siteUsn", "УСН", "dual"], ["mpTax", "Налоги по маркетплейсам", "dual"],
+      ["siteVat", "НДС", "dual"], ["siteUsn", "УСН", "dual"], ["mpTax", "Налоги по маркетплейсам", "dual"], ["reg", "1 % за регистрацию", "dual"],
       ["interest", "Проценты по кредитам, ₽", "money"], ["loan", "Тело кредита, ₽", "money"], ["dividends", "Дивиденды, ₽", "money"] ] }
   ];
   var LEVER_KIND = {}; GROUPS.forEach(function(g){ g.items.forEach(function(it){ LEVER_KIND[it[0]] = it[2]; }); });
@@ -5763,7 +5776,7 @@ window.__salesActSetData = function(newData){
   // ---- база → входы модели ----
   function baseInputs(c){
     var rev = c.site + c.mp + c.b2b, bases = { rev: rev, site: c.site, mp: c.mp };
-    var x = { site: c.site, mp: c.mp, b2b: c.b2b, fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed, interest: c.interest, loan: c.loan, dividends: c.dividends, children: {} };
+    var x = { site: c.site, mp: c.mp, b2b: c.b2b, fot: c.fot, marketing: c.marketing, comm: c.comm, office: c.office, rare: c.rare, interest: c.interest, loan: c.loan, dividends: c.dividends, children: {} };
     Object.keys(DUALS).forEach(function(k){
       var dd = DUALS[k], abs = dd.src ? c[dd.src] : dd.fixedRate * bases[dd.baseOf];
       x[k + "Abs"] = abs;
@@ -5792,11 +5805,11 @@ window.__salesActSetData = function(newData){
     var act = dual("act"), mpFees = dual("mpFee"), acq = dual("acq"), bank = dual("bank"), pack = dual("pack"), deliv = dual("deliv");
     var variable = act + mpFees + acq + bank + pack + deliv;
     var margin = netRev - variable;
-    var fot = amount(x, "fot"), marketing = amount(x, "marketing"), otherFixed = amount(x, "otherFixed");
-    var fixed = fot + marketing + otherFixed;
+    var fot = amount(x, "fot"), marketing = amount(x, "marketing"), comm = amount(x, "comm"), office = amount(x, "office"), rare = amount(x, "rare");
+    var fixed = fot + marketing + comm + office + rare;
     var op = margin - fixed;
-    var siteTax = dual("siteVat") + dual("siteUsn"), mpTax = dual("mpTax");
-    var taxes = siteTax + mpTax + x.interest;
+    var siteTax = dual("siteVat") + dual("siteUsn"), mpTax = dual("mpTax"), reg = dual("reg");
+    var taxes = siteTax + mpTax + reg + x.interest;
     var net = op - taxes;
     var fin = x.loan + x.dividends, after = net - fin;
     // точка безубыточности при той же структуре каналов: рычаги в режиме «₽» — как постоянные
@@ -5804,8 +5817,8 @@ window.__salesActSetData = function(newData){
     Object.keys(DUALS).forEach(function(k){ if (x[k + "Mode"] === "abs") fixedAll += amount(x, k); else contrib -= w[DUALS[k].baseOf] * x[k + "Rate"]; });
     var be = contrib > 0.01 ? fixedAll / contrib : null;
     return { site: site, mp: mp, b2b: b2b, rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
-      variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fot: fot, marketing: marketing, otherFixed: otherFixed, fixed: fixed,
-      op: op, opPct: safeDiv(op, netRev), siteTax: siteTax, mpTax: mpTax, interest: x.interest, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
+      variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fot: fot, marketing: marketing, comm: comm, office: office, rare: rare, fixed: fixed,
+      op: op, opPct: safeDiv(op, netRev), siteTax: siteTax, mpTax: mpTax, reg: reg, interest: x.interest, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
   }
 
   // ---- состояние: база + переопределения пользователя ----
@@ -5971,13 +5984,13 @@ window.__salesActSetData = function(newData){
       ["", "− Возвраты", "returns"], ["t", "Чистая выручка", "netRev"],
       ["t", "Переменные расходы", "variable"], ["sub", "Себестоимость (активации)", "act"], ["sub", "Комиссии и логистика МП", "mpFees"], ["sub", "Эквайринг", "acq"], ["sub", "Банковские комиссии", "bank"], ["sub", "Упаковка и вложения", "pack"], ["sub", "Доставка", "deliv"],
       ["t", "Маржинальная прибыль", "margin"], ["p", "Рентабельность по марже", "marginPct", true],
-      ["t", "Постоянные расходы", "fixed"], ["sub", "ФОТ", "fot"], ["sub", "Маркетинг", "marketing"], ["sub", "Прочие постоянные", "otherFixed"],
+      ["t", "Постоянные расходы", "fixed"], ["sub", "ФОТ", "fot"], ["sub", "Маркетинг", "marketing"], ["sub", "Связь и сервисы", "comm"], ["sub", "Офис и администрирование", "office"], ["sub", "Редкие и разовые", "rare"],
       ["t", "Операционная прибыль", "op"], ["p", "Рентабельность операционная", "opPct", true],
-      ["t", "Проценты и налоги", "taxes"], ["sub", "НДС и УСН по сайту", "siteTax"], ["sub", "Налоги по маркетплейсам", "mpTax"], ["sub", "Проценты по кредитам", "interest"],
+      ["t", "Проценты и налоги", "taxes"], ["sub", "НДС и УСН по сайту", "siteTax"], ["sub", "Налоги по маркетплейсам", "mpTax"], ["sub", "1 % за регистрацию", "reg"], ["sub", "Проценты по кредитам", "interest"],
       ["t", "Чистая прибыль", "net"], ["p", "Рентабельность по чистой прибыли", "netPct", true],
       ["t", "Тело кредита и дивиденды", "fin"], ["t", "Остаток после фин. расходов", "after"]
     ];
-    var COST = /Возвраты|расходы|Проценты и налоги|Тело кредита|Себестоимость|Комиссии|Эквайринг|Упаковка|Доставка|ФОТ|Маркетинг$|Прочие|НДС|Налоги по|Проценты по/;
+    var COST = /Возвраты|расходы|Проценты и налоги|Тело кредита|Себестоимость|Комиссии|Эквайринг|Упаковка|Доставка|ФОТ|Маркетинг$|Связь|Офис|Редкие|НДС|Налоги по|1 %|Проценты по/;
     root.querySelector("#fmTableBody").innerHTML = rows.map(function(r){
       var v = res[r[2]], b = bres[r[2]], isPct = !!r[3], d = v - b;
       var good = COST.test(r[1]) ? d < -0.5 : d > 0.5, bad = COST.test(r[1]) ? d > 0.5 : d < -0.5;
