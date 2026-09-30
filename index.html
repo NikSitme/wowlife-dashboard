@@ -6079,20 +6079,18 @@ window.__salesActSetData = function(newData){
       });
     });
   }
-  function kpi(label, val, baseVal, sub){
-    var d = val - baseVal, cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "flat");
-    var dtxt = fmtS(d) + (baseVal ? " (" + fmtSP(safeDiv(d, Math.abs(baseVal))) + ")" : "");
-    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + fmtR(val) + '</div>' +
-      '<div class="delta ' + cls + '">' + (cls === "flat" ? "как в базе" : dtxt + " к базе") + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div>';
+  // плитки показывают только результат модели; сравнение с базой — в таблице ниже
+  function kpi(label, val, sub){
+    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + fmtR(val) + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div>';
   }
   function renderKpis(res, bres){
     root.querySelector("#fmKpis").innerHTML =
-      kpi("Выручка", res.rev, bres.rev) +
-      kpi("Маржинальная прибыль", res.margin, bres.margin, "рентабельность " + fmtP(res.marginPct) + " (база " + fmtP(bres.marginPct) + ")") +
-      kpi("Операционная прибыль", res.op, bres.op, "рентабельность " + fmtP(res.opPct) + " (база " + fmtP(bres.opPct) + ")") +
-      kpi("Чистая прибыль", res.net, bres.net, "рентабельность " + fmtP(res.netPct) + " (база " + fmtP(bres.netPct) + ")") +
-      kpi("После кредита и дивидендов", res.after, bres.after) +
-      (res.be !== null && bres.be !== null ? kpi("Точка безубыточности", res.be, bres.be, "выручка в месяц, при которой чистая прибыль = 0")
+      kpi("Выручка", res.rev) +
+      kpi("Маржинальная прибыль", res.margin, "рентабельность " + fmtP(res.marginPct)) +
+      kpi("Операционная прибыль", res.op, "рентабельность " + fmtP(res.opPct)) +
+      kpi("Чистая прибыль", res.net, "рентабельность " + fmtP(res.netPct)) +
+      kpi("После кредита и дивидендов", res.after) +
+      (res.be !== null ? kpi("Точка безубыточности", res.be, "выручка в месяц, при которой чистая прибыль = 0")
         : '<div class="kpi"><div class="lbl">Точка безубыточности</div><div class="val">—</div><div class="sub">переменные расходы съедают всю выручку</div></div>');
   }
   function renderTable(res, bres){
