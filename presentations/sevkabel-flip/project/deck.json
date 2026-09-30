@@ -1,0 +1,60 @@
+{
+ "v": 4,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-09-30T19:07:30Z"
+ },
+ "lists": "css",
+ "title": "Флиппинг 3к у Севкабеля",
+ "order": [
+  "cover",
+  "deal",
+  "location",
+  "legenda",
+  "gap",
+  "market",
+  "object",
+  "smeta",
+  "waterfall",
+  "returns",
+  "timeline",
+  "sensitivity",
+  "breakeven",
+  "risks",
+  "structure"
+ ],
+ "cover": "cover",
+ "sections": {
+  "s1": {
+   "description": "Суть предложения",
+   "start": "cover"
+  },
+  "s2": {
+   "description": "Локация и соседний ЖК LEGENDA",
+   "start": "location"
+  },
+  "s3": {
+   "description": "Анализ рынка, объект и смета",
+   "start": "market"
+  },
+  "s4": {
+   "description": "Финансовая модель, доходность и сроки",
+   "start": "waterfall"
+  },
+  "s5": {
+   "description": "Чувствительность, риски и структура сделки",
+   "start": "sensitivity"
+  }
+ },
+ "faces": {
+  "playfair-display": {
+   "family": "Playfair Display",
+   "href": "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
+  },
+  "manrope": {
+   "family": "Manrope",
+   "href": "https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap"
+  }
+ },
+ "designSystems": []
+}
