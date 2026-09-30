@@ -5756,47 +5756,7 @@ window.__salesActSetData = function(newData){
 
   // overrides — только те рычаги, которые двигал пользователь; остальные всегда равны базе,
   // поэтому смена базы или обновление данных не оставляет «хвостов» от старых значений
-  var state = { basePreset: "prev", baseMonth: null, bddsMonth: null, overrides: {}, inputs: null };
-  // ---- база «План БДДС»: план движения денег из книги БДДС (лист «реестр»), свёрнутый по месяцам ----
-  var BDDS = null;
-  window.__finmodelSetBdds = function(d){ BDDS = d || null; if (state.basePreset === "bdds"){ rebuildBase(true); renderAll(); } else if (inited) renderBaseBar(); };
-  // статьи БДДС → компоненты модели (в книге встречаются старые и новые названия — перечислены оба варианта)
-  var BDDS_MAP = {
-    site: ["Тинькофф эквайринг","СБП","Перевод с Далли","Выручка с Далли","касса Офис","РС Тинькофф","Касса","Альфа","Наличные Мск","Карта Сбер","Выручка СДЭК","Выручка 5Post","Перевод СДЭК","Перевод 5Post"],
-    mpTransfers: ["Перевод с Озона","Перевод с ВБ","Перевод с ВБ цифровой","Перевод с ЯМаркета","Перевод с Flowwow"],
-    mpGross: ["Выручка с Озона","Выручка с ВБ","Выручка с ВБ цифровой","Выручка с ЯМаркета","Выручка с Flowwow"],
-    b2b: ["B2B выручка"],
-    returns: ["Возвраты"], activation: ["Активация","Активации"],
-    acquiring: ["Эквайринговая комиссия"], bank: ["Банковские комиссии","РКО"], packaging: ["Создание продукта"],
-    delivery: ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"],
-    fot: ["ФОТ отдела продукта","ФОТ Маркетинга","ФОТ ОЗ:","ФОТ ОП","ФОТ отдела активации","Менеджер маркетплейсов","Менеджер м-плейсов","ФОТ разработки","ФОТ Административный"],
-    marketing: ["Закупка рекламы","Съёмки","Монтаж","Подрядчики маркетинговые","Email рассылка","Сервисы маркетинговые"],
-    otherFixed: ["Сервисы продукта","Оборудование","Открытие нового города","Консалтинг","Телефония","СМС","Менеджер B2B","Подрядчики B2B","Прочие расходы B2B","Расходы м-плесов","Упаковка м-плейсы","Самовыкупы м-плейсы","Реклама м-плейсы","Сервисы разработки","Аренда и содержание офиса","Аренда офиса","Аренда офиса Мск","Аренда офиса Москва","Найм сотрудников","Расходы офиса","Сервисы административные","Подарки команде","Подарки партнерам","Прочие административные расходы"],
-    interest: ["Проценты по кредитам и займам","Оплата % по кредиту"],
-    taxesFixed: ["Налоги и пошлины","Налоги","1% за регистрацию","Страховые взносы ИП","Налог на прибыль (доход)","Налог на добавленную стоимость","НДС"],
-    loan: ["Тело кредита","Оплата тела кредита"], dividends: ["Вывод дивидендов","Дивиденды Сергей"]
-  };
-  function bddsInputs(ym){
-    var mo = (BDDS && BDDS.months[ym]) || {};
-    function sumOf(names){ return names.reduce(function(a, n){ return a + Math.abs(mo[n] || 0); }, 0); }
-    var mpT = sumOf(BDDS_MAP.mpTransfers), mp = mpT > 0 ? mpT : sumOf(BDDS_MAP.mpGross);
-    var c = { site: sumOf(BDDS_MAP.site), mp: mp, b2b: sumOf(BDDS_MAP.b2b), returns: sumOf(BDDS_MAP.returns), activation: sumOf(BDDS_MAP.activation),
-      acquiring: sumOf(BDDS_MAP.acquiring), bank: sumOf(BDDS_MAP.bank), packaging: sumOf(BDDS_MAP.packaging), delivery: sumOf(BDDS_MAP.delivery),
-      fot: sumOf(BDDS_MAP.fot), marketing: sumOf(BDDS_MAP.marketing), otherFixed: sumOf(BDDS_MAP.otherFixed), interest: sumOf(BDDS_MAP.interest),
-      taxesFixed: sumOf(BDDS_MAP.taxesFixed), loan: sumOf(BDDS_MAP.loan), dividends: sumOf(BDDS_MAP.dividends) };
-    var rev = c.site + c.mp + c.b2b;
-    return {
-      site: c.site, mp: c.mp, b2b: c.b2b,
-      retRate: safeDiv(c.returns, rev), retAbs: c.returns, retMode: "abs",
-      actRate: safeDiv(c.activation, rev), actAbs: c.activation, actMode: "abs",
-      mpFeeRate: 0, // переводы с площадок в БДДС уже за вычетом комиссий
-      acqRate: safeDiv(c.acquiring, c.site), bankRate: safeDiv(c.bank, rev), packRate: safeDiv(c.packaging, rev), delivRate: safeDiv(c.delivery, c.site),
-      fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed,
-      siteVat: 0, siteUsn: 0, mpTaxRate: 0, // налоги в БДДС — суммы платежей, они целиком в «Налоги и пошлины»
-      interest: c.interest, taxesFixed: c.taxesFixed, loan: c.loan, dividends: c.dividends
-    };
-  }
-  function bddsLabel(ym){ return MONTHS_RU[parseInt(ym.slice(5,7),10)-1] + " " + ym.slice(2,4); }
+  var state = { basePreset: "prev", baseMonth: null, overrides: {}, inputs: null };
   function applyOverrides(){ state.inputs = JSON.parse(JSON.stringify(base)); Object.keys(state.overrides || {}).forEach(function(k){ if (k in base) state.inputs[k] = state.overrides[k]; }); }
   var base = null, baseC = null;
 
@@ -5809,52 +5769,31 @@ window.__salesActSetData = function(newData){
     return full.slice(-1);
   }
   function rebuildBase(keepInputs){
-    var note = root.querySelector("#fmBaseNote");
-    if (state.basePreset === "bdds"){
-      if (!BDDS || !BDDS.keys.length){ state.basePreset = "prev"; }
-      else {
-        if (!state.bddsMonth || !BDDS.months[state.bddsMonth]) state.bddsMonth = BDDS.keys[BDDS.keys.length - 1];
-        baseC = null; base = bddsInputs(state.bddsMonth);
-        if (!keepInputs) state.overrides = {};
-        applyOverrides();
-        note.textContent = "База — план БДДС на " + bddsLabel(state.bddsMonth) + " (книга БДДС, лист «реестр»). Это движение денег, а не начисление: выручка сайта — поступления по эквайрингу, СБП, Далли и кассе; маркетплейсы — переводы с площадок уже за вычетом комиссий, поэтому «Комиссии МП» здесь 0 %; налоги — суммы платежей в строке «Налоги и пошлины». Возвраты и активации — суммами.";
-        return true;
-      }
-    }
     var ms = baseMonths(); if (!ms.length) return false;
     baseC = avgDecomp(ms); base = baseInputs(baseC);
     if (!keepInputs) state.overrides = {};
     applyOverrides();
+    var note = root.querySelector("#fmBaseNote");
     var lbl = ms.length === 1 ? mlabel(ms[0]) : "средний месяц за " + mlabel(ms[0]) + " – " + mlabel(ms[ms.length-1]);
     note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %. Возвраты и себестоимость (активации) по умолчанию заданы суммой в месяц, как в ОПиУ — по факту; переключатель у рычага переводит их в % от выручки.";
     return true;
   }
   function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && s.overrides) state = { basePreset: s.basePreset || "prev", baseMonth: s.baseMonth || null, bddsMonth: s.bddsMonth || null, overrides: s.overrides, inputs: null }; } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && s.overrides) state = { basePreset: s.basePreset || "prev", baseMonth: s.baseMonth || null, overrides: s.overrides, inputs: null }; } catch (e) {} }
 
   // ---- рендер ----
-  var PRESETS = [["prev","Прошлый месяц"],["avg3","Средний за 3 мес"],["avg6","Средний за 6 мес"],["month","Выбрать месяц"],["bdds","План БДДС"]];
+  var PRESETS = [["prev","Прошлый месяц"],["avg3","Средний за 3 мес"],["avg6","Средний за 6 мес"],["month","Выбрать месяц"]];
   function renderBaseBar(){
     var box = root.querySelector("#fmBasePresets"); box.innerHTML = "";
     PRESETS.forEach(function(p){
       var b = document.createElement("button"); b.type = "button"; b.className = "chip" + (state.basePreset === p[0] ? " active" : ""); b.textContent = p[1];
-      if (p[0] === "bdds" && !(BDDS && BDDS.keys.length)){ b.disabled = true; b.title = "План БДДС появится после обновления данных"; b.style.opacity = "0.5"; }
-      b.addEventListener("click", function(){
-        state.basePreset = p[0];
-        if (p[0] === "month" && !state.baseMonth){ var d = data(); state.baseMonth = d[Math.max(0, d.length-2)].label; }
-        rebuildBase(false); save(); renderAll();
-      });
+      b.addEventListener("click", function(){ state.basePreset = p[0]; if (p[0] === "month" && !state.baseMonth){ var d = data(); state.baseMonth = d[Math.max(0, d.length-2)].label; } rebuildBase(false); save(); renderAll(); });
       box.appendChild(b);
     });
     var sel = root.querySelector("#fmBaseMonth"); sel.innerHTML = "";
-    if (state.basePreset === "bdds" && BDDS){
-      BDDS.keys.forEach(function(ym){ var o = document.createElement("option"); o.value = ym; o.textContent = "план " + bddsLabel(ym); sel.appendChild(o); });
-      sel.hidden = false; if (state.bddsMonth) sel.value = state.bddsMonth;
-    } else {
-      data().forEach(function(m){ var o = document.createElement("option"); o.value = m.label; o.textContent = mlabel(m); sel.appendChild(o); });
-      sel.hidden = state.basePreset !== "month";
-      if (state.baseMonth) sel.value = state.baseMonth;
-    }
+    data().forEach(function(m){ var o = document.createElement("option"); o.value = m.label; o.textContent = mlabel(m); sel.appendChild(o); });
+    sel.hidden = state.basePreset !== "month";
+    if (state.baseMonth) sel.value = state.baseMonth;
   }
   // рычаги с двумя режимами: % от выручки или фиксированная сумма в месяц (по умолчанию — сумма, как в ОПиУ:
   // возвраты и активации учитываются по факту, сертификаты активируют с задержкой до 2 лет)
@@ -6031,11 +5970,7 @@ window.__salesActSetData = function(newData){
     renderResults(); save();
   });
   root.querySelector("#fmReset").addEventListener("click", function(){ state.overrides = {}; applyOverrides(); save(); renderAll(); });
-  root.querySelector("#fmBaseMonth").addEventListener("change", function(e){
-    if (state.basePreset === "bdds") state.bddsMonth = e.target.value;
-    else { state.baseMonth = e.target.value; state.basePreset = "month"; }
-    rebuildBase(false); save(); renderAll();
-  });
+  root.querySelector("#fmBaseMonth").addEventListener("change", function(e){ state.baseMonth = e.target.value; state.basePreset = "month"; rebuildBase(false); save(); renderAll(); });
 
   var inited = false;
   function renderFinmodel(){
@@ -6083,7 +6018,6 @@ window.__salesActSetData = function(newData){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var FEED_ID = "1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA";
-  var BDDS_ID = "1yjPM9Zl8A3ddnnz5fAgVncUT1KcGXlECjV2eW4Pkg9I"; // книга БДДС (план движения денег по дням), лист «реестр»
   var CACHE_KEY = "wowlife-dashboard-cache-v1";
 
   // ---------- generic helpers ----------
@@ -6333,27 +6267,6 @@ window.__salesActSetData = function(newData){
       if (cur) tree[cur].push(b);
     });
     return tree;
-  }
-  // Лист «реестр» книги БДДС: дата, статья, сумма (план платежей и поступлений по дням).
-  // Сворачиваем в месяц × статья; итоговые строки («Выручка», «Расходы», «Сальдо…») остаются как есть —
-  // финмодель берёт только нужные ей статьи по именам.
-  function computeBdds(rows){
-    var months = {};
-    for (var i = 1; i < rows.length; i++){
-      var r = rows[i]; if (!r) continue;
-      var ds = String(r[0] || "").trim(), ym = null, m;
-      if ((m = ds.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/))) ym = m[3] + "-" + m[2].padStart(2, "0");
-      else if ((m = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) ym = m[1] + "-" + m[2].padStart(2, "0");
-      if (!ym) continue;
-      var name = String(r[1] || "").trim(); if (!name) continue;
-      var v = parseFloat(String(r[2] || "").replace(/[\s\u00a0]/g, "").replace(",", "."));
-      if (!v || !isFinite(v)) continue;
-      var mo = months[ym] || (months[ym] = {});
-      mo[name] = (mo[name] || 0) + v;
-    }
-    var keys = Object.keys(months).sort();
-    if (!keys.length) throw new Error("БДДС: лист «реестр» пуст или имеет другой формат");
-    return { months: months, keys: keys };
   }
   // Лист «Операции» книги-копии: дата зачисления, статья, сумма — свод операций «выгрузки» Адеска по дням.
   // Если листа нет, gviz молча отдаёт первый лист (Лист1) — там в первой колонке нет дат, и парсер вернёт ошибку.
@@ -6892,11 +6805,7 @@ window.__salesActSetData = function(newData){
       safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
       // лист «Операции» необязателен (нужен только для расчёта ОПиУ по дням) — его отсутствие не считаем ошибкой
       (async function(){ try { fetches.adeskOps = await fetchSheet(ADESK_ID, "Операции"); } catch (e) { fetches.adeskOps = null; } })(),
-      // реестр БДДС — для базы «План БДДС» в финмодели; его отсутствие тоже не считаем ошибкой
-      (async function(){ try { fetches.bdds = await fetchSheet(BDDS_ID, "реестр"); } catch (e) { fetches.bdds = null; } })(),
     ]);
-    var bddsData = null;
-    if (fetches.bdds){ try { bddsData = computeBdds(fetches.bdds); if (window.__finmodelSetBdds) window.__finmodelSetBdds(bddsData); } catch (e) { console.warn(e.message); } }
 
     // OПиУ
     if (fetches.adeskList1){
@@ -6956,7 +6865,6 @@ window.__salesActSetData = function(newData){
         var cache = loadCache() || {};
         if (opiuData) cache.opiu = opiuData;
         if (opiuTree){ cache.opiuTree = opiuTree; cache.ops = opsData || null; }
-        if (bddsData) cache.bdds = bddsData;
         if (saData) cache.salesact = saData;
         if (wsData){
           cache.sales = wsData.sales;
@@ -6988,7 +6896,6 @@ window.__salesActSetData = function(newData){
     try {
       if (cache.opiu) window.__opiuSetData(cache.opiu);
       if (cache.opiuTree && window.__opiuSetDaily) window.__opiuSetDaily(cache.ops || null, cache.opiuTree);
-      if (cache.bdds && window.__finmodelSetBdds) window.__finmodelSetBdds(cache.bdds);
       if (cache.salesact) window.__salesActSetData(cache.salesact);
       if (cache.sales && cache.activations && cache.partners) window.__wowSalesSetData(cache.sales, cache.activations, cache.partners);
       if (cache.kreditorka) window.__kreditorkaSetData(cache.kreditorka);
