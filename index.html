@@ -3499,6 +3499,19 @@ window.__salesActSetData = function(newData){
   .fm-sens .s .a.up { color: var(--good); } .fm-sens .s .a.down { color: var(--bad); }
   .fm-sens .s .m { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   #fmWater { display: block; width: 100%; height: auto; margin-top: 6px; }
+  .fm-exp { font: inherit; font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--fm-accent, var(--s1)); cursor: pointer; margin-left: 8px; vertical-align: 1px; }
+  .fm-kidnote { font-size: 10.5px; color: var(--text-muted); margin-left: 8px; }
+  .fm-kids { grid-column: 1 / -1; margin: 6px 0 2px 10px; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--fm-accent, var(--s1)) 35%, transparent); }
+  .fm-kid { display: grid; grid-template-columns: 1fr 120px; grid-template-areas: "lbl val" "sl sl" "base base"; gap: 1px 10px; padding: 5px 0; border-top: 1px dashed var(--border); }
+  .fm-kid:first-child { border-top: none; }
+  .fm-kid .klbl { grid-area: lbl; font-size: 11.5px; color: var(--text-secondary); align-self: center; }
+  .fm-kid.changed .klbl { color: var(--text-primary); font-weight: 650; }
+  .fm-kid .kval { grid-area: val; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .fm-kid .kval input { width: 100px; font: inherit; font-size: 11.5px; text-align: right; padding: 3px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .fm-kid .kval .unit { font-size: 10.5px; color: var(--text-muted); width: 14px; }
+  .fm-kid input[type=range] { grid-area: sl; width: 100%; height: 14px; accent-color: var(--fm-accent, var(--s1)); margin: 0; opacity: 0.85; }
+  .fm-kid .kbase { grid-area: base; font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .fm-kid .kbase .d { font-weight: 650; } .fm-kid .kbase .d.up { color: var(--good); } .fm-kid .kbase .d.down { color: var(--bad); }
 </style>
 
   <div class="card">
@@ -5661,105 +5674,153 @@ window.__salesActSetData = function(newData){
 <script>
 (function(){
   // ===== Финмодель: интерактивный прототип «меняю рычаг — вижу, что будет с прибылью» =====
-  // База — факт из ОПиУ Адеска (window.__opiuData). Все расходы разложены на рычаги:
-  // выручка по каналам (₽), переменные расходы (% от выручки канала), постоянные (₽/мес), налоги и финансы.
+  // База — факт из ОПиУ Адеска (window.__opiuData). Рычаги: выручка по каналам, переменные расходы
+  // (в % от выручки канала или суммой), постоянные, налоги и финансы. У большинства рычагов есть разбивка
+  // по статьям Адеска: редактируется и целое, и каждая статья (целое = сумма статей).
   var root = document.querySelector('[data-panel="finmodel"]');
   if (!root) return;
-  var STORE_KEY = "wowlife-finmodel-v1";
+  var STORE_KEY = "wowlife-finmodel-v2";
   function data(){ return window.__opiuData || []; }
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
   function sumPick(arr, names){ return names.reduce(function(a, n){ return a + pick(arr, n); }, 0); }
+  function sumItems(items){ return items.reduce(function(a, it){ return a + Math.abs(it.value); }, 0); }
+  function safeDiv(a, b){ return b ? a / b : 0; }
   function fmtR(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtN(n){ return Math.round(n).toLocaleString("ru-RU"); }
   function fmtS(n){ var s = Math.round(n).toLocaleString("ru-RU"); return (n > 0 ? "+" : "") + s + " ₽"; }
   function fmtP(x, d){ return (x * 100).toFixed(d === undefined ? 1 : d).replace(".", ",") + " %"; }
   function fmtSP(x){ return (x > 0 ? "+" : "") + (x * 100).toFixed(1).replace(".", ",") + " %"; }
+  function fmtPin(x){ return (x * 100).toFixed(1).replace(".", ","); }
   var MONTHS_RU = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
   function mlabel(m){ return MONTHS_RU[parseInt(m.label.slice(5,7),10)-1] + " " + m.label.slice(2,4); }
+  function parseNum(s){ return parseFloat(String(s).replace(/[\s ₽%]/g, "").replace(",", ".")); }
 
-  // ---- разложение одного месяца ОПиУ на компоненты модели ----
+  // ---- разложение месяца ОПиУ на компоненты модели + детализация по статьям ----
+  var DELIV = ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"];
+  var MKT = ["Закупка рекламы","Email рассылка","Сервисы маркетинговые","Подрядчики маркетинговые","Съёмки","Монтаж"];
+  var MPFEES = ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"];
   function decompose(m){
     var rb = m.revenue_breakdown || [];
     function r(i){ return rb[i] ? rb[i].value : 0; }
-    var site = r(0) + r(1), mp = r(2)+r(3)+r(4)+r(5)+r(6)+r(7)+r(8)+r(9), b2b = r(10);
-    var d = m.direct_breakdown, ind = m.indirect_breakdown, tx = m.taxes_breakdown;
-    var delivery = sumPick(ind, ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"]);
-    var marketing = sumPick(ind, ["Закупка рекламы","Email рассылка","Сервисы маркетинговые","Подрядчики маркетинговые","Съёмки","Монтаж"]);
+    var d = m.direct_breakdown || [], ind = m.indirect_breakdown || [], adm = m.admin_breakdown || [], tx = m.taxes_breakdown || [];
+    var pers = m.personnel_breakdown || [], pc = m.product_creation_breakdown || [];
+    var otherItems = ind.filter(function(x){ return DELIV.indexOf(x.name) < 0 && MKT.indexOf(x.name) < 0; })
+      .concat(adm).concat([{ name: "Сервисы разработки (вкл. сервер)", value: m.dev_services || 0 }]);
+    var mpItems = rb.slice(2, 10).map(function(x){ return { name: x.name.replace(/^Выручка /, "").replace(/\s+/g, " "), value: x.value }; });
     return {
-      site: site, mp: mp, b2b: b2b,
+      site: r(0) + r(1), mp: r(2)+r(3)+r(4)+r(5)+r(6)+r(7)+r(8)+r(9), b2b: r(10),
       returns: pick(d, "Возвраты"), activation: pick(d, "Активация"),
-      mpFees: sumPick(d, ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"]),
-      acquiring: pick(d, "Эквайринговая комиссия"), bank: pick(d, "Банковские комиссии"), packaging: pick(d, "Создание продукта"),
-      delivery: delivery, marketing: marketing, fot: m.personnel_total || 0,
-      otherFixed: (m.indirect_total || 0) - delivery - marketing + (m.admin_total || 0) + (m.dev_services || 0),
-      interest: m.interest || 0, taxesFixed: pick(tx, "Налоги и пошлины"),
-      mpTax: sumPick(tx, ["НДС по маркетплейсам","УСН по маркетплейсам"]),
-      loan: m.loan_principal || 0, dividends: m.dividends || 0
+      mpFees: sumPick(d, MPFEES), acquiring: pick(d, "Эквайринговая комиссия"), bank: pick(d, "Банковские комиссии"), packaging: pick(d, "Создание продукта"),
+      delivery: sumPick(ind, DELIV), marketing: sumPick(ind, MKT), fot: m.personnel_total || 0, otherFixed: sumItems(otherItems),
+      interest: m.interest || 0, mpTax: sumPick(tx, ["НДС по маркетплейсам","УСН по маркетплейсам"]), loan: m.loan_principal || 0, dividends: m.dividends || 0,
+      children: {
+        site: [{ name: "Сайт МСК", value: r(0) }, { name: "Сайт СПБ", value: r(1) }],
+        mp: mpItems,
+        mpFee: MPFEES.map(function(n){ return { name: n, value: pick(d, n) }; }),
+        pack: pc.map(function(x){ return { name: x.name, value: x.value }; }),
+        deliv: DELIV.map(function(n){ return { name: n, value: pick(ind, n) }; }),
+        fot: pers.map(function(x){ return { name: x.name, value: x.value }; }),
+        marketing: MKT.map(function(n){ return { name: n, value: pick(ind, n) }; }),
+        otherFixed: otherItems.map(function(x){ return { name: x.name, value: x.value }; })
+      }
     };
   }
   function avgDecomp(months){
-    var keys = Object.keys(decompose(months[0])), out = {};
-    keys.forEach(function(k){ out[k] = months.reduce(function(a, m){ return a + decompose(m)[k]; }, 0) / months.length; });
+    var ds = months.map(decompose), n = ds.length, out = { children: {} };
+    Object.keys(ds[0]).forEach(function(k){ if (k !== "children") out[k] = ds.reduce(function(a, x){ return a + x[k]; }, 0) / n; });
+    Object.keys(ds[0].children).forEach(function(ck){
+      var acc = {}, order = [];
+      ds.forEach(function(x){ (x.children[ck] || []).forEach(function(it){ if (!(it.name in acc)){ acc[it.name] = 0; order.push(it.name); } acc[it.name] += Math.abs(it.value) / n; }); });
+      out.children[ck] = order.map(function(nm){ return { name: nm, value: acc[nm] }; });
+    });
     return out;
-  }
-  // ---- база → входы модели ----
-  function safeDiv(a, b){ return b ? a / b : 0; }
-  function baseInputs(c){
-    var rev = c.site + c.mp + c.b2b;
-    return {
-      site: c.site, mp: c.mp, b2b: c.b2b,
-      retRate: safeDiv(c.returns, rev), retAbs: c.returns, retMode: "abs",
-      actRate: safeDiv(c.activation, rev), actAbs: c.activation, actMode: "abs", mpFeeRate: safeDiv(c.mpFees, c.mp),
-      acqRate: safeDiv(c.acquiring, c.site), bankRate: safeDiv(c.bank, rev), packRate: safeDiv(c.packaging, rev), delivRate: safeDiv(c.delivery, c.site),
-      fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed,
-      siteVat: 0.05, siteUsn: 0.01, mpTaxRate: safeDiv(c.mpTax, c.mp), interest: c.interest, taxesFixed: c.taxesFixed,
-      loan: c.loan, dividends: c.dividends
-    };
-  }
-  // ---- расчёт ОПиУ по входам ----
-  function compute(x){
-    var rev = x.site + x.mp + x.b2b;
-    var retIsAbs = x.retMode === "abs";
-    var returns = retIsAbs ? x.retAbs : rev * x.retRate, netRev = rev - returns;
-    var actIsAbs = x.actMode === "abs";
-    var act = actIsAbs ? x.actAbs : rev * x.actRate, mpFees = x.mp * x.mpFeeRate, acq = x.site * x.acqRate, bank = rev * x.bankRate, pack = rev * x.packRate, deliv = x.site * x.delivRate;
-    var variable = act + mpFees + acq + bank + pack + deliv;
-    var margin = netRev - variable;
-    var fixed = x.fot + x.marketing + x.otherFixed;
-    var op = margin - fixed;
-    var siteTax = x.site * (x.siteVat + x.siteUsn), mpTax = x.mp * x.mpTaxRate;
-    var taxes = siteTax + mpTax + x.interest + x.taxesFixed;
-    var net = op - taxes;
-    var fin = x.loan + x.dividends;
-    var after = net - fin;
-    // точка безубыточности по выручке при той же структуре каналов
-    var ws = safeDiv(x.site, rev), wm = safeDiv(x.mp, rev);
-    var contrib = 1 - (retIsAbs ? 0 : x.retRate) - (actIsAbs ? 0 : x.actRate) - x.bankRate - x.packRate - wm * x.mpFeeRate - ws * (x.acqRate + x.delivRate) - ws * (x.siteVat + x.siteUsn) - wm * x.mpTaxRate;
-    var be = contrib > 0.01 ? (fixed + (actIsAbs ? x.actAbs : 0) + (retIsAbs ? x.retAbs : 0) + x.interest + x.taxesFixed) / contrib : null;
-    return { rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
-      variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fixed: fixed, op: op, opPct: safeDiv(op, netRev),
-      siteTax: siteTax, mpTax: mpTax, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
   }
 
   // ---- описание рычагов ----
+  // dual — рычаг с двумя режимами: % от базы (rev/site/mp) или сумма в месяц
+  var DUALS = {
+    ret: { baseOf: "rev", src: "returns" }, act: { baseOf: "rev", src: "activation" }, mpFee: { baseOf: "mp", src: "mpFees" },
+    acq: { baseOf: "site", src: "acquiring" }, bank: { baseOf: "rev", src: "bank" }, pack: { baseOf: "rev", src: "packaging" }, deliv: { baseOf: "site", src: "delivery" },
+    siteVat: { baseOf: "site", fixedRate: 0.05 }, siteUsn: { baseOf: "site", fixedRate: 0.01 }, mpTax: { baseOf: "mp", src: "mpTax" }
+  };
+  var ABS_BY_DEFAULT = { ret: 1, act: 1 };
+  var CHILD_OF = { site: "site", mp: "mp", mpFee: "mpFee", pack: "pack", deliv: "deliv", fot: "fot", marketing: "marketing", otherFixed: "otherFixed" };
+  var BASE_LABEL = { rev: "от выручки", site: "от выручки сайта", mp: "от выручки МП" };
   var GROUPS = [
     { key: "rev", title: "Выручка", tag: "₽ в месяц", accent: "var(--s1)", items: [
       ["site", "Сайт (МСК + СПБ)", "money"], ["mp", "Маркетплейсы", "money"], ["b2b", "B2B", "money"] ] },
-    { key: "var", title: "Переменные расходы", tag: "% от выручки", accent: "var(--s2)", items: [
-      ["ret", "Возвраты", "dual"], ["act", "Себестоимость (активации)", "dual"], ["mpFeeRate", "Комиссии и логистика МП, % от выручки МП", "pct"],
-      ["acqRate", "Эквайринг, % от выручки сайта", "pct"], ["bankRate", "Банковские комиссии, % от выручки", "pct"], ["packRate", "Упаковка и вложения, % от выручки", "pct"], ["delivRate", "Доставка, % от выручки сайта", "pct"] ] },
+    { key: "var", title: "Переменные расходы", tag: "% от выручки или ₽", accent: "var(--s2)", items: [
+      ["ret", "Возвраты", "dual"], ["act", "Себестоимость (активации)", "dual"], ["mpFee", "Комиссии и логистика МП", "dual"],
+      ["acq", "Эквайринг", "dual"], ["bank", "Банковские комиссии", "dual"], ["pack", "Упаковка и вложения", "dual"], ["deliv", "Доставка", "dual"] ] },
     { key: "fix", title: "Постоянные расходы", tag: "₽ в месяц", accent: "var(--s4)", items: [
       ["fot", "ФОТ (все отделы)", "money"], ["marketing", "Маркетинг (реклама и продакшн)", "money"], ["otherFixed", "Прочие постоянные (связь, сервисы, офис, админ.)", "money"] ] },
-    { key: "tax", title: "Налоги и финансы", tag: "% и ₽", accent: "#8b5cf6", items: [
-      ["siteVat", "НДС, % от выручки сайта", "pct"], ["siteUsn", "УСН, % от выручки сайта", "pct"], ["mpTaxRate", "Налоги по маркетплейсам, % от выручки МП", "pct"],
-      ["interest", "Проценты по кредитам, ₽", "money"], ["taxesFixed", "Налоги и пошлины, ₽", "money"], ["loan", "Тело кредита, ₽", "money"], ["dividends", "Дивиденды, ₽", "money"] ] }
+    { key: "tax", title: "Налоги и финансы", tag: "% или ₽", accent: "#8b5cf6", items: [
+      ["siteVat", "НДС", "dual"], ["siteUsn", "УСН", "dual"], ["mpTax", "Налоги по маркетплейсам", "dual"],
+      ["interest", "Проценты по кредитам, ₽", "money"], ["loan", "Тело кредита, ₽", "money"], ["dividends", "Дивиденды, ₽", "money"] ] }
   ];
+  var LEVER_KIND = {}; GROUPS.forEach(function(g){ g.items.forEach(function(it){ LEVER_KIND[it[0]] = it[2]; }); });
 
-  // overrides — только те рычаги, которые двигал пользователь; остальные всегда равны базе,
-  // поэтому смена базы или обновление данных не оставляет «хвостов» от старых значений
-  var state = { basePreset: "prev", baseMonth: null, overrides: {}, inputs: null };
-  function applyOverrides(){ state.inputs = JSON.parse(JSON.stringify(base)); Object.keys(state.overrides || {}).forEach(function(k){ if (k in base) state.inputs[k] = state.overrides[k]; }); }
-  var base = null, baseC = null;
+  // ---- база → входы модели ----
+  function baseInputs(c){
+    var rev = c.site + c.mp + c.b2b, bases = { rev: rev, site: c.site, mp: c.mp };
+    var x = { site: c.site, mp: c.mp, b2b: c.b2b, fot: c.fot, marketing: c.marketing, otherFixed: c.otherFixed, interest: c.interest, loan: c.loan, dividends: c.dividends, children: {} };
+    Object.keys(DUALS).forEach(function(k){
+      var dd = DUALS[k], abs = dd.src ? c[dd.src] : dd.fixedRate * bases[dd.baseOf];
+      x[k + "Abs"] = abs;
+      x[k + "Rate"] = dd.fixedRate !== undefined ? dd.fixedRate : safeDiv(abs, bases[dd.baseOf]);
+      x[k + "Mode"] = ABS_BY_DEFAULT[k] ? "abs" : "pct";
+    });
+    Object.keys(c.children).forEach(function(ck){ x.children[ck] = {}; c.children[ck].forEach(function(it){ x.children[ck][it.name] = Math.abs(it.value); }); });
+    return x;
+  }
+  function childNames(x, key){ var ch = x.children[CHILD_OF[key]]; return ch ? Object.keys(ch) : []; }
+  function hasKids(x, key){ return !!CHILD_OF[key] && childNames(x, key).length > 0; }
+  function childSum(x, key){ var ch = x.children[CHILD_OF[key]] || {}; return Object.keys(ch).reduce(function(a, n){ return a + ch[n]; }, 0); }
+  // сумма рычага в рублях (для money-рычагов и dual в режиме «₽»): с разбивкой — всегда сумма статей
+  function amount(x, key){
+    if (hasKids(x, key)) return childSum(x, key);
+    return DUALS[key] ? x[key + "Abs"] : x[key];
+  }
+  function isAbs(x, key){ return !DUALS[key] || x[key + "Mode"] === "abs"; }
 
+  // ---- расчёт ОПиУ по входам ----
+  function compute(x){
+    var site = amount(x, "site"), mp = amount(x, "mp"), b2b = x.b2b, rev = site + mp + b2b;
+    var bases = { rev: rev, site: site, mp: mp };
+    function dual(k){ return x[k + "Mode"] === "abs" ? amount(x, k) : x[k + "Rate"] * bases[DUALS[k].baseOf]; }
+    var returns = dual("ret"), netRev = rev - returns;
+    var act = dual("act"), mpFees = dual("mpFee"), acq = dual("acq"), bank = dual("bank"), pack = dual("pack"), deliv = dual("deliv");
+    var variable = act + mpFees + acq + bank + pack + deliv;
+    var margin = netRev - variable;
+    var fot = amount(x, "fot"), marketing = amount(x, "marketing"), otherFixed = amount(x, "otherFixed");
+    var fixed = fot + marketing + otherFixed;
+    var op = margin - fixed;
+    var siteTax = dual("siteVat") + dual("siteUsn"), mpTax = dual("mpTax");
+    var taxes = siteTax + mpTax + x.interest;
+    var net = op - taxes;
+    var fin = x.loan + x.dividends, after = net - fin;
+    // точка безубыточности при той же структуре каналов: рычаги в режиме «₽» — как постоянные
+    var w = { rev: 1, site: safeDiv(site, rev), mp: safeDiv(mp, rev) }, contrib = 1, fixedAll = fixed + x.interest;
+    Object.keys(DUALS).forEach(function(k){ if (x[k + "Mode"] === "abs") fixedAll += amount(x, k); else contrib -= w[DUALS[k].baseOf] * x[k + "Rate"]; });
+    var be = contrib > 0.01 ? fixedAll / contrib : null;
+    return { site: site, mp: mp, b2b: b2b, rev: rev, returns: returns, netRev: netRev, act: act, mpFees: mpFees, acq: acq, bank: bank, pack: pack, deliv: deliv,
+      variable: variable, margin: margin, marginPct: safeDiv(margin, netRev), fot: fot, marketing: marketing, otherFixed: otherFixed, fixed: fixed,
+      op: op, opPct: safeDiv(op, netRev), siteTax: siteTax, mpTax: mpTax, interest: x.interest, taxes: taxes, net: net, netPct: safeDiv(net, netRev), fin: fin, after: after, be: be };
+  }
+
+  // ---- состояние: база + переопределения пользователя ----
+  // ov: только то, что двигал пользователь; ключи "site", "retRate", "retAbs", "retMode", "c:fot:ФОТ ОП" и т.п.
+  var state = { basePreset: "prev", baseMonth: null, ov: {} };
+  var base = null, inputs = null, expanded = {}, inited = false;
+  function cloneInputs(b){ var x = JSON.parse(JSON.stringify(b)); return x; }
+  function applyOverrides(){
+    inputs = cloneInputs(base);
+    Object.keys(state.ov).forEach(function(k){
+      var v = state.ov[k];
+      if (k.indexOf("c:") === 0){ var p = k.split(":"); var ch = inputs.children[p[1]]; if (ch && p[2] in ch) ch[p[2]] = v; }
+      else if (k in inputs) inputs[k] = v;
+    });
+  }
   function baseMonths(){
     var d = data(); if (!d.length) return [];
     if (state.basePreset === "month" && state.baseMonth){ var m = d.filter(function(x){ return x.label === state.baseMonth; }); if (m.length) return m; }
@@ -5768,18 +5829,41 @@ window.__salesActSetData = function(newData){
     if (state.basePreset === "avg6") return full.slice(-6);
     return full.slice(-1);
   }
-  function rebuildBase(keepInputs){
+  function rebuildBase(keepOv){
     var ms = baseMonths(); if (!ms.length) return false;
-    baseC = avgDecomp(ms); base = baseInputs(baseC);
-    if (!keepInputs) state.overrides = {};
+    base = baseInputs(avgDecomp(ms));
+    if (!keepOv) state.ov = {};
     applyOverrides();
-    var note = root.querySelector("#fmBaseNote");
     var lbl = ms.length === 1 ? mlabel(ms[0]) : "средний месяц за " + mlabel(ms[0]) + " – " + mlabel(ms[ms.length-1]);
-    note.textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. Проценты переменных расходов взяты из базы как отношение расхода к выручке соответствующего канала; НДС и УСН по сайту — по ставкам 5 % и 1 %. Возвраты и себестоимость (активации) по умолчанию заданы суммой в месяц, как в ОПиУ — по факту; переключатель у рычага переводит их в % от выручки.";
+    root.querySelector("#fmBaseNote").textContent = "База — " + lbl + " (факт ОПиУ Адеска). Двигайте рычаги слева: все итоги справа пересчитываются сразу. У рычага со стрелкой есть разбивка по статьям Адеска: целое равно сумме статей, менять можно и целое, и каждую статью. Проценты взяты из базы как отношение расхода к выручке канала; переключатель «₽ в месяц» фиксирует сумму независимо от выручки. Возвраты и активации по умолчанию — суммами, как в ОПиУ. НДС и УСН по сайту — 5 % и 1 %.";
     return true;
   }
   function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && s.overrides) state = { basePreset: s.basePreset || "prev", baseMonth: s.baseMonth || null, overrides: s.overrides, inputs: null }; } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && s.ov) state = { basePreset: s.basePreset || "prev", baseMonth: s.baseMonth || null, ov: s.ov }; } catch (e) {} }
+
+  // ---- правки рычагов ----
+  function setChild(key, name, v){ var ck = CHILD_OF[key]; inputs.children[ck][name] = v; if (Math.abs(v - base.children[ck][name]) > 0.5) state.ov["c:" + ck + ":" + name] = v; else delete state.ov["c:" + ck + ":" + name]; }
+  function setParentAmount(key, v){
+    v = Math.max(0, v);
+    if (hasKids(inputs, key)){
+      var cur = childSum(inputs, key), names = childNames(inputs, key);
+      if (cur > 0){ var f = v / cur; names.forEach(function(n){ setChild(key, n, inputs.children[CHILD_OF[key]][n] * f); }); }
+      else { setChild(key, names[0], v); }
+      return;
+    }
+    var k = DUALS[key] ? key + "Abs" : key;
+    inputs[k] = v; if (Math.abs(v - base[k]) > 0.5) state.ov[k] = v; else delete state.ov[k];
+  }
+  function setRate(key, r){ r = Math.max(0, r); inputs[key + "Rate"] = r; if (Math.abs(r - base[key + "Rate"]) > 0.00005) state.ov[key + "Rate"] = r; else delete state.ov[key + "Rate"]; }
+  function setMode(key, mode){ inputs[key + "Mode"] = mode; if (mode !== base[key + "Mode"]) state.ov[key + "Mode"] = mode; else delete state.ov[key + "Mode"]; }
+  function resetLever(key){
+    Object.keys(state.ov).forEach(function(k){ if (k === key || k.indexOf(key + "Rate") === 0 || k.indexOf(key + "Abs") === 0 || k.indexOf(key + "Mode") === 0 || (CHILD_OF[key] && k.indexOf("c:" + CHILD_OF[key] + ":") === 0)) delete state.ov[k]; });
+    applyOverrides();
+  }
+  function leverChanged(key){
+    if (isAbs(inputs, key)) return Math.abs(amount(inputs, key) - amount(base, key)) > 0.5 || (DUALS[key] && inputs[key + "Mode"] !== base[key + "Mode"]);
+    return Math.abs(inputs[key + "Rate"] - base[key + "Rate"]) > 0.00005 || inputs[key + "Mode"] !== base[key + "Mode"];
+  }
 
   // ---- рендер ----
   var PRESETS = [["prev","Прошлый месяц"],["avg3","Средний за 3 мес"],["avg6","Средний за 6 мес"],["month","Выбрать месяц"]];
@@ -5795,47 +5879,80 @@ window.__salesActSetData = function(newData){
     sel.hidden = state.basePreset !== "month";
     if (state.baseMonth) sel.value = state.baseMonth;
   }
-  // рычаги с двумя режимами: % от выручки или фиксированная сумма в месяц (по умолчанию — сумма, как в ОПиУ:
-  // возвраты и активации учитываются по факту, сертификаты активируют с задержкой до 2 лет)
-  var DUAL = { ret: { pct: "retRate", abs: "retAbs", mode: "retMode" }, act: { pct: "actRate", abs: "actAbs", mode: "actMode" } };
-  function modeToggle(dk, cur){
-    return '<span class="fm-mode" data-dual="' + dk + '"><button type="button" data-mode="abs"' + (cur === "abs" ? ' class="on"' : "") + '>₽ в месяц</button>' +
-      '<button type="button" data-mode="pct"' + (cur === "pct" ? ' class="on"' : "") + '>% от выручки</button></span>';
+  function modeToggle(key, cur){
+    return '<span class="fm-mode" data-lever="' + key + '"><button type="button" data-mode="pct"' + (cur === "pct" ? ' class="on"' : "") + '>% ' + BASE_LABEL[DUALS[key].baseOf] + '</button>' +
+      '<button type="button" data-mode="abs"' + (cur === "abs" ? ' class="on"' : "") + '>₽ в месяц</button></span>';
   }
-  function ctlHtml(g, it){
+  function rangeMax(b, pct){ return pct ? Math.max(0.6, Math.min(1, b * 3 || 0.1)) : Math.max(b * 2.5, 100000); }
+  function rangeStep(max, pct){ return pct ? 0.001 : (max > 5e6 ? 50000 : 10000); }
+  function baseLine(key){
+    var pct = !isAbs(inputs, key), v = pct ? inputs[key + "Rate"] : amount(inputs, key), b = pct ? base[key + "Rate"] : amount(base, key);
+    var changed = leverChanged(key), d = b ? (v - b) / Math.abs(b) : 0, dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
+    return '<span>база: ' + (pct ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "");
+  }
+  function kidHtml(key, name){
+    var ck = CHILD_OF[key], v = inputs.children[ck][name], b = base.children[ck][name];
+    var max = Math.max(b * 2.5, 50000), changed = Math.abs(v - b) > 0.5, d = b ? (v - b) / Math.abs(b) : 0, dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
+    return '<div class="fm-kid' + (changed ? " changed" : "") + '" data-lever="' + key + '" data-name="' + name.replace(/"/g, "&quot;") + '">' +
+      '<div class="klbl">' + name + '</div>' +
+      '<div class="kval"><input type="text" class="num-in" value="' + fmtN(v) + '"><span class="unit">₽</span></div>' +
+      '<input type="range" min="0" max="' + max + '" step="' + rangeStep(max, false) + '" value="' + v + '">' +
+      '<div class="kbase">база ' + fmtR(b) + (changed ? ' <span class="d ' + dcls + '">' + fmtSP(d) + '</span>' : "") + '</div></div>';
+  }
+  function ctlHtml(it){
     var key = it[0], kind = it[2], label = it[1];
-    if (kind === "dual"){
-      var dd = DUAL[key], cur = state.inputs[dd.mode] === "pct" ? "pct" : "abs";
-      key = dd[cur]; kind = cur === "abs" ? "money" : "pct";
-      label = it[1] + ", " + (cur === "abs" ? "₽ в месяц" : "% от выручки") + " " + modeToggle(it[0], cur);
-    }
-    var v = state.inputs[key], b = base[key];
-    var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
-    var max = kind === "pct" ? Math.max(0.6, Math.min(1, b * 3 || 0.1)) : Math.max(b * 2.5, 100000);
-    var step = kind === "pct" ? 0.001 : (max > 5e6 ? 50000 : 10000);
-    var d = b ? (v - b) / Math.abs(b) : 0;
-    var dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
-    return '<div class="fm-ctl' + (changed ? " changed" : "") + '" data-key="' + key + '" data-kind="' + kind + '">' +
-      '<div class="lbl">' + label + '</div>' +
-      '<div class="val"><input type="text" class="num-in" value="' + (kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU")) + '"><span class="unit">' + (kind === "pct" ? "%" : "₽") + '</span></div>' +
-      '<input type="range" min="0" max="' + max + '" step="' + step + '" value="' + v + '">' +
-      '<div class="base"><span>база: ' + (kind === "pct" ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "") + '</div>' +
+    var pct = !isAbs(inputs, key);
+    var v = pct ? inputs[key + "Rate"] : amount(inputs, key), b = pct ? base[key + "Rate"] : amount(base, key);
+    var max = rangeMax(b, pct); if (v > max) max = v * 1.2;
+    var kids = !pct && hasKids(inputs, key) ? childNames(inputs, key) : [];
+    var extra = "";
+    if (kind === "dual") extra += " " + modeToggle(key, pct ? "pct" : "abs");
+    if (hasKids(inputs, key)) extra += pct
+      ? ' <span class="fm-kidnote">разбивка доступна в режиме ₽</span>'
+      : ' <button type="button" class="fm-exp" data-exp="' + key + '">' + (expanded[key] ? "▾" : "▸") + ' ' + kids.length + ' ст.</button>';
+    return '<div class="fm-ctl' + (leverChanged(key) ? " changed" : "") + '" data-lever="' + key + '" data-kind="' + (pct ? "pct" : "money") + '">' +
+      '<div class="lbl">' + label + extra + '</div>' +
+      '<div class="val"><input type="text" class="num-in" value="' + (pct ? fmtPin(v) : fmtN(v)) + '"><span class="unit">' + (pct ? "%" : "₽") + '</span></div>' +
+      '<input type="range" min="0" max="' + max + '" step="' + rangeStep(max, pct) + '" value="' + v + '">' +
+      '<div class="base">' + baseLine(key) + '</div>' +
+      (kids.length ? '<div class="fm-kids"' + (expanded[key] ? "" : " hidden") + '>' + kids.map(function(n){ return kidHtml(key, n); }).join("") + '</div>' : "") +
       '</div>';
   }
+  function groupSums(res){ return { rev: fmtR(res.rev), "var": fmtR(res.variable), fix: fmtR(res.fixed), tax: fmtR(res.taxes + res.fin) }; }
   function renderControls(){
-    var box = root.querySelector("#fmControls"); var html = "";
-    var res = compute(state.inputs);
-    var sums = { rev: fmtR(res.rev), "var": fmtR(res.variable), fix: fmtR(res.fixed), tax: fmtR(res.taxes + res.fin) };
+    var sums = groupSums(compute(inputs)), html = "";
     GROUPS.forEach(function(g){
       html += '<div class="fm-group" style="--fm-accent:' + g.accent + '"><h3>' + g.title + '<span class="fm-tag">' + g.tag + '</span><span class="fm-sum">' + sums[g.key] + '</span></h3>' +
-        g.items.map(function(it){ return ctlHtml(g, it); }).join("") + '</div>';
+        g.items.map(ctlHtml).join("") + '</div>';
     });
-    box.innerHTML = html;
+    root.querySelector("#fmControls").innerHTML = html;
   }
-  function kpi(label, val, baseVal, sub, pctMode){
+  // обновить числа в уже нарисованных контролах (без перерисовки DOM — чтобы не ломать перетаскивание ползунка)
+  function refreshControls(active){
+    var sums = groupSums(compute(inputs));
+    root.querySelectorAll(".fm-group").forEach(function(g, i){ g.querySelector(".fm-sum").textContent = sums[GROUPS[i].key]; });
+    root.querySelectorAll(".fm-ctl").forEach(function(el){
+      var key = el.dataset.lever, pct = el.dataset.kind === "pct", v = pct ? inputs[key + "Rate"] : amount(inputs, key);
+      var ni = el.querySelector(":scope > .val .num-in"), rg = el.querySelector(":scope > input[type=range]");
+      if (ni !== active) ni.value = pct ? fmtPin(v) : fmtN(v);
+      if (rg !== active){ if (v > parseFloat(rg.max)) rg.max = v * 1.2; rg.value = v; }
+      el.classList.toggle("changed", leverChanged(key));
+      el.querySelector(":scope > .base").innerHTML = baseLine(key);
+      el.querySelectorAll(".fm-kid").forEach(function(kel){
+        var name = kel.dataset.name, ck = CHILD_OF[key], kv = inputs.children[ck][name], kb = base.children[ck][name];
+        var kni = kel.querySelector(".num-in"), krg = kel.querySelector("input[type=range]");
+        if (kni !== active) kni.value = fmtN(kv);
+        if (krg !== active){ if (kv > parseFloat(krg.max)) krg.max = kv * 1.2; krg.value = kv; }
+        var changed = Math.abs(kv - kb) > 0.5, d = kb ? (kv - kb) / Math.abs(kb) : 0, dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
+        kel.classList.toggle("changed", changed);
+        kel.querySelector(".kbase").innerHTML = 'база ' + fmtR(kb) + (changed ? ' <span class="d ' + dcls + '">' + fmtSP(d) + '</span>' : "");
+      });
+    });
+  }
+  function kpi(label, val, baseVal, sub){
     var d = val - baseVal, cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "flat");
-    var dtxt = pctMode ? fmtSP(d) : fmtS(d) + (baseVal ? " (" + fmtSP(safeDiv(d, Math.abs(baseVal))) + ")" : "");
-    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + (pctMode ? fmtP(val) : fmtR(val)) + '</div>' +
+    var dtxt = fmtS(d) + (baseVal ? " (" + fmtSP(safeDiv(d, Math.abs(baseVal))) + ")" : "");
+    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + fmtR(val) + '</div>' +
       '<div class="delta ' + cls + '">' + (cls === "flat" ? "как в базе" : dtxt + " к базе") + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div>';
   }
   function renderKpis(res, bres){
@@ -5845,138 +5962,107 @@ window.__salesActSetData = function(newData){
       kpi("Операционная прибыль", res.op, bres.op, "рентабельность " + fmtP(res.opPct) + " (база " + fmtP(bres.opPct) + ")") +
       kpi("Чистая прибыль", res.net, bres.net, "рентабельность " + fmtP(res.netPct) + " (база " + fmtP(bres.netPct) + ")") +
       kpi("После кредита и дивидендов", res.after, bres.after) +
-      (res.be !== null && bres.be !== null
-        ? kpi("Точка безубыточности", res.be, bres.be, "выручка в месяц, при которой чистая прибыль = 0")
+      (res.be !== null && bres.be !== null ? kpi("Точка безубыточности", res.be, bres.be, "выручка в месяц, при которой чистая прибыль = 0")
         : '<div class="kpi"><div class="lbl">Точка безубыточности</div><div class="val">—</div><div class="sub">переменные расходы съедают всю выручку</div></div>');
   }
   function renderTable(res, bres){
     var rows = [
-      ["t", "Выручка", "rev"], ["sub", "Сайт", null, state.inputs.site, base.site], ["sub", "Маркетплейсы", null, state.inputs.mp, base.mp], ["sub", "B2B", null, state.inputs.b2b, base.b2b],
+      ["t", "Выручка", "rev"], ["sub", "Сайт", "site"], ["sub", "Маркетплейсы", "mp"], ["sub", "B2B", "b2b"],
       ["", "− Возвраты", "returns"], ["t", "Чистая выручка", "netRev"],
       ["t", "Переменные расходы", "variable"], ["sub", "Себестоимость (активации)", "act"], ["sub", "Комиссии и логистика МП", "mpFees"], ["sub", "Эквайринг", "acq"], ["sub", "Банковские комиссии", "bank"], ["sub", "Упаковка и вложения", "pack"], ["sub", "Доставка", "deliv"],
-      ["t", "Маржинальная прибыль", "margin"], ["p", "Рентабельность по марже", "marginPct", null, null, true],
-      ["t", "Постоянные расходы", "fixed"], ["sub", "ФОТ", null, state.inputs.fot, base.fot], ["sub", "Маркетинг", null, state.inputs.marketing, base.marketing], ["sub", "Прочие постоянные", null, state.inputs.otherFixed, base.otherFixed],
-      ["t", "Операционная прибыль", "op"], ["p", "Рентабельность операционная", "opPct", null, null, true],
-      ["t", "Проценты и налоги", "taxes"], ["sub", "НДС и УСН по сайту", "siteTax"], ["sub", "Налоги по маркетплейсам", "mpTax"], ["sub", "Проценты по кредитам", null, state.inputs.interest, base.interest], ["sub", "Налоги и пошлины", null, state.inputs.taxesFixed, base.taxesFixed],
-      ["t", "Чистая прибыль", "net"], ["p", "Рентабельность по чистой прибыли", "netPct", null, null, true],
+      ["t", "Маржинальная прибыль", "margin"], ["p", "Рентабельность по марже", "marginPct", true],
+      ["t", "Постоянные расходы", "fixed"], ["sub", "ФОТ", "fot"], ["sub", "Маркетинг", "marketing"], ["sub", "Прочие постоянные", "otherFixed"],
+      ["t", "Операционная прибыль", "op"], ["p", "Рентабельность операционная", "opPct", true],
+      ["t", "Проценты и налоги", "taxes"], ["sub", "НДС и УСН по сайту", "siteTax"], ["sub", "Налоги по маркетплейсам", "mpTax"], ["sub", "Проценты по кредитам", "interest"],
+      ["t", "Чистая прибыль", "net"], ["p", "Рентабельность по чистой прибыли", "netPct", true],
       ["t", "Тело кредита и дивиденды", "fin"], ["t", "Остаток после фин. расходов", "after"]
     ];
+    var COST = /Возвраты|расходы|Проценты и налоги|Тело кредита|Себестоимость|Комиссии|Эквайринг|Упаковка|Доставка|ФОТ|Маркетинг$|Прочие|НДС|Налоги по|Проценты по/;
     root.querySelector("#fmTableBody").innerHTML = rows.map(function(r){
-      var v = r[2] ? res[r[2]] : r[3], b = r[2] ? bres[r[2]] : r[4], isPct = !!r[5];
-      var d = v - b, cls = isPct ? "" : (d > 0.5 ? " up" : (d < -0.5 ? " down" : ""));
-      var isCost = /Возвраты|расходы|Проценты и налоги|Тело кредита/.test(r[1]) || r[0] === "sub" && !/Сайт|Маркетплейсы$|B2B/.test(r[1]);
-      if (isCost) cls = d > 0.5 ? " down" : (d < -0.5 ? " up" : "");
+      var v = res[r[2]], b = bres[r[2]], isPct = !!r[3], d = v - b;
+      var good = COST.test(r[1]) ? d < -0.5 : d > 0.5, bad = COST.test(r[1]) ? d > 0.5 : d < -0.5;
+      var cls = isPct ? "" : (good ? " up" : (bad ? " down" : ""));
       return '<tr class="' + r[0] + '"><td>' + r[1] + '</td><td class="num">' + (isPct ? fmtP(b) : fmtR(b)) + '</td><td class="num">' + (isPct ? fmtP(v) : fmtR(v)) + '</td>' +
         '<td class="num' + cls + '">' + (isPct ? fmtSP(d) : (Math.abs(d) < 0.5 ? "—" : fmtS(d))) + '</td><td class="num' + cls + '">' + (isPct || !b || Math.abs(d) < 0.5 ? "—" : fmtSP(d / Math.abs(b))) + '</td></tr>';
     }).join("");
   }
   function renderWater(res){
     var steps = [["Выручка", res.rev, "total"], ["Возвраты", -res.returns], ["Переменные", -res.variable], ["Маржа", res.margin, "total"], ["Постоянные", -res.fixed], ["Опер. прибыль", res.op, "total"], ["Налоги и %", -res.taxes], ["Чистая", res.net, "total"], ["Кредит и див.", -res.fin], ["Остаток", res.after, "total"]];
-    var W = 640, H = 270, padL = 8, padR = 8, padT = 22, padB = 44, n = steps.length, bw = (W - padL - padR) / n, run = 0;
-    var vals = [], lo = 0, hi = 0;
+    var W = 640, H = 270, padL = 8, padR = 8, padT = 22, padB = 44, n = steps.length, bw = (W - padL - padR) / n, run = 0, vals = [], lo = 0, hi = 0;
     steps.forEach(function(s){ var y0 = s[2] ? 0 : run, y1 = s[2] ? s[1] : run + s[1]; run = y1; vals.push([Math.min(y0,y1), Math.max(y0,y1)]); lo = Math.min(lo, y0, y1); hi = Math.max(hi, y0, y1); });
     if (hi === lo) hi = lo + 1;
     function y(v){ return padT + (hi - v) / (hi - lo) * (H - padT - padB); }
     var svg = '<line x1="0" x2="' + W + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="var(--baseline)" stroke-width="1"/>';
     steps.forEach(function(s, i){
       var x = padL + i * bw + bw * 0.12, w = bw * 0.76, top = y(vals[i][1]), bot = y(vals[i][0]);
-      var color = s[2] ? (s[1] >= 0 ? "var(--s3)" : "var(--bad)") : (s[1] >= 0 ? "var(--s3)" : "var(--s2)");
+      var color = s[1] >= 0 ? "var(--s3)" : (s[2] ? "var(--bad)" : "var(--s2)");
       svg += '<rect x="' + x + '" y="' + top + '" width="' + w + '" height="' + Math.max(1, bot - top) + '" rx="3" fill="' + color + '" opacity="' + (s[2] ? 0.9 : 0.55) + '"/>';
-      var lab = Math.round(s[1] / 1000).toLocaleString("ru-RU") + " т.";
-      svg += '<text x="' + (x + w/2) + '" y="' + (top - 5) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + lab + '</text>';
-      // подписи в шахматном порядке в две строки, чтобы не налезали друг на друга
+      svg += '<text x="' + (x + w/2) + '" y="' + (top - 5) + '" text-anchor="middle" font-size="10" fill="var(--text-secondary)">' + Math.round(s[1] / 1000).toLocaleString("ru-RU") + ' т.</text>';
       svg += '<text x="' + (x + w/2) + '" y="' + (H - (i % 2 ? 6 : 20)) + '" text-anchor="middle" font-size="10" fill="var(--text-muted)">' + s[0] + '</text>';
     });
     root.querySelector("#fmWater").innerHTML = svg;
   }
   function renderSens(res){
-    var x = state.inputs;
-    function withPatch(p){ var y = JSON.parse(JSON.stringify(x)); Object.keys(p).forEach(function(k){ y[k] = p[k]; }); return compute(y).net - res.net; }
+    var x = inputs;
+    function withPatch(fn){ var y = cloneInputs(x); fn(y); return compute(y).net - res.net; }
+    function scaleLever(y, key, f){ if (hasKids(y, key)){ var ch = y.children[CHILD_OF[key]]; Object.keys(ch).forEach(function(n){ ch[n] *= f; }); } else if (DUALS[key]) y[key + "Abs"] *= f; else y[key] *= f; }
+    function dualCase(key, title, pp){
+      return isAbs(x, key)
+        ? [title + " −10 %", function(y){ scaleLever(y, key, 0.9); }, "−" + fmtR(amount(x, key) * 0.1) + " в месяц"]
+        : [title + " −" + pp + " п.п.", function(y){ y[key + "Rate"] = Math.max(0, y[key + "Rate"] - pp / 100); }, fmtP(x[key + "Rate"]) + " → " + fmtP(Math.max(0, x[key + "Rate"] - pp / 100))];
+    }
     var cases = [
-      ["Сайт +10 %", { site: x.site * 1.1 }, "выручка сайта +" + fmtR(x.site * 0.1)],
-      ["Маркетплейсы +10 %", { mp: x.mp * 1.1 }, "выручка МП +" + fmtR(x.mp * 0.1)],
-      ["B2B +500 000 ₽", { b2b: x.b2b + 500000 }, "при тех же % расходов"],
-      (x.actMode === "pct"
-        ? ["Активации −1 п.п.", { actRate: Math.max(0, x.actRate - 0.01) }, "себестоимость " + fmtP(x.actRate) + " → " + fmtP(Math.max(0, x.actRate - 0.01))]
-        : ["Активации −10 %", { actAbs: x.actAbs * 0.9 }, "оплаты партнёрам −" + fmtR(x.actAbs * 0.1) + " в месяц"]),
-      ["Комиссии МП −5 п.п.", { mpFeeRate: Math.max(0, x.mpFeeRate - 0.05) }, fmtP(x.mpFeeRate) + " → " + fmtP(Math.max(0, x.mpFeeRate - 0.05))],
-      ["Маркетинг −20 %", { marketing: x.marketing * 0.8 }, "−" + fmtR(x.marketing * 0.2) + " в месяц"],
-      ["ФОТ −10 %", { fot: x.fot * 0.9 }, "−" + fmtR(x.fot * 0.1) + " в месяц"],
-      (x.retMode === "pct"
-        ? ["Возвраты −1 п.п.", { retRate: Math.max(0, x.retRate - 0.01) }, fmtP(x.retRate) + " → " + fmtP(Math.max(0, x.retRate - 0.01))]
-        : ["Возвраты −20 %", { retAbs: x.retAbs * 0.8 }, "−" + fmtR(x.retAbs * 0.2) + " в месяц"])
+      ["Сайт +10 %", function(y){ scaleLever(y, "site", 1.1); }, "выручка сайта +" + fmtR(amount(x, "site") * 0.1)],
+      ["Маркетплейсы +10 %", function(y){ scaleLever(y, "mp", 1.1); }, "выручка МП +" + fmtR(amount(x, "mp") * 0.1)],
+      ["B2B +500 000 ₽", function(y){ y.b2b += 500000; }, "при тех же % расходов"],
+      dualCase("act", "Активации", 1), dualCase("mpFee", "Комиссии МП", 5),
+      ["Маркетинг −20 %", function(y){ scaleLever(y, "marketing", 0.8); }, "−" + fmtR(amount(x, "marketing") * 0.2) + " в месяц"],
+      ["ФОТ −10 %", function(y){ scaleLever(y, "fot", 0.9); }, "−" + fmtR(amount(x, "fot") * 0.1) + " в месяц"],
+      dualCase("ret", "Возвраты", 1)
     ];
     root.querySelector("#fmSens").innerHTML = cases.map(function(c){
-      var d = withPatch(c[1]); var cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "");
+      var d = withPatch(c[1]), cls = d > 0.5 ? "up" : (d < -0.5 ? "down" : "");
       return '<div class="s"><div class="q">' + c[0] + '</div><div class="a ' + cls + '">' + fmtS(d) + '</div><div class="m">' + c[2] + '</div></div>';
     }).join("");
   }
-  function renderAll(){
-    if (!base) return;
-    renderBaseBar();
-    var res = compute(state.inputs), bres = compute(base);
-    renderKpis(res, bres); renderControls(); renderTable(res, bres); renderWater(res); renderSens(res);
-  }
-  function renderResults(){
-    var res = compute(state.inputs), bres = compute(base);
-    renderKpis(res, bres); renderTable(res, bres); renderWater(res); renderSens(res);
-    // суммы в заголовках групп и пометки «изменено» — без перерисовки полей ввода
-    root.querySelectorAll(".fm-ctl").forEach(function(el){
-      var key = el.dataset.key, kind = el.dataset.kind, v = state.inputs[key], b = base[key];
-      var changed = Math.abs(v - b) > (kind === "pct" ? 0.00005 : 0.5);
-      el.classList.toggle("changed", changed);
-      var d = b ? (v - b) / Math.abs(b) : 0, dcls = d > 0.0005 ? "up" : (d < -0.0005 ? "down" : "");
-      el.querySelector(".base").innerHTML = '<span>база: ' + (kind === "pct" ? fmtP(b) : fmtR(b)) + '</span>' + (changed ? '<span class="d ' + dcls + '">' + fmtSP(d) + '</span><span class="reset" data-reset="' + key + '">вернуть</span>' : "");
-    });
-    var sums = { rev: fmtR(res.rev), "var": fmtR(res.variable), fix: fmtR(res.fixed), tax: fmtR(res.taxes + res.fin) };
-    root.querySelectorAll(".fm-group").forEach(function(g, i){ g.querySelector(".fm-sum").textContent = sums[GROUPS[i].key]; });
-  }
-  function parseNum(s){ return parseFloat(String(s).replace(/[\s ₽%]/g, "").replace(",", ".")); }
+  function renderResults(){ var res = compute(inputs), bres = compute(base); renderKpis(res, bres); renderTable(res, bres); renderWater(res); renderSens(res); }
+  function renderAll(){ if (!base) return; renderBaseBar(); renderControls(); renderResults(); }
 
   // ---- события ----
   var controls = root.querySelector("#fmControls");
+  function leverOf(el){ var k = el.closest(".fm-kid"); return k ? { key: k.dataset.lever, name: k.dataset.name } : { key: el.closest(".fm-ctl").dataset.lever }; }
   controls.addEventListener("input", function(e){
-    var ctl = e.target.closest(".fm-ctl"); if (!ctl) return;
-    var key = ctl.dataset.key, kind = ctl.dataset.kind;
-    if (e.target.type === "range"){
-      var v = parseFloat(e.target.value); state.inputs[key] = v; state.overrides[key] = v;
-      ctl.querySelector(".num-in").value = kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU");
-      renderResults(); save();
-    }
+    if (e.target.type !== "range") return;
+    var t = leverOf(e.target), v = parseFloat(e.target.value);
+    if (t.name !== undefined) setChild(t.key, t.name, v);
+    else if (isAbs(inputs, t.key)) setParentAmount(t.key, v);
+    else setRate(t.key, v);
+    refreshControls(e.target); renderResults(); save();
   });
   controls.addEventListener("change", function(e){
-    var ctl = e.target.closest(".fm-ctl"); if (!ctl || !e.target.classList.contains("num-in")) return;
-    var key = ctl.dataset.key, kind = ctl.dataset.kind, v = parseNum(e.target.value);
-    if (isNaN(v)) { renderAll(); return; }
-    if (kind === "pct") v = v / 100;
-    v = Math.max(0, v); state.inputs[key] = v; state.overrides[key] = v;
-    var r = ctl.querySelector('input[type=range]'); if (v > parseFloat(r.max)) r.max = v * 1.2; r.value = v;
-    e.target.value = kind === "pct" ? (v*100).toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU");
-    renderResults(); save();
+    if (!e.target.classList.contains("num-in")) return;
+    var t = leverOf(e.target), v = parseNum(e.target.value);
+    if (isNaN(v)){ renderAll(); return; }
+    if (t.name !== undefined) setChild(t.key, t.name, Math.max(0, v));
+    else if (isAbs(inputs, t.key)) setParentAmount(t.key, v);
+    else setRate(t.key, v / 100);
+    refreshControls(null); renderResults(); save();
   });
   controls.addEventListener("click", function(e){
     var mt = e.target.closest("[data-mode]");
-    if (mt){
-      var dd = DUAL[mt.closest("[data-dual]").dataset.dual], mode = mt.dataset.mode;
-      state.inputs[dd.mode] = mode;
-      if (mode === base[dd.mode]) delete state.overrides[dd.mode]; else state.overrides[dd.mode] = mode;
-      save(); renderAll(); return;
-    }
-    var rs = e.target.closest("[data-reset]"); if (!rs) return;
-    var key = rs.dataset.reset; state.inputs[key] = base[key]; delete state.overrides[key];
-    var ctl = controls.querySelector('.fm-ctl[data-key="' + key + '"]');
-    ctl.querySelector('input[type=range]').value = base[key];
-    ctl.querySelector(".num-in").value = ctl.dataset.kind === "pct" ? (base[key]*100).toFixed(1).replace(".", ",") : Math.round(base[key]).toLocaleString("ru-RU");
-    renderResults(); save();
+    if (mt){ setMode(mt.closest("[data-lever]").dataset.lever, mt.dataset.mode); save(); renderAll(); return; }
+    var ex = e.target.closest("[data-exp]");
+    if (ex){ expanded[ex.dataset.exp] = !expanded[ex.dataset.exp]; renderControls(); return; }
+    var rs = e.target.closest("[data-reset]");
+    if (rs){ resetLever(rs.dataset.reset); save(); renderAll(); }
   });
-  root.querySelector("#fmReset").addEventListener("click", function(){ state.overrides = {}; applyOverrides(); save(); renderAll(); });
+  root.querySelector("#fmReset").addEventListener("click", function(){ state.ov = {}; applyOverrides(); save(); renderAll(); });
   root.querySelector("#fmBaseMonth").addEventListener("change", function(e){ state.baseMonth = e.target.value; state.basePreset = "month"; rebuildBase(false); save(); renderAll(); });
 
-  var inited = false;
   function renderFinmodel(){
     if (!data().length) return;
-    if (!inited){ load(); inited = true; rebuildBase(true); }
-    else rebuildBase(true);
+    if (!inited){ load(); inited = true; }
+    rebuildBase(true);
     renderAll();
   }
   window.__finmodelRerender = renderFinmodel;
