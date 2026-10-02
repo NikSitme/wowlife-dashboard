@@ -411,6 +411,7 @@
     <button class="tabbtn active" data-tab="opiu" type="button">ОПиУ</button>
     <button class="tabbtn" data-tab="salesact" type="button">Продажи и активации</button>
     <button class="tabbtn" data-tab="wowsales" type="button">Аналитика продаж</button>
+    <button class="tabbtn" data-tab="marketing" type="button">Маркетинг</button>
     <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
     <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
     <button class="tabbtn" data-tab="finmodel" type="button">Финмодель</button>
@@ -420,11 +421,11 @@
   <div class="docs-overlay" id="docsOverlay" hidden>
     <div class="docs-panel" role="dialog" aria-modal="true" aria-label="Документация дашборда">
       <div class="docs-head">
-        <div><div class="docs-title">💡 Документация дашборда</div><div class="docs-sub">Что откуда тянется и как считается. Обновлено 01.10.2026</div></div>
+        <div><div class="docs-title">💡 Документация дашборда</div><div class="docs-sub">Что откуда тянется и как считается. Обновлено 02.10.2026</div></div>
         <button type="button" class="chip" id="docsClose">Закрыть</button>
       </div>
       <nav class="docs-nav">
-        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-known">Особенности</a>
+        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-mkt">Маркетинг</a><a href="#doc-known">Особенности</a>
       </nav>
       <div class="docs-body">
 
@@ -483,7 +484,18 @@
       <p><b>Режимы.</b> Процентный рычаг считается как доля от базы канала (вся выручка, сайт или маркетплейсы) и растёт вместе с ней; режим «₽ в месяц» фиксирует сумму. Возвраты и активации по умолчанию в рублях, как в ОПиУ. У рычагов со стрелкой есть разбивка по статьям Адеска: целое всегда равно сумме статей, правка статьи меняет целое, правка целого масштабирует статьи пропорционально. Разбивка ФОТ — по группам Адеска, а отделы продукта, заботы (ФОТ ОЗ) и продаж (ФОТ ОП) раскрыты до людей; закупка рекламы в маркетинге раскрыта по каналам (Яндекс Директ, Таргет ВК, посевы, блогеры и другие). Детализация до людей и каналов появляется после первого обновления данных.</p>
       <p><b>Расчёт.</b> Чистая выручка = выручка − возвраты. Маржинальная прибыль = чистая выручка − переменные. Операционная = маржа − постоянные. Чистая = операционная − налоги − проценты. Остаток = чистая − тело кредита − дивиденды. Точка безубыточности — выручка при той же структуре каналов, при которой чистая прибыль равна нулю; рычаги в режиме «₽» считаются постоянными. Чувствительность — пересчёт модели при сдвиге одного рычага. Изменённые рычаги хранятся в браузере, «Сбросить рычаги к базе» очищает их; смена базы тоже сбрасывает.</p>
 
-      <h3 id="doc-known">10. Известные особенности и принятые решения</h3>
+      <h3 id="doc-mkt">10. Вкладка «Маркетинг»</h3>
+      <p>Только сайт (МСК + СПБ), маркетплейсы исключены. Главный элемент — выбор месяца; изменения считаются к предыдущему месяцу и, в скобках, к тому же месяцу прошлого года.</p>
+      <ul>
+        <li><b>Заказы и клиенты</b> — таблица «Никита», лист «Маркетинг»: сделки «Сделка успешна» по дате оплаты с источником не маркетплейса. Покупатель — id контакта CRM (сделка без контакта считается отдельным покупателем). Новый покупатель — первая успешная сделка контакта в этом месяце. Канал заказа — по utm_source и источнику: платный поиск (utm yandex…), блогеры и соцсети (bloger_*, instagram, tg, followish), email (unisender), ВКонтакте, звонки/мессенджеры/офис (источники Звонок, Офис, Wazzup, CRM-форма, Квиз, MAX, Telegram), органика и прямые заходы (google, direct, пустой utm).</li>
+        <li><b>Расходы</b> — статьи ОПиУ Адеска за месяц: реклама (Яндекс Директ, Таргет ВК, Посевы ВК, Блогеры, СберАДС, Соавторство, Доп. аналитика), ФОТ маркетинга по людям, прочее (email, сервисы маркетинговые, подрядчики, съёмки, монтаж). Расходы Директа по кампаниям не разбираются — по решению Никиты берутся суммы из Адеска.</li>
+        <li><b>Трафик</b> — Яндекс.Метрика, счётчик 32072156, через серверный сборщик (GitHub Actions раз в сутки → файл data/metrika.json). Конверсия в покупку = заказы сайта CRM ÷ визиты; цели счётчика показываются отдельно, если настроены.</li>
+        <li><b>CAC</b> = реклама ÷ новые покупатели; полный CAC = все расходы маркетинга ÷ новые покупатели. <b>CPO</b> = реклама ÷ все заказы сайта. <b>ROMI</b> = (маржа сайта − расходы маркетинга) ÷ расходы маркетинга, где маржа сайта = выручка сайта − возвраты − эквайринг − доставка − доля сайта в активациях, упаковке и банковских комиссиях (доля — по выручке сайта к маркетплейсам).</li>
+        <li><b>Retention</b> — доля заказов месяца от повторных покупателей; когорты — по месяцу первой покупки: доля клиентов со второй покупкой за 3 и 12 месяцев. <b>LTV</b> — выручка на клиента когорты за 3 и 12 месяцев; <b>LTV по активациям</b> — та же выручка минус себестоимость активаций по сертификатам клиента (лист «Активация» связан с «Маркетинг» по id контакта; активации до первой покупки на сайте не учитываются). В плитках — среднее по шести последним когортам, созревшим на выбранный месяц.</li>
+        <li><b>Контент-завод</b> — файл data/content.json, который публикует бот статистики (просмотры, переходы, ролики по креаторам за месяц). Пока файла нет, блок пустой.</li>
+      </ul>
+
+      <h3 id="doc-known">11. Известные особенности и принятые решения</h3>
       <ul>
         <li>«1 % за регистрацию» в Адеске помесячно равен расчётным строкам «УСН 1 % от выручки с сайта» + «УСН по маркетплейсам». Обе группы оставлены в ОПиУ по решению Никиты от 24.09.2026, чистая прибыль ниже примерно на сумму УСН.</li>
         <li>Банковские комиссии считаются переменным расходом (решение от 24.09.2026).</li>
@@ -3670,6 +3682,94 @@ window.__salesActSetData = function(newData){
 
   </div>
 
+  <div class="tabpanel" data-panel="marketing" hidden>
+<style>
+  .mk-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mk-head select { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); }
+  .mk-head .chip { padding: 6px 10px; }
+  .mk-note { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+  .mk-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 1100px) { .mk-kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .mk-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .mk-kpis .kpi .val { font-size: 19px; }
+  .mk-kpis .kpi .sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .mk-kpis .kpi .delta { font-size: 11.5px; }
+  .mk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 980px) { .mk-grid { grid-template-columns: 1fr; } }
+  .mk-table { width: 100%; font-size: 12.5px; }
+  .mk-table th, .mk-table td { padding: 6px 10px; white-space: nowrap; }
+  .mk-table tr.t td { font-weight: 700; border-top: 1px solid var(--border); }
+  .mk-table tr.sub td:first-child { padding-left: 22px; color: var(--text-secondary); }
+  .mk-table td.up { color: var(--good); } .mk-table td.down { color: var(--bad); }
+  .mk-bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--s1); vertical-align: middle; margin-right: 6px; opacity: 0.8; }
+  .mk-svg { display: block; width: 100%; height: auto; }
+  .mk-empty { font-size: 12.5px; color: var(--text-muted); padding: 8px 0; }
+  .mk-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 4px 0 6px; flex-wrap: wrap; }
+  .mk-legend .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .mk-cohort td.mat { color: var(--text-muted); }
+</style>
+
+  <div class="card">
+    <div class="mk-head">
+      <label>Месяц</label>
+      <button type="button" class="chip" id="mkPrev">‹</button>
+      <select id="mkMonth"></select>
+      <button type="button" class="chip" id="mkNext">›</button>
+      <span class="mk-note" id="mkHeadNote"></span>
+    </div>
+    <p class="mk-note">Только сайт (МСК + СПБ), маркетплейсы в этот отчёт не входят. Заказы и клиенты — CRM (таблица «Никита»), расходы — ОПиУ Адеска, трафик — Яндекс.Метрика. Изменения — к предыдущему месяцу, в скобках — к тому же месяцу прошлого года.</p>
+  </div>
+
+  <div class="mk-kpis" id="mkKpis"></div>
+
+  <div class="mk-grid" style="margin-top:16px">
+    <div class="card">
+      <h2>Расходы по каналам</h2>
+      <p class="cap">Статьи ОПиУ Адеска за месяц · реклама, ФОТ маркетинга, прочее</p>
+      <table class="mk-table"><tbody id="mkExpenses"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Заказы по каналам</h2>
+      <p class="cap">Сделки CRM «Сделка успешна» по дате оплаты, канал — по источнику и utm_source</p>
+      <table class="mk-table"><tbody id="mkChannels"></tbody></table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Трафик и конверсия</h2>
+    <p class="cap" id="mkTrafficCap">Визиты по дням (Метрика) и заказы сайта по дням (CRM)</p>
+    <div class="mk-legend"><span><span class="k" style="background:var(--s1)"></span>Визиты</span><span><span class="k" style="background:var(--s3)"></span>Заказы</span></div>
+    <svg class="mk-svg" id="mkTrafficSvg" viewBox="0 0 900 220"></svg>
+    <div class="mk-grid" style="margin-top:12px">
+      <table class="mk-table"><tbody id="mkSources"></tbody></table>
+      <table class="mk-table"><tbody id="mkGoals"></tbody></table>
+    </div>
+  </div>
+
+  <div class="mk-grid" style="margin-top:16px">
+    <div class="card">
+      <h2>Новые и повторные покупатели</h2>
+      <p class="cap">По месяцам за последний год · покупатель — id контакта CRM, новый — первая успешная сделка в этом месяце</p>
+      <div class="mk-legend"><span><span class="k" style="background:var(--s1)"></span>Новые</span><span><span class="k" style="background:var(--s4)"></span>Повторные</span></div>
+      <svg class="mk-svg" id="mkBuyersSvg" viewBox="0 0 440 200"></svg>
+    </div>
+    <div class="card">
+      <h2>Когорты: retention и LTV</h2>
+      <p class="cap">Когорта — месяц первой покупки. Повтор — доля клиентов со второй покупкой в срок. LTV — выручка на клиента, LTV по активациям — выручка минус себестоимость активаций клиента после первой покупки (связь по id контакта). Серым — срок ещё не прошёл</p>
+      <div class="table-scroll" style="max-height:420px">
+        <table class="mk-table mk-cohort"><thead><tr><th>Когорта</th><th class="num">Клиентов</th><th class="num">Повтор 3 мес</th><th class="num">Повтор 12 мес</th><th class="num">LTV 3 мес</th><th class="num">LTV 12 мес</th><th class="num">LTV по акт. 12 мес</th></tr></thead><tbody id="mkCohorts"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Контент-завод</h2>
+    <p class="cap">Просмотры, переходы и ролики креаторов за месяц · данные бота статистики</p>
+    <table class="mk-table"><tbody id="mkContent"></tbody></table>
+  </div>
+
+  </div>
+
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
 
 <script>
@@ -5513,6 +5613,7 @@ window.__salesActSetData = function(newData){
       if (target === "kreditorka" && window.__kreditorkaRerender) window.__kreditorkaRerender();
       if (target === "fot" && window.__fotRerender) window.__fotRerender();
       if (target === "finmodel" && window.__finmodelRerender) window.__finmodelRerender();
+      if (target === "marketing" && window.__marketingRerender) window.__marketingRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
   });
@@ -5592,6 +5693,7 @@ window.__salesActSetData = function(newData){
     if (window.__kreditorkaRerender) window.__kreditorkaRerender();
     if (window.__fotRerender) window.__fotRerender();
     if (window.__finmodelRerender) window.__finmodelRerender();
+    if (window.__marketingRerender) window.__marketingRerender();
   };
 })();
 </script>
@@ -6225,6 +6327,218 @@ window.__salesActSetData = function(newData){
   }
   window.__finmodelRerender = renderFinmodel;
   renderFinmodel();
+})();
+</script>
+<script>
+(function(){
+  // ===== Маркетинг: сайт — заказы и клиенты (CRM), расходы (ОПиУ Адеска), трафик (Метрика), контент-завод (бот) =====
+  var root = document.querySelector('[data-panel="marketing"]');
+  if (!root) return;
+  var MK = null, MET = null, CT = null, state = { month: null };
+  var MONTHS_RU = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  function lab(ym){ return MONTHS_RU[parseInt(ym.slice(5,7),10)-1] + " " + ym.slice(2,4); }
+  function fmtR(n){ return Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtN(n){ return Math.round(n).toLocaleString("ru-RU"); }
+  function fmtP(x, d){ return x === null || !isFinite(x) ? "—" : (x * 100).toFixed(d === undefined ? 1 : d).replace(".", ",") + " %"; }
+  function fmtSP(x){ return x === null || !isFinite(x) ? "—" : (x > 0 ? "+" : "") + (x * 100).toFixed(0) + " %"; }
+  function safeDiv(a, b){ return b ? a / b : null; }
+  function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
+  function addMonths(ym, n){ var y = parseInt(ym.slice(0,4),10), m = parseInt(ym.slice(5,7),10) - 1 + n; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return y + "-" + String(m + 1).padStart(2, "0"); }
+  function ymDiff(a, b){ return (parseInt(b.slice(0,4),10) - parseInt(a.slice(0,4),10)) * 12 + (parseInt(b.slice(5,7),10) - parseInt(a.slice(5,7),10)); }
+  function opiuMonth(ym){ return (window.__opiuData || []).filter(function(m){ return m.label === ym; })[0] || null; }
+
+  window.__marketingSetData = function(d){ MK = d; if (!state.month || !MK.months[state.month]) state.month = defaultMonth(); render(); };
+  window.__marketingSetMetrika = function(d){ MET = d && d.months ? d : null; render(); };
+  window.__marketingSetContent = function(d){ CT = d && d.months ? d : null; render(); };
+  function defaultMonth(){ var now = new Date(); var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0"); var prev = addMonths(cur, -1); return MK && MK.months[prev] ? prev : (MK ? MK.range[1] : cur); }
+
+  // ---- расходы маркетинга и маржа сайта за месяц из ОПиУ ----
+  var ADV = ["Яндекс Директ","Таргет ВК","Посевы ВК","Блогеры","СберАДС","Соавторство","Доп. аналитика"];
+  var FOTM = ["Маркетолог","Контент-креатор (Настя Жильникова)","СММ менеджер","СММ","Инфлюенс-менеджер","Директолог","Таргетолог","Дизайнер","Копирайтер","SEO","Рилсмейкер","Трафик менеджер"];
+  var OTHER = ["Email рассылка","Сервисы маркетинговые","Подрядчики маркетинговые","Съёмки","Монтаж"];
+  var DELIV = ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"];
+  function expenses(ym){
+    var m = opiuMonth(ym); if (!m) return null;
+    var rows = m.rows || null;
+    function leaf(n){ return rows ? Math.abs(rows[n] || 0) : 0; }
+    var adv = rows ? ADV.map(function(n){ return { name: n, value: leaf(n) }; }) : [{ name: "Закупка рекламы", value: pick(m.indirect_breakdown, "Закупка рекламы") }];
+    var fot = rows ? FOTM.map(function(n){ return { name: n, value: leaf(n) }; }) : [{ name: "ФОТ Маркетинга", value: pick(m.personnel_breakdown, "ФОТ Маркетинга") }];
+    var other = OTHER.map(function(n){ return { name: n, value: pick(m.indirect_breakdown, n) }; });
+    function sum(a){ return a.reduce(function(s, x){ return s + x.value; }, 0); }
+    var advT = rows ? Math.max(sum(adv), pick(m.indirect_breakdown, "Закупка рекламы")) : sum(adv);
+    var fotT = rows ? Math.max(sum(fot), pick(m.personnel_breakdown, "ФОТ Маркетинга")) : sum(fot);
+    return { adv: adv, fot: fot, other: other, advT: advT, fotT: fotT, otherT: sum(other), total: advT + fotT + sum(other) };
+  }
+  function siteMargin(ym){
+    var m = opiuMonth(ym); if (!m) return null;
+    var rb = m.revenue_breakdown || []; function r(i){ return rb[i] ? rb[i].value : 0; }
+    var site = r(0) + r(1), mp = r(2)+r(3)+r(4)+r(5)+r(6)+r(7)+r(8)+r(9), share = safeDiv(site, site + mp) || 0;
+    var d = m.direct_breakdown, ind = m.indirect_breakdown;
+    var deliv = DELIV.reduce(function(a, n){ return a + pick(ind, n); }, 0);
+    var margin = site - pick(d, "Возвраты") - pick(d, "Эквайринговая комиссия") - deliv - share * (pick(d, "Активация") + pick(d, "Создание продукта") + pick(d, "Банковские комиссии"));
+    return { site: site, margin: margin, share: share };
+  }
+  function metrikaMonth(ym){ return MET && MET.months && MET.months[ym] ? MET.months[ym] : null; }
+  function visits(ym){ var mm = metrikaMonth(ym); return mm ? mm.visits : null; }
+  // средний LTV по когортам, созревшим на выбранный месяц (последние 6 когорт)
+  function ltvAt(ym, h){
+    if (!MK) return null;
+    var cms = Object.keys(MK.cohorts).filter(function(cm){ return ymDiff(cm, ym) >= h; }).sort().slice(-6);
+    var size = 0, rev = 0, act = 0;
+    cms.forEach(function(cm){ var c = MK.cohorts[cm]; size += c.size; rev += c.h[h].rev; act += c.h[h].act; });
+    return size ? { ltv: rev / size, ltvAct: (rev - act) / size, from: cms[0], to: cms[cms.length - 1], size: size } : null;
+  }
+  function metrics(ym){
+    var m = MK && MK.months[ym], ex = expenses(ym), mg = siteMargin(ym), v = visits(ym);
+    if (!m) return null;
+    var out = { orders: m.orders, revenue: m.revenue, buyers: m.buyers, newBuyers: m.newBuyers, retShare: safeDiv(m.retOrders, m.orders), visits: v,
+      conv: v ? m.orders / v : null, exp: ex, cac: ex ? safeDiv(ex.advT, m.newBuyers) : null, cacFull: ex ? safeDiv(ex.total, m.newBuyers) : null,
+      cpo: ex ? safeDiv(ex.advT, m.orders) : null, romi: ex && mg && ex.total ? (mg.margin - ex.total) / ex.total : null, margin: mg ? mg.margin : null };
+    var l = ltvAt(ym, 12); out.ltv = l ? l.ltv : null; out.ltvAct = l ? l.ltvAct : null; out.ltvInfo = l;
+    return out;
+  }
+
+  // ---- рендер ----
+  function kpi(label, text, val, prev, yoy, sub, lowerBetter){
+    function d(p){ if (val === null || val === undefined || !isFinite(val) || p === null || p === undefined || !isFinite(p) || !p) return null; return (val - p) / Math.abs(p); }
+    var d1 = d(prev), d2 = d(yoy);
+    function cls(x){ if (x === null) return "flat"; var good = lowerBetter ? x < 0 : x > 0; return Math.abs(x) < 0.005 ? "flat" : (good ? "up" : "down"); }
+    var delta = d1 === null ? "" : '<div class="delta ' + cls(d1) + '">' + fmtSP(d1) + (d2 !== null ? ' <span style="opacity:.75">(' + fmtSP(d2) + ')</span>' : "") + '</div>';
+    return '<div class="kpi"><div class="lbl">' + label + '</div><div class="val">' + text + '</div>' + delta + (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div>';
+  }
+  function renderKpis(){
+    var ym = state.month, cur = metrics(ym), prev = metrics(addMonths(ym, -1)), yoy = metrics(addMonths(ym, -12));
+    var box = root.querySelector("#mkKpis");
+    if (!cur){ box.innerHTML = '<div class="mk-empty">Нет данных CRM за этот месяц</div>'; return; }
+    function g(o, k){ return o ? o[k] : null; }
+    function money(x){ return x === null || x === undefined || !isFinite(x) ? "—" : fmtR(x); }
+    var ex = cur.exp;
+    box.innerHTML =
+      kpi("Расходы на маркетинг", ex ? fmtR(ex.total) : "—", ex ? ex.total : null, g(prev, "exp") && prev.exp.total, g(yoy, "exp") && yoy.exp.total, ex ? "реклама " + fmtN(ex.advT) + " · ФОТ " + fmtN(ex.fotT) + " · прочее " + fmtN(ex.otherT) : "нет ОПиУ за месяц", true) +
+      kpi("Визиты", cur.visits !== null ? fmtN(cur.visits) : "—", cur.visits, g(prev, "visits"), g(yoy, "visits"), cur.visits !== null ? "Метрика, счётчик 32072156" : "Метрика не подключена") +
+      kpi("Конверсия в покупку", fmtP(cur.conv, 2), cur.conv, g(prev, "conv"), g(yoy, "conv"), "заказы сайта ÷ визиты") +
+      kpi("CAC", money(cur.cac), cur.cac, g(prev, "cac"), g(yoy, "cac"), "реклама ÷ новые покупатели (" + fmtN(cur.newBuyers) + ")" + (cur.cacFull !== null ? " · полный с ФОТ " + fmtN(cur.cacFull) : ""), true) +
+      kpi("ROMI", fmtP(cur.romi, 0), cur.romi, g(prev, "romi"), g(yoy, "romi"), cur.margin !== null ? "маржа сайта " + fmtN(cur.margin) + " ₽" : "нет ОПиУ за месяц") +
+      kpi("Заказы сайта", fmtN(cur.orders), cur.orders, g(prev, "orders"), g(yoy, "orders"), fmtR(cur.revenue) + " · покупателей " + fmtN(cur.buyers)) +
+      kpi("CPO", money(cur.cpo), cur.cpo, g(prev, "cpo"), g(yoy, "cpo"), "реклама ÷ все заказы сайта", true) +
+      kpi("Retention", fmtP(cur.retShare, 0), cur.retShare, g(prev, "retShare"), g(yoy, "retShare"), "доля заказов от повторных покупателей") +
+      kpi("LTV 12 мес", money(cur.ltv), cur.ltv, g(prev, "ltv"), g(yoy, "ltv"), cur.ltvInfo ? "выручка на клиента · когорты " + lab(cur.ltvInfo.from) + " – " + lab(cur.ltvInfo.to) : "когорты ещё не созрели") +
+      kpi("LTV по активациям 12 мес", money(cur.ltvAct), cur.ltvAct, g(prev, "ltvAct"), g(yoy, "ltvAct"), "выручка минус себестоимость активаций на клиента");
+  }
+  function deltaTd(cur, prev, lowerBetter){
+    if (!prev) return '<td class="num">—</td>';
+    var d = (cur - prev) / Math.abs(prev), good = lowerBetter ? d < 0 : d > 0;
+    return '<td class="num ' + (Math.abs(d) < 0.005 ? "" : (good ? "up" : "down")) + '">' + fmtSP(d) + '</td>';
+  }
+  function renderExpenses(){
+    var ex = expenses(state.month), pex = expenses(addMonths(state.month, -1)), body = root.querySelector("#mkExpenses");
+    if (!ex){ body.innerHTML = '<tr><td class="mk-empty">Нет ОПиУ Адеска за этот месяц</td></tr>'; return; }
+    var max = Math.max(ex.advT, ex.fotT, ex.otherT, 1), html = "";
+    function group(title, total, items, ptotal, pitems){
+      html += '<tr class="t"><td>' + title + '</td><td class="num">' + fmtR(total) + '</td>' + deltaTd(total, ptotal, true) + '</tr>';
+      items.filter(function(it){ return it.value > 0.5; }).sort(function(a, b){ return b.value - a.value; }).forEach(function(it){
+        var p = pitems ? (pitems.filter(function(x){ return x.name === it.name; })[0] || {}).value : null;
+        html += '<tr class="sub"><td><span class="mk-bar" style="width:' + Math.round(it.value / max * 120) + 'px"></span>' + it.name + '</td><td class="num">' + fmtR(it.value) + '</td>' + deltaTd(it.value, p, true) + '</tr>';
+      });
+    }
+    html += '<tr><th>Статья</th><th class="num">' + lab(state.month) + '</th><th class="num">к пред. мес.</th></tr>';
+    group("Реклама", ex.advT, ex.adv, pex && pex.advT, pex && pex.adv);
+    group("ФОТ маркетинга", ex.fotT, ex.fot, pex && pex.fotT, pex && pex.fot);
+    group("Прочее", ex.otherT, ex.other, pex && pex.otherT, pex && pex.other);
+    html += '<tr class="t"><td>Итого</td><td class="num">' + fmtR(ex.total) + '</td>' + deltaTd(ex.total, pex && pex.total, true) + '</tr>';
+    body.innerHTML = html;
+  }
+  function renderChannels(){
+    var m = MK && MK.months[state.month], pm = MK && MK.months[addMonths(state.month, -1)], body = root.querySelector("#mkChannels");
+    if (!m){ body.innerHTML = '<tr><td class="mk-empty">Нет данных</td></tr>'; return; }
+    var chs = Object.keys(m.byChannel).sort(function(a, b){ return m.byChannel[b].revenue - m.byChannel[a].revenue; });
+    var html = '<tr><th>Канал</th><th class="num">Заказы</th><th class="num">Выручка</th><th class="num">Доля</th><th class="num">к пред. мес.</th></tr>';
+    chs.forEach(function(ch){
+      var c = m.byChannel[ch], p = pm && pm.byChannel[ch];
+      html += '<tr><td>' + ch + '</td><td class="num">' + fmtN(c.orders) + '</td><td class="num">' + fmtR(c.revenue) + '</td><td class="num">' + fmtP(c.revenue / m.revenue, 0) + '</td>' + deltaTd(c.revenue, p && p.revenue, false) + '</tr>';
+    });
+    html += '<tr class="t"><td>Итого сайт</td><td class="num">' + fmtN(m.orders) + '</td><td class="num">' + fmtR(m.revenue) + '</td><td class="num">100 %</td>' + deltaTd(m.revenue, pm && pm.revenue, false) + '</tr>';
+    body.innerHTML = html;
+  }
+  function renderTraffic(){
+    var ym = state.month, m = MK && MK.months[ym], mm = metrikaMonth(ym), svg = root.querySelector("#mkTrafficSvg");
+    var dim = new Date(parseInt(ym.slice(0,4),10), parseInt(ym.slice(5,7),10), 0).getDate();
+    var days = []; for (var i = 1; i <= dim; i++) days.push(ym + "-" + String(i).padStart(2, "0"));
+    var vis = days.map(function(d){ return MET && MET.days && MET.days[d] ? MET.days[d].visits : 0; });
+    var ord = days.map(function(d){ return m && m.byDay[d] ? m.byDay[d].orders : 0; });
+    var W = 900, H = 220, padL = 46, padR = 46, padT = 12, padB = 26, pw = W - padL - padR, ph = H - padT - padB;
+    var maxV = Math.max.apply(null, vis.concat([1])), maxO = Math.max.apply(null, ord.concat([1]));
+    var bw = pw / dim, out = "";
+    for (var k = 0; k < dim; k++){
+      var x = padL + k * bw;
+      out += '<rect x="' + (x + bw * 0.2) + '" y="' + (padT + ph - ord[k] / maxO * ph) + '" width="' + (bw * 0.6) + '" height="' + (ord[k] / maxO * ph) + '" fill="var(--s3)" opacity="0.55"/>';
+      if (k % 2 === 0) out += '<text x="' + (x + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" fill="var(--text-muted)">' + (k + 1) + '</text>';
+    }
+    if (mm){
+      var pts = vis.map(function(v, k){ return (padL + k * bw + bw / 2).toFixed(1) + "," + (padT + ph - v / maxV * ph).toFixed(1); });
+      out += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--s1)" stroke-width="2"/>';
+      out += '<text x="' + (padL - 6) + '" y="' + (padT + 10) + '" text-anchor="end" font-size="10" fill="var(--s1)">' + fmtN(maxV) + '</text>';
+    }
+    out += '<text x="' + (W - padR + 6) + '" y="' + (padT + 10) + '" font-size="10" fill="var(--s3)">' + maxO + '</text>';
+    svg.innerHTML = out;
+    root.querySelector("#mkTrafficCap").textContent = mm ? "Визиты по дням (Метрика) и заказы сайта по дням (CRM) · за месяц визитов " + fmtN(mm.visits) + ", посетителей " + fmtN(mm.users) : "Заказы сайта по дням (CRM). Метрика не подключена: добавьте секрет METRIKA_TOKEN в репозиторий дашборда, визиты появятся после первого запуска сборщика";
+    var sb = root.querySelector("#mkSources"), gb = root.querySelector("#mkGoals");
+    if (mm && mm.sources){
+      var srcs = Object.keys(mm.sources).sort(function(a, b){ return mm.sources[b] - mm.sources[a]; }).slice(0, 10);
+      sb.innerHTML = '<tr><th>Источник трафика</th><th class="num">Визиты</th><th class="num">Доля</th></tr>' + srcs.map(function(s){ return '<tr><td>' + s + '</td><td class="num">' + fmtN(mm.sources[s]) + '</td><td class="num">' + fmtP(mm.sources[s] / mm.visits, 0) + '</td></tr>'; }).join("");
+      var goals = MET.goals ? Object.keys(MET.goals) : [];
+      gb.innerHTML = '<tr><th>Цель Метрики</th><th class="num">Достижений</th><th class="num">Конверсия</th></tr>' + (goals.length ? goals.map(function(gid){ var gl = MET.goals[gid], n = gl.months[ym] || 0; return '<tr><td>' + gl.name + '</td><td class="num">' + fmtN(n) + '</td><td class="num">' + fmtP(n / mm.visits, 2) + '</td></tr>'; }).join("") : '<tr><td class="mk-empty" colspan="3">Целей в счётчике нет</td></tr>') +
+        '<tr class="t"><td>Заказы CRM ÷ визиты</td><td class="num">' + (m ? fmtN(m.orders) : "—") + '</td><td class="num">' + (m ? fmtP(m.orders / mm.visits, 2) : "—") + '</td></tr>';
+    } else { sb.innerHTML = ""; gb.innerHTML = ""; }
+  }
+  function renderBuyers(){
+    var svg = root.querySelector("#mkBuyersSvg"), months = []; for (var i = 11; i >= 0; i--) months.push(addMonths(state.month, -i));
+    var W = 440, H = 200, padL = 36, padB = 24, padT = 10, pw = W - padL - 8, ph = H - padT - padB, bw = pw / 12;
+    var vals = months.map(function(ym){ var m = MK.months[ym]; return m ? [m.newBuyers, m.buyers - m.newBuyers] : [0, 0]; });
+    var max = Math.max.apply(null, vals.map(function(v){ return v[0] + v[1]; }).concat([1])), out = "";
+    vals.forEach(function(v, k){
+      var x = padL + k * bw + bw * 0.15, w = bw * 0.7, hN = v[0] / max * ph, hR = v[1] / max * ph;
+      out += '<rect x="' + x + '" y="' + (padT + ph - hN) + '" width="' + w + '" height="' + hN + '" fill="var(--s1)" opacity="0.85"/>';
+      out += '<rect x="' + x + '" y="' + (padT + ph - hN - hR) + '" width="' + w + '" height="' + hR + '" fill="var(--s4)" opacity="0.85"/>';
+      out += '<text x="' + (x + w / 2) + '" y="' + (padT + ph - hN - hR - 3) + '" text-anchor="middle" font-size="9" fill="var(--text-secondary)">' + (v[0] + v[1] || "") + '</text>';
+      out += '<text x="' + (x + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + lab(months[k]) + '</text>';
+    });
+    svg.innerHTML = out;
+  }
+  function renderCohorts(){
+    var body = root.querySelector("#mkCohorts"), cms = Object.keys(MK.cohorts).filter(function(cm){ return cm <= state.month; }).sort().slice(-15).reverse();
+    body.innerHTML = cms.map(function(cm){
+      var c = MK.cohorts[cm], age = ymDiff(cm, state.month);
+      function cell(h, fn){ var mature = age >= h; return '<td class="num' + (mature ? "" : " mat") + '">' + fn(c.h[h]) + (mature ? "" : "*") + '</td>'; }
+      return '<tr><td>' + lab(cm) + '</td><td class="num">' + fmtN(c.size) + '</td>' +
+        cell(3, function(h){ return fmtP(h.repeaters / c.size, 0); }) + cell(12, function(h){ return fmtP(h.repeaters / c.size, 0); }) +
+        cell(3, function(h){ return fmtR(h.rev / c.size); }) + cell(12, function(h){ return fmtR(h.rev / c.size); }) + cell(12, function(h){ return fmtR((h.rev - h.act) / c.size); }) + '</tr>';
+    }).join("") || '<tr><td class="mk-empty">Нет когорт</td></tr>';
+  }
+  function renderContent(){
+    var body = root.querySelector("#mkContent"), cm = CT && CT.months && CT.months[state.month];
+    if (!cm || !cm.creators || !cm.creators.length){ body.innerHTML = '<tr><td class="mk-empty">Нет данных за месяц: бот контент-завода ещё не публикует файл data/content.json в репозиторий дашборда</td></tr>'; return; }
+    body.innerHTML = '<tr><th>Креатор</th><th class="num">Просмотры</th><th class="num">Переходы на сайт</th><th class="num">Ролики</th><th class="num">Просмотров на ролик</th></tr>' +
+      cm.creators.slice().sort(function(a, b){ return (b.views || 0) - (a.views || 0); }).map(function(c){ return '<tr><td>' + c.name + '</td><td class="num">' + fmtN(c.views || 0) + '</td><td class="num">' + fmtN(c.clicks || 0) + '</td><td class="num">' + fmtN(c.videos || 0) + '</td><td class="num">' + (c.videos ? fmtN(c.views / c.videos) : "—") + '</td></tr>'; }).join("");
+  }
+  function renderHead(){
+    var sel = root.querySelector("#mkMonth"); sel.innerHTML = "";
+    var ym = MK.range[0]; var list = [];
+    while (ym <= MK.range[1]){ list.push(ym); ym = addMonths(ym, 1); }
+    list.reverse().forEach(function(k){ var o = document.createElement("option"); o.value = k; o.textContent = lab(k); sel.appendChild(o); });
+    sel.value = state.month;
+    var m = MK.months[state.month], partial = MK.lastDate && MK.lastDate.slice(0, 7) === state.month;
+    root.querySelector("#mkHeadNote").textContent = (m ? fmtN(m.orders) + " заказов, " + fmtN(m.buyers) + " покупателей" : "нет сделок") + (partial ? " · данные по " + MK.lastDate.slice(8, 10) + "." + MK.lastDate.slice(5, 7) + ", месяц неполный" : "");
+  }
+  function render(){
+    if (!MK) return;
+    if (!state.month) state.month = defaultMonth();
+    renderHead(); renderKpis(); renderExpenses(); renderChannels(); renderTraffic(); renderBuyers(); renderCohorts(); renderContent();
+  }
+  root.querySelector("#mkMonth").addEventListener("change", function(e){ state.month = e.target.value; render(); });
+  root.querySelector("#mkPrev").addEventListener("click", function(){ var p = addMonths(state.month, -1); if (MK && p >= MK.range[0]){ state.month = p; render(); } });
+  root.querySelector("#mkNext").addEventListener("click", function(){ var n = addMonths(state.month, 1); if (MK && n <= MK.range[1]){ state.month = n; render(); } });
+  window.__marketingRerender = render;
 })();
 </script>
 
@@ -7026,11 +7340,85 @@ window.__salesActSetData = function(newData){
     return d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
+  // ---- Маркетинг: сайт по CRM — заказы, клиенты, когорты (таблица «Никита», листы «Маркетинг» и «Активация») ----
+  // Канал заказа: по полю «источник» и utm_source. Маркетплейсы исключаются полностью.
+  function mktChannel(source, utm){
+    var src = (source || "").trim(), u = (utm || "").trim().toLowerCase();
+    if (MP_SOURCE_MAP[src]) return null;
+    if (/bloger_|instagram|followish|^tg$|telegram|tiktok|youtube|ohmywishes/.test(u)) return "Блогеры и соцсети";
+    if (/yandex|^ya_/.test(u)) return "Платный поиск (Директ)";
+    if (/unisender|email/.test(u)) return "Email";
+    if (/^vk|away\.vk/.test(u)) return "ВКонтакте";
+    if (/Звонок|Офис|WAZZUP|WhatsApp|ВКонтакте|CRM-форма|Квиз|MAX|Telegram|Телеграм|Онлайн-чат|почта|рекомендации/i.test(src)) return "Звонки, мессенджеры, офис";
+    if (/google|^\(direct\)$|^direct$|chatgpt/.test(u) || !u || u === "<не заполнено>") return "Органика и прямые заходы";
+    return "Прочее";
+  }
+  function ymDiff(a, b){ return (parseInt(b.slice(0,4),10) - parseInt(a.slice(0,4),10)) * 12 + (parseInt(b.slice(5,7),10) - parseInt(a.slice(5,7),10)); }
+  function computeMarketing(mktRows, actRows){
+    var mh = mktRows[0];
+    var iStage = headerIndex(mh, "стадия"), iDate = headerIndex(mh, "дата оплаты"), iSum = headerIndex(mh, "сумма");
+    var iSource = headerIndex(mh, "источник"), iUtm = headerIndex(mh, "utm source"), iContact = headerIndex(mh, "id контакта"), iDeal = headerIndex(mh, "id сделки"), iDesc = headerIndex(mh, "описание");
+    // активации связаны с продажами по id контакта (id сделок у активаций свои, с продажами не пересекаются)
+    var ah = actRows[0], iAContact = headerIndex(ah, "id контакта"), iADate = headerIndex(ah, "дата активации"), iACost = headerIndex(ah, "себестоимость");
+    var acts = [];
+    for (var a = 1; a < actRows.length; a++){
+      var ar = actRows[a]; if (!ar || !ar[iAContact] || !ar[iADate]) continue;
+      var ad = anyDateToIso(ar[iADate]); if (!ad) continue;
+      acts.push({ contact: String(ar[iAContact]).trim(), ym: ad.slice(0, 7), cost: ruNum(ar[iACost]) });
+    }
+    var deals = [];
+    for (var r = 1; r < mktRows.length; r++){
+      var row = mktRows[r];
+      if (!row || row[iStage] !== "Сделка успешна" || !row[iDate]) continue;
+      var ch = mktChannel(row[iSource], iUtm >= 0 ? row[iUtm] : "");
+      if (!ch) continue;
+      var d = anyDateToIso(row[iDate]); if (!d) continue;
+      var dealId = String(row[iDeal] || "").trim();
+      var contact = String(row[iContact] || "").trim() || ("deal:" + dealId);
+      deals.push({ d: d, ym: d.slice(0, 7), sum: ruNum(row[iSum]), contact: contact, dealId: dealId, ch: ch, qty: dealQty(row[iDesc]) });
+    }
+    if (!deals.length) throw new Error("Маркетинг: нет сделок сайта в листе «Маркетинг»");
+    deals.sort(function(x, y){ return x.d < y.d ? -1 : x.d > y.d ? 1 : 0; });
+    var first = {}; deals.forEach(function(dl){ if (!(dl.contact in first)) first[dl.contact] = dl.ym; });
+    var months = {}, cohorts = {}, seenInMonth = {}, dealsSeen = {};
+    deals.forEach(function(dl){
+      var m = months[dl.ym] || (months[dl.ym] = { orders: 0, revenue: 0, qty: 0, buyers: 0, newBuyers: 0, retOrders: 0, retRevenue: 0, byChannel: {}, byDay: {} });
+      var isFirstDeal = !dealsSeen[dl.contact]; dealsSeen[dl.contact] = true;
+      m.orders++; m.revenue += dl.sum; m.qty += dl.qty;
+      var sk = dl.ym + "|" + dl.contact;
+      if (!seenInMonth[sk]){ seenInMonth[sk] = true; m.buyers++; if (first[dl.contact] === dl.ym) m.newBuyers++; }
+      if (first[dl.contact] !== dl.ym){ m.retOrders++; m.retRevenue += dl.sum; }
+      var c = m.byChannel[dl.ch] || (m.byChannel[dl.ch] = { orders: 0, revenue: 0 }); c.orders++; c.revenue += dl.sum;
+      var dd = m.byDay[dl.d] || (m.byDay[dl.d] = { orders: 0, revenue: 0 }); dd.orders++; dd.revenue += dl.sum;
+      // когорты по месяцу первой покупки: выручка, себестоимость активаций и повторные покупатели в горизонтах 3/6/12 мес и всего
+      var cm = first[dl.contact], diff = ymDiff(cm, dl.ym);
+      var co = cohorts[cm] || (cohorts[cm] = { size: 0, h: { 3: { rev: 0, act: 0, rep: {} }, 6: { rev: 0, act: 0, rep: {} }, 12: { rev: 0, act: 0, rep: {} } }, all: { rev: 0, act: 0, rep: {} } });
+      if (isFirstDeal) co.size++;
+      [3, 6, 12].forEach(function(hh){ if (diff < hh){ co.h[hh].rev += dl.sum; if (!isFirstDeal) co.h[hh].rep[dl.contact] = 1; } });
+      co.all.rev += dl.sum; if (!isFirstDeal) co.all.rep[dl.contact] = 1;
+    });
+    // себестоимость активаций клиента — в когорту его первой покупки на сайте, по сроку от первой покупки до активации
+    acts.forEach(function(ac){
+      var cm = first[ac.contact]; if (!cm) return;
+      var diff = ymDiff(cm, ac.ym); if (diff < 0) return;
+      var co = cohorts[cm];
+      [3, 6, 12].forEach(function(hh){ if (diff < hh) co.h[hh].act += ac.cost; });
+      co.all.act += ac.cost;
+    });
+    Object.keys(cohorts).forEach(function(cm){
+      var co = cohorts[cm];
+      [3, 6, 12].forEach(function(hh){ co.h[hh].repeaters = Object.keys(co.h[hh].rep).length; delete co.h[hh].rep; });
+      co.all.repeaters = Object.keys(co.all.rep).length; delete co.all.rep;
+    });
+    var keys = Object.keys(months).sort();
+    return { months: months, cohorts: cohorts, range: [keys[0], keys[keys.length - 1]], lastDate: deals[deals.length - 1].d, deals: deals.length, contacts: Object.keys(first).length };
+  }
+
   async function runUpdate(btn, statusEl){
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = "Обновляю…";
-    var results = { opiu: null, salesact: null, wowsales: null, kreditorka: null };
+    var results = { opiu: null, salesact: null, wowsales: null, kreditorka: null, marketing: null };
     var errors = [];
 
     var fetches = {};
@@ -7049,7 +7437,12 @@ window.__salesActSetData = function(newData){
       safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
       // лист «Операции» необязателен (нужен только для расчёта ОПиУ по дням) — его отсутствие не считаем ошибкой
       (async function(){ try { fetches.adeskOps = await fetchSheet(ADESK_ID, "Операции"); } catch (e) { fetches.adeskOps = null; } })(),
+      // файлы, которые кладут в репозиторий серверные сборщики (Метрика, бот контент-завода); их отсутствие — не ошибка
+      (async function(){ try { var r = await fetch("data/metrika.json?ts=" + Date.now()); fetches.metrika = r.ok ? await r.json() : null; } catch (e) { fetches.metrika = null; } })(),
+      (async function(){ try { var r = await fetch("data/content.json?ts=" + Date.now()); fetches.content = r.ok ? await r.json() : null; } catch (e) { fetches.content = null; } })(),
     ]);
+    if (fetches.metrika && fetches.metrika.months && Object.keys(fetches.metrika.months).length && window.__marketingSetMetrika) window.__marketingSetMetrika(fetches.metrika);
+    if (fetches.content && window.__marketingSetContent) window.__marketingSetContent(fetches.content);
 
     // OПиУ
     if (fetches.adeskList1){
@@ -7083,6 +7476,16 @@ window.__salesActSetData = function(newData){
       } catch (e) { errors.push(e.message); }
     }
 
+    // Маркетинг (сайт по CRM)
+    var mkData = null;
+    if (fetches.nikitaMarketing && fetches.nikitaActivation){
+      try {
+        mkData = computeMarketing(fetches.nikitaMarketing, fetches.nikitaActivation);
+        window.__marketingSetData(mkData);
+        results.marketing = "Маркетинг: " + mkData.deals + " заказов сайта, " + mkData.contacts + " клиентов, по " + mkData.lastDate;
+      } catch (e) { errors.push(e.message); }
+    }
+
     // Аналитика продаж
     if (fetches.feedList1 && fetches.feedVygruzka && fetches.feedMarketplaces && fetches.nikitaActivation){
       try {
@@ -7102,7 +7505,7 @@ window.__salesActSetData = function(newData){
       } catch (e) { errors.push(e.message); }
     }
 
-    var okParts = [results.opiu, results.salesact, results.wowsales, results.kreditorka].filter(Boolean);
+    var okParts = [results.opiu, results.salesact, results.wowsales, results.kreditorka, results.marketing].filter(Boolean);
 
     if (okParts.length){
       try {
@@ -7116,6 +7519,9 @@ window.__salesActSetData = function(newData){
           cache.partners = wsData.partners;
         }
         if (kData) cache.kreditorka = kData;
+        if (mkData) cache.marketing = mkData;
+        if (fetches.metrika && fetches.metrika.months && Object.keys(fetches.metrika.months).length) cache.metrika = fetches.metrika;
+        if (fetches.content) cache.content = fetches.content;
         cache.savedAt = new Date().toISOString();
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       } catch (e) { /* localStorage недоступен (приватный режим и т.п.) — не критично */ }
@@ -7143,6 +7549,9 @@ window.__salesActSetData = function(newData){
       if (cache.salesact) window.__salesActSetData(cache.salesact);
       if (cache.sales && cache.activations && cache.partners) window.__wowSalesSetData(cache.sales, cache.activations, cache.partners);
       if (cache.kreditorka) window.__kreditorkaSetData(cache.kreditorka);
+      if (cache.marketing && window.__marketingSetData) window.__marketingSetData(cache.marketing);
+      if (cache.metrika && window.__marketingSetMetrika) window.__marketingSetMetrika(cache.metrika);
+      if (cache.content && window.__marketingSetContent) window.__marketingSetContent(cache.content);
       return true;
     } catch (e) { return false; }
   }
