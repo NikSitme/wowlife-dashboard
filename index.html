@@ -6501,7 +6501,7 @@ window.__salesActSetData = function(newData){
       out += '<rect x="' + x + '" y="' + (padT + ph - hN) + '" width="' + w + '" height="' + hN + '" fill="var(--s1)" opacity="0.85"/>';
       out += '<rect x="' + x + '" y="' + (padT + ph - hN - hR) + '" width="' + w + '" height="' + hR + '" fill="var(--s4)" opacity="0.85"/>';
       out += '<text x="' + (x + w / 2) + '" y="' + (padT + ph - hN - hR - 3) + '" text-anchor="middle" font-size="9" fill="var(--text-secondary)">' + (v[0] + v[1] || "") + '</text>';
-      out += '<text x="' + (x + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + lab(months[k]) + '</text>';
+      if (k % 2 === 1) out += '<text x="' + (x + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + lab(months[k]) + '</text>';
     });
     svg.innerHTML = out;
   }
