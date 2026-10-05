@@ -497,14 +497,14 @@
       </ul>
 
       <h3 id="doc-pricing">11. Вкладка «Ценообразование»</h3>
-      <p>Конструктор наборов и прайс услуг по логике standfin (созвон 04.10.2026): в цену закладываются только <b>переменные расходы в процентах</b>, постоянные (ФОТ, аренда, маркетинг) покрываются маржой и в прайс не входят; чистая прибыль показывается справочно.</p>
+      <p>Конструктор наборов и прайс услуг по логике standfin (созвон 04.10.2026): в цену закладываются только <b>переменные расходы</b>, постоянные (ФОТ, аренда, маркетинг) покрываются маржой и в прайс не входят; чистая прибыль показывается справочно. Инструкция «что сделать / что получаем / зачем / почему так» — в каждом блоке вкладки.</p>
       <ul>
         <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Прайс услуг — листы «Услуги Мск/СПб» (id, название, партнёр, цена, себестоимость). Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить из CRM» скачивает заново.</li>
-        <li><b>Параметры.</b> Эквайринг, возвраты и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Любой параметр можно сдвинуть, таблицы пересчитываются сразу; «Сбросить к факту» возвращает значения по умолчанию.</li>
-        <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка). Переменные V = P × (эквайринг + возвраты + упаковка + налоги). Ожидаемая себестоимость C — выплата партнёру за выбранную услугу: средняя по услугам набора, худшая (самая дорогая) или взвешенная по частоте активаций партнёров. МП = P − V − C × активация; маржа = МП / P. «При 100 %» — та же формула с активацией 100 % (сертификат точно используют). ЧП = МП − P × постоянные %. Цена для целевой маржи M: P = C × активация / (1 − V% − M), затем делим на (1 − скидка). Услуга «убыточна при активации», если P − V − её себестоимость &lt; 0.</li>
+        <li><b>Параметры.</b> Эквайринг, возвраты и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
+        <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (самая дорогая) или взвешенная по частоте активаций партнёров. МП = P − V − C × активация; маржа = МП / P. «При 100 %» — та же формула с активацией 100 %. ЧП = МП − постоянные (P × % или ₽). Цена для целевой маржи M: P = (₽ расходы + C × активация) / (1 − V% − M), затем возвращаем скидку. Услуга «убыточна при активации», если P − V − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
-        <li><b>Конструктор.</b> «Новый набор» создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» копирует существующий набор для переработки, «Скрыть» убирает набор из прайса. «Цена для цели» ставит цену, при которой маржа равна целевой.</li>
-        <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «Скачать CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
+        <li><b>Конструктор.</b> «Новый набор» создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» копирует существующий набор для переработки, «Скрыть» убирает набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
+        <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
         <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава.</li>
       </ul>
       <h3 id="doc-known">12. Известные особенности и принятые решения</h3>
@@ -3784,101 +3784,137 @@ window.__salesActSetData = function(newData){
 
   <div class="tabpanel" data-panel="pricing" hidden>
 <style>
-  .pr-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .pr-note { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
-  .pr-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px 16px; margin-top: 12px; }
-  .pr-param label { display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 3px; }
-  .pr-param .v { display: flex; align-items: center; gap: 4px; }
-  .pr-param .v input[type=number] { width: 72px; font: inherit; font-size: 12.5px; text-align: right; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
-  .pr-param .u { font-size: 11px; color: var(--text-muted); }
-  .pr-param input[type=range] { width: 100%; accent-color: var(--s1); margin: 4px 0 0; }
-  .pr-param .fact { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .pr-param.changed label { color: var(--text-primary); font-weight: 650; }
-  .pr-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 16px; }
-  @media (max-width: 1100px) { .pr-kpis { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 600px) { .pr-kpis { grid-template-columns: repeat(2, 1fr); } }
-  .pr-kpis .kpi .val { font-size: 18px; }
-  .pr-kpis .kpi .sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
-  .pr-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .pr-tools input[type=search] { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); min-width: 220px; }
+  .pr { --pr-good-bg: color-mix(in srgb, var(--good) 13%, transparent); --pr-warn-bg: color-mix(in srgb, var(--s4) 16%, transparent); --pr-bad-bg: color-mix(in srgb, var(--bad) 13%, transparent); --pr-key-bg: color-mix(in srgb, var(--s1) 9%, transparent); }
+  .pr .card { border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 0 0 1px var(--border); }
+  .pr-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .pr-top h2 { margin: 0; font-size: 15px; }
+  .pr-top .sub { font-size: 12px; color: var(--text-muted); }
+  .pr-top .right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .pr [hidden] { display: none !important; }
+  .pr-howto { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 18px; margin: 10px 0 14px; padding: 10px 14px; border-radius: 10px; background: var(--pr-key-bg); font-size: 12px; line-height: 1.4; }
+  @media (max-width: 900px) { .pr-howto { grid-template-columns: 1fr 1fr; } }
+  .pr-howto b { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--s1); margin-bottom: 2px; }
+  .pr-howto span { color: var(--text-secondary); }
+  .pr-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px 24px; }
+  .pr-group h4 { margin: 4px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 650; }
+  .pr-param { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; align-items: center; padding: 7px 0; border-top: 1px solid var(--border); }
+  .pr-param:first-of-type { border-top: none; }
+  .pr-param .lbl { font-size: 13px; }
+  .pr-param .hint { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .pr-param.changed .lbl { font-weight: 650; color: var(--s1); }
+  .pr-param .ctl { display: flex; align-items: center; gap: 6px; }
+  .pr-param input[type=number] { width: 84px; font: inherit; font-size: 13px; text-align: right; padding: 5px 7px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .pr-param .unit { font-size: 12px; color: var(--text-muted); width: 14px; }
+  .pr-mode { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+  .pr-mode button { font: inherit; font-size: 11px; padding: 2px 8px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+  .pr-mode button.on { background: var(--pr-key-bg); color: var(--s1); font-weight: 650; }
+  .pr-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+  @media (max-width: 800px) { .pr-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .pr-kpis .kpi { border: none; box-shadow: 0 0 0 1px var(--border); }
+  .pr-kpis .kpi .val { font-size: 22px; }
+  .pr-kpis .kpi .sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .pr-kpis .kpi.good { background: var(--pr-good-bg); } .pr-kpis .kpi.warn { background: var(--pr-warn-bg); } .pr-kpis .kpi.bad { background: var(--pr-bad-bg); }
+  .pr-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
+  .pr-tools input[type=search] { font: inherit; font-size: 13px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); min-width: 240px; }
   .pr-tools .sp { flex: 1; }
-  .pr-scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--border); border-radius: 10px; }
-  .pr-table { width: 100%; font-size: 12.5px; border-collapse: separate; border-spacing: 0; }
-  .pr-table th, .pr-table td { padding: 7px 9px; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  .pr-status { font-size: 11.5px; color: var(--text-muted); margin: 0 0 8px; }
+  .pr-scroll { overflow: auto; max-height: 72vh; border-radius: 10px; box-shadow: 0 0 0 1px var(--border); }
+  .pr-table { width: 100%; font-size: 13px; border-collapse: separate; border-spacing: 0; }
+  .pr-table th, .pr-table td { padding: 9px 10px; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
   .pr-table th:first-child, .pr-table td:first-child { text-align: left; }
-  .pr-table th:nth-child(2), .pr-table td:nth-child(2) { text-align: left; }
   .pr-table thead th { position: sticky; top: 0; background: var(--surface-2); font-size: 11px; font-weight: 650; color: var(--text-secondary); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; z-index: 1; }
   .pr-table thead th.on { color: var(--s1); }
+  .pr-table thead th.key { background: var(--pr-key-bg); }
   .pr-table tbody tr.row td { border-top: 1px solid var(--border); }
   .pr-table tbody tr.row.set { cursor: pointer; }
-  .pr-table tbody tr.row:hover td { background: color-mix(in srgb, var(--s1) 6%, transparent); }
-  .pr-table tbody tr.row.open td { background: color-mix(in srgb, var(--s1) 9%, transparent); }
-  .pr-table td.good { color: var(--good); font-weight: 650; } .pr-table td.bad { color: var(--bad); font-weight: 650; } .pr-table td.warn { color: var(--s4); font-weight: 650; }
+  .pr-table tbody tr.row:hover td { background: var(--surface-2); }
+  .pr-table tbody tr.row.open td { background: var(--surface-2); }
+  .pr-table td.good { background: var(--pr-good-bg); } .pr-table td.warn { background: var(--pr-warn-bg); } .pr-table td.bad { background: var(--pr-bad-bg); }
   .pr-table td.muted, .pr-table span.muted { color: var(--text-muted); }
-  .pr-table .nm { max-width: 380px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
-  .pr-table input.in { width: 86px; font: inherit; font-size: 12px; text-align: right; padding: 3px 5px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
-  .pr-table input.in.txt { width: 100%; min-width: 180px; text-align: left; }
+  .pr-table td.key { background: var(--pr-key-bg); font-weight: 650; }
+  .pr-table .nm { display: block; max-width: 420px; overflow: hidden; text-overflow: ellipsis; }
+  .pr-table .meta { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .pr-table input.in { width: 90px; font: inherit; font-size: 13px; text-align: right; padding: 4px 6px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .pr-table input.in.txt { width: 100%; min-width: 200px; text-align: left; }
   .pr-table input.in.changed { border-color: var(--s1); font-weight: 650; }
-  .pr-table .tag { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, var(--s1) 14%, transparent); color: var(--s1); margin-left: 6px; vertical-align: 1px; }
-  .pr-table .tag.u { background: color-mix(in srgb, var(--s3) 16%, transparent); color: var(--s3); }
-  .pr-table .tag.z { background: color-mix(in srgb, var(--s4) 16%, transparent); color: var(--s4); }
-  .pr-sub td { padding: 0 0 12px 0 !important; white-space: normal; background: var(--surface-2); }
-  .pr-subbox { padding: 10px 14px 4px 24px; border-left: 3px solid color-mix(in srgb, var(--s1) 45%, transparent); margin: 0 0 0 10px; }
-  .pr-subbox .hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; }
-  .pr-subbox .hdr b { font-size: 12.5px; }
-  .pr-items { width: 100%; font-size: 11.5px; border-collapse: collapse; }
-  .pr-items th, .pr-items td { padding: 4px 8px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .pr-items th:first-child, .pr-items td:first-child, .pr-items th:nth-child(2), .pr-items td:nth-child(2) { text-align: left; }
-  .pr-items th { font-size: 10.5px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); cursor: default; }
-  .pr-items tr:hover td { background: color-mix(in srgb, var(--s1) 5%, transparent); }
-  .pr-items td.good { color: var(--good); } .pr-items td.bad { color: var(--bad); font-weight: 650; } .pr-items td.warn { color: var(--s4); }
-  .pr-items .nm { max-width: 440px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; white-space: nowrap; }
-  .pr-x { font: inherit; font-size: 11px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); border-radius: 6px; padding: 1px 6px; cursor: pointer; }
-  .pr-x:hover { color: var(--bad); border-color: var(--bad); }
+  .pr-table .tag { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--pr-key-bg); color: var(--s1); margin-left: 6px; vertical-align: 1px; }
+  .pr-table .tag.z { background: var(--pr-warn-bg); color: var(--s4); } .pr-table .tag.r { background: var(--pr-bad-bg); color: var(--bad); }
+  .pr-sub td { padding: 0 0 14px 0 !important; white-space: normal; background: var(--surface-2); }
+  .pr-subbox { padding: 12px 16px 6px 28px; }
+  .pr-subbox .hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12.5px; }
+  .pr-subbox .hdr .muted { color: var(--text-muted); }
+  .pr-items { width: 100%; font-size: 12.5px; border-collapse: collapse; background: var(--surface-1); border-radius: 8px; overflow: hidden; }
+  .pr-items th, .pr-items td { padding: 6px 9px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pr-items th:first-child, .pr-items td:first-child { text-align: left; }
+  .pr-items th { font-size: 10.5px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .pr-items td { border-top: 1px solid var(--border); }
+  .pr-items td.good { background: var(--pr-good-bg); } .pr-items td.warn { background: var(--pr-warn-bg); } .pr-items td.bad { background: var(--pr-bad-bg); }
+  .pr-items .nm { display: block; max-width: 460px; overflow: hidden; text-overflow: ellipsis; }
+  .pr-items .meta { display: block; font-size: 11px; color: var(--text-muted); }
+  .pr-x { font: inherit; font-size: 12px; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; padding: 1px 6px; cursor: pointer; }
+  .pr-x:hover { color: var(--bad); background: var(--pr-bad-bg); }
   .pr-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; position: relative; }
-  .pr-add input { font: inherit; font-size: 12px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); min-width: 320px; }
-  .pr-add .res { position: absolute; left: 0; top: 100%; z-index: 5; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 260px; overflow: auto; min-width: 520px; }
-  .pr-add .res div { padding: 5px 10px; font-size: 11.5px; cursor: pointer; display: flex; gap: 10px; }
-  .pr-add .res div:hover { background: color-mix(in srgb, var(--s1) 10%, transparent); }
+  .pr-add input { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); min-width: 340px; }
+  .pr-add .res { position: absolute; left: 0; top: 100%; z-index: 5; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 260px; overflow: auto; min-width: 540px; }
+  .pr-add .res div { padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; gap: 10px; }
+  .pr-add .res div:hover { background: var(--pr-key-bg); }
   .pr-add .res div span:last-child { margin-left: auto; color: var(--text-muted); }
-  .pr-btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
+  .pr-btn { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
   .pr-btn.pri { background: var(--s1); border-color: var(--s1); color: #fff; }
-  .pr-btn:disabled { opacity: 0.5; cursor: default; }
+  .pr-btn.soft { border-color: transparent; background: var(--pr-key-bg); color: var(--s1); }
+  .pr-btn.quiet { border-color: transparent; color: var(--text-muted); }
   .pr-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 13px; }
-  .pr-legend { font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
-  .pr-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .pr-legend { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .pr-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
 </style>
+<div class="pr">
 
   <div class="card">
-    <div class="pr-head">
-      <h2 style="margin:0">Параметры прайса</h2>
-      <span class="chip" id="prFactChip" title="Откуда взяты значения по умолчанию">факт ОПиУ</span>
-      <button type="button" class="chip" id="prParamsReset" style="margin-left:auto">Сбросить к факту</button>
+    <div class="pr-top"><h2>1. Параметры прайса</h2><span class="sub">правила, по которым считается каждая услуга и набор</span>
+      <div class="right"><span class="chip" id="prFactChip">факт ОПиУ</span><button type="button" class="pr-btn quiet" id="prParamsReset">Сбросить к факту</button></div></div>
+    <div class="pr-howto">
+      <div><b>Что сделать</b><span>Проверить проценты (по умолчанию — факт ОПиУ за 6 месяцев), выставить активацию и целевую маржу. Любой расход можно задать в ₽ на один набор вместо %.</span></div>
+      <div><b>Что получаем</b><span>Единые правила расчёта: сколько от цены съедают переменные расходы и выплата партнёру, сколько должно остаться.</span></div>
+      <div><b>Зачем</b><span>Чтобы цена каждого набора покрывала выплату партнёру и переменные расходы и оставляла целевую маржу — без этого набор убыточен.</span></div>
+      <div><b>Почему так</b><span>По логике standfin в прайс входят только переменные расходы. Постоянные (ФОТ, аренда, маркетинг) покрываются маржой, поэтому в цену не зашиты и показаны справочно в колонке «ЧП».</span></div>
     </div>
-    <p class="pr-note">По логике standfin: в цену закладываем только переменные расходы, в процентах от цены. Постоянные (ФОТ, аренда, маркетинг) в прайс не входят — их покрывает маржа. Маржинальная прибыль = цена − скидка − переменные % − выплата партнёру × активация. Чистая прибыль — справочно: маржа минус постоянные расходы как % выручки по факту ОПиУ.</p>
-    <div class="pr-params" id="prParams"></div>
+    <div class="pr-groups" id="prParams"></div>
   </div>
 
   <div class="pr-kpis" id="prKpis"></div>
 
   <div class="card" style="margin-top:16px">
+    <div class="pr-top"><h2 id="prTitle">2. Наборы</h2><span class="sub" id="prTitleSub">конструктор: состав, цена, маржа</span></div>
+    <div class="pr-howto" id="prHowSets">
+      <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: «+ Новый набор» → название, город, услуги поиском.</span></div>
+      <div><b>Что получаем</b><span>По каждому набору: ожидаемая выплата партнёру, маржа при заложенной активации и при 100 %, чистая прибыль, цена под целевую маржу.</span></div>
+      <div><b>Зачем</b><span>Пересобрать наборы и цены так, чтобы каждый набор был маржинальным, даже если сертификат точно используют.</span></div>
+      <div><b>Почему так</b><span>Покупатель платит цену набора, какую услугу ни выберут, — поэтому маржа услуги считается от цены набора. Какую выберут, заранее неизвестно — берём среднюю, худшую или по частоте активаций партнёров.</span></div>
+    </div>
+    <div class="pr-howto" id="prHowServices" hidden>
+      <div><b>Что сделать</b><span>Проверить цену и выплату партнёру по услугам, поправить устаревшие, добавить новые («+ Новая услуга»). Правка себестоимости применяется во всех наборах.</span></div>
+      <div><b>Что получаем</b><span>Маржа каждой услуги отдельным сертификатом и цена, при которой она даёт целевую маржу; сколько наборов её содержат.</span></div>
+      <div><b>Зачем</b><span>Услуги — кирпичи наборов: убыточная услуга делает убыточным любой набор, куда входит.</span></div>
+      <div><b>Почему так</b><span>Цена и себестоимость берутся из прайса CRM (листы «Услуги Мск/СПб»); правки здесь CRM не меняют — это модель для решения, что менять.</span></div>
+    </div>
     <div class="pr-tools">
       <div class="seg" id="prView"><button type="button" data-v="sets" class="active">Наборы</button><button type="button" data-v="services">Услуги</button></div>
       <div class="seg" id="prCity"><button type="button" data-c="all" class="active">Все</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div>
-      <div class="seg" id="prMode" title="Какую себестоимость считать ожидаемой для набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div>
+      <div class="seg" id="prMode" title="Какую выплату партнёру считать ожидаемой для набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div>
       <input type="search" id="prQ" placeholder="Поиск по названию, партнёру…">
       <span class="sp"></span>
-      <button type="button" class="pr-btn" id="prNewSet">+ Новый набор</button>
-      <button type="button" class="pr-btn" id="prNewService" hidden>+ Новая услуга</button>
-      <button type="button" class="pr-btn" id="prCsv">Скачать CSV</button>
-      <button type="button" class="pr-btn" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
-      <button type="button" class="pr-btn" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
+      <button type="button" class="pr-btn pri" id="prNewSet">+ Новый набор</button>
+      <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
+      <button type="button" class="pr-btn" id="prCsv">CSV</button>
+      <button type="button" class="pr-btn quiet" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
+      <button type="button" class="pr-btn quiet" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
     </div>
-    <p class="pr-note" id="prStatus" style="margin:0 0 10px"></p>
+    <p class="pr-status" id="prStatus"></p>
     <div class="pr-scroll" id="prTableWrap"></div>
-    <div class="pr-legend"><span><i style="background:var(--good)"></i>маржа ≥ целевой</span><span><i style="background:var(--s4)"></i>ниже целевой</span><span><i style="background:var(--bad)"></i>убыток</span><span>Маржа считается от цены набора при заложенной активации; «при 100 %» — худший сценарий, когда сертификат точно используют.</span></div>
+    <div class="pr-legend"><span><i style="background:var(--pr-good-bg)"></i>маржа не ниже целевой</span><span><i style="background:var(--pr-warn-bg)"></i>ниже целевой</span><span><i style="background:var(--pr-bad-bg)"></i>убыток</span><span><i style="background:var(--pr-key-bg)"></i>главное</span></div>
   </div>
 
+</div>
   </div>
 
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
@@ -7713,17 +7749,17 @@ window.__salesActSetData = function(newData){
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v1", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
-  var state = { params: null, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var state = { params: null, pmode: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
 
   var PARAM_DEFS = [
-    { k: "act", lbl: "Активация", min: 0, max: 100, step: 1, hint: "Доля сертификатов, которые используют. Факт за 2 года ≈ 60 %; 100 % — худший сценарий" },
-    { k: "acq", lbl: "Эквайринг", min: 0, max: 5, step: 0.05, hint: "Комиссия эквайринга, % от выручки сайта" },
-    { k: "ret", lbl: "Возвраты", min: 0, max: 10, step: 0.1, hint: "Возвраты, % от выручки сайта" },
-    { k: "pack", lbl: "Упаковка", min: 0, max: 10, step: 0.1, hint: "Создание продукта (коробки, шоколад, вкладыши), % от выручки сайта" },
-    { k: "tax", lbl: "Налоги с выручки", min: 0, max: 15, step: 0.5, hint: "НДС 5 % + УСН 1 % + 1 % за регистрацию" },
-    { k: "disc", lbl: "Скидка", min: 0, max: 50, step: 1, hint: "Постоянная скидка или промокод, % от цены" },
-    { k: "target", lbl: "Целевая маржа", min: 0, max: 80, step: 1, hint: "Красная линия: наборы и услуги ниже неё подсвечиваются" },
-    { k: "fixed", lbl: "Постоянные расходы", min: 0, max: 80, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. расходы — % от выручки за 6 мес. ОПиУ. В цену не закладываются, нужны только для оценки чистой прибыли: ЧП = МП − цена × этот %" }
+    { k: "act", g: "Сколько сертификатов используют", lbl: "Активация", unit: "%", max: 100, step: 1, hint: "Факт за 2 года ≤ 60 %. Поставьте 100 % — увидите худший сценарий" },
+    { k: "acq", g: "Переменные расходы с каждой продажи", lbl: "Эквайринг", rub: true, max: 10, step: 0.05, hint: "комиссия банка за оплату картой" },
+    { k: "ret", g: "Переменные расходы с каждой продажи", lbl: "Возвраты", rub: true, max: 20, step: 0.1, hint: "деньги, которые возвращаем покупателям" },
+    { k: "pack", g: "Переменные расходы с каждой продажи", lbl: "Упаковка", rub: true, max: 20, step: 0.1, hint: "коробка, шоколад, вкладыши — «Создание продукта» в ОПиУ" },
+    { k: "tax", g: "Переменные расходы с каждой продажи", lbl: "Налоги с выручки", rub: true, max: 30, step: 0.5, hint: "НДС 5 % + УСН 1 % + 1 % за регистрацию" },
+    { k: "disc", g: "Переменные расходы с каждой продажи", lbl: "Скидка", rub: true, max: 90, step: 1, hint: "постоянная скидка или промокод от цены" },
+    { k: "target", g: "Цель", lbl: "Целевая маржа", unit: "%", max: 90, step: 1, hint: "красная линия: всё, что ниже, подсвечено жёлтым" },
+    { k: "fixed", g: "Цель", lbl: "Постоянные расходы", rub: true, max: 90, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. — справочно для колонки «ЧП», в цену не входят" }
   ];
 
   function fmtR(n){ return n === null || !isFinite(n) ? "—" : Math.round(n).toLocaleString("ru-RU") + " ₽"; }
@@ -7735,8 +7771,8 @@ window.__salesActSetData = function(newData){
   function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
 
   // ---------- хранение ----------
-  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, view: state.view, city: state.city, mode: state.mode, sort: state.sort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","view","city","mode","sort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, view: state.view, city: state.city, mode: state.mode, sort: state.sort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","view","city","mode","sort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
@@ -7881,7 +7917,15 @@ window.__salesActSetData = function(newData){
   function usage(){ var u = {}; allSets().forEach(function(s){ s.items.forEach(function(it){ u[it.sid] = (u[it.sid] || 0) + 1; }); }); return u; }
 
   // ---------- расчёт ----------
-  function P(){ var p = state.params; return { a: p.act / 100, v: (p.acq + p.ret + p.pack + p.tax) / 100, disc: p.disc / 100, t: p.target / 100, f: (p.fixed || 0) / 100 }; }
+  function isRub(k){ return state.pmode[k] === "rub"; }
+  function P(){
+    var p = state.params; function pct(k){ return isRub(k) ? 0 : (p[k] || 0) / 100; } function rub(k){ return isRub(k) ? (p[k] || 0) : 0; }
+    return { a: p.act / 100, v: pct("acq") + pct("ret") + pct("pack") + pct("tax"), vr: rub("acq") + rub("ret") + rub("pack") + rub("tax"), discP: pct("disc"), discR: rub("disc"), t: p.target / 100, fP: pct("fixed"), fR: rub("fixed") };
+  }
+  function netPrice(price, p){ return price * (1 - p.discP) - p.discR; }
+  function grossPrice(net, p){ return (net + p.discR) / (1 - p.discP); }
+  function targetPrice(cost, p){ var den = 1 - p.v - p.t; return cost > 0 && den > 0 ? grossPrice((p.vr + cost * p.a) / den, p) : null; }
+  function fixedOf(price, p){ return price * p.fP + p.fR; }
   function weights(set){
     if (state.mode !== "act" || !ACT) return null;
     var cnt = ACT.counts[set.city] || {}; var per = {};
@@ -7893,57 +7937,58 @@ window.__salesActSetData = function(newData){
     return w;
   }
   function calcSet(s){
-    var p = P(); var price = s.price * (1 - p.disc); var V = price * p.v;
+    var p = P(); var price = netPrice(s.price, p); var V = price * p.v + p.vr;
     var costs = s.items.filter(function(it){ return it.cost > 0; }).map(function(it){ return it.cost; });
     var avg = mean(costs), max = costs.length ? Math.max.apply(null, costs) : null;
     var w = weights(s), wavg = null;
     if (w){ wavg = 0; s.items.forEach(function(it){ if (w[it.sid]) wavg += w[it.sid] * it.cost; }); }
     var exp = state.mode === "max" ? max : (state.mode === "act" && wavg !== null ? wavg : avg);
-    var den = 1 - p.v - p.t;
-    var r = { price: price, V: V, avg: avg, max: max, wavg: wavg, exp: exp, w: w, noCost: s.items.length - costs.length, n: s.items.length, target: exp !== null && den > 0 ? exp * p.a / den / (1 - p.disc) : null };
-    if (exp === null || !s.price){ r.mpAct = r.mAct = r.mp100 = r.m100 = r.npAct = r.nAct = null; r.loss = r.below = 0; return r; }
-    r.mpAct = price - V - exp * p.a; r.mAct = r.mpAct / price; r.npAct = r.mpAct - price * p.f; r.nAct = r.npAct / price;
+    var r = { price: price, V: V, avg: avg, max: max, wavg: wavg, exp: exp, w: w, noCost: s.items.length - costs.length, n: s.items.length, target: targetPrice(exp, p), mpAct: null, mAct: null, mp100: null, m100: null, npAct: null, nAct: null, loss: 0, below: 0 };
+    if (exp === null || !(price > 0)) return r;
+    r.mpAct = price - V - exp * p.a; r.mAct = r.mpAct / price; r.npAct = r.mpAct - fixedOf(price, p); r.nAct = r.npAct / price;
     r.mp100 = price - V - exp; r.m100 = r.mp100 / price;
     r.loss = s.items.filter(function(it){ return it.cost > 0 && price - V - it.cost < 0; }).length;
     r.below = s.items.filter(function(it){ return it.cost > 0 && (price - V - it.cost * p.a) / price < p.t; }).length;
     return r;
   }
   function calcItem(set, it, r){
-    var p = P(); if (!(it.cost > 0) || !r.price) return { mpAct: null, mAct: null, m100: null, share: null };
+    var p = P(); if (!(it.cost > 0) || !(r.price > 0)) return { mpAct: null, mAct: null, m100: null, share: null };
     var mpAct = r.price - r.V - it.cost * p.a, mp100 = r.price - r.V - it.cost;
     return { mpAct: mpAct, mAct: mpAct / r.price, m100: mp100 / r.price, share: it.cost / set.price };
   }
   function calcService(sv){
-    var p = P(); var price = sv.price * (1 - p.disc); var V = price * p.v;
-    var den = 1 - p.v - p.t;
-    if (!(sv.price > 0) || !(sv.cost > 0)) return { mpAct: null, mAct: null, m100: null, nAct: null, share: sv.price > 0 && sv.cost > 0 ? sv.cost / sv.price : null, target: sv.cost > 0 && den > 0 ? sv.cost * p.a / den / (1 - p.disc) : null };
-    var mpAct = price - V - sv.cost * p.a, mp100 = price - V - sv.cost;
-    return { mpAct: mpAct, mAct: mpAct / price, m100: mp100 / price, nAct: (mpAct - price * p.f) / price, share: sv.cost / sv.price, target: den > 0 ? sv.cost * p.a / den / (1 - p.disc) : null };
+    var p = P(); var price = netPrice(sv.price, p); var V = price * p.v + p.vr;
+    var c = { mpAct: null, mAct: null, m100: null, nAct: null, share: sv.price > 0 && sv.cost > 0 ? sv.cost / sv.price : null, target: targetPrice(sv.cost, p) };
+    if (!(price > 0) || !(sv.cost > 0)) return c;
+    c.mpAct = price - V - sv.cost * p.a; c.mAct = c.mpAct / price; c.m100 = (price - V - sv.cost) / price; c.nAct = (c.mpAct - fixedOf(price, p)) / price;
+    return c;
   }
 
   // ---------- рендер ----------
+  function refPrice(){ var ps = allSets().filter(function(s){ return s.price > 0; }).map(function(s){ return s.price; }); return ps.length ? mean(ps) : 5000; }
   function renderParams(){
-    var box = root.querySelector("#prParams");
-    box.innerHTML = PARAM_DEFS.map(function(d){
-      var v = state.params[d.k], f = FACT[d.k], ch = Math.abs(v - f) > 1e-9;
-      return '<div class="pr-param' + (ch ? " changed" : "") + '" title="' + esc(d.hint) + '"><label>' + d.lbl + '</label><div class="v"><input type="number" data-k="' + d.k + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '" value="' + v + '"><span class="u">%</span></div><input type="range" data-k="' + d.k + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '" value="' + v + '"><div class="fact">' + (ch ? "по умолчанию " + String(f).replace(".", ",") + " %" : (d.k === "acq" || d.k === "ret" || d.k === "pack" || d.k === "fixed" ? "факт ОПиУ" : d.k === "act" ? "история: ≤ 60 %" : "&nbsp;")) + '</div></div>';
+    var box = root.querySelector("#prParams"); var ref = refPrice(); var groups = [];
+    PARAM_DEFS.forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
+    box.innerHTML = groups.map(function(g){
+      return '<div class="pr-group"><h4>' + g.name + '</h4>' + g.items.map(function(d){
+        var v = state.params[d.k], f = FACT[d.k], rub = isRub(d.k), ch = !rub && Math.abs(v - f) > 1e-9;
+        var fact = rub ? "≈ " + String(Math.round(v / ref * 1000) / 10).replace(".", ",") + " % при средней цене " + fmtR(ref) : (d.k === "act" ? "история: ≤ 60 %" : d.k === "target" ? "" : (ch ? "факт ОПиУ: " + String(f).replace(".", ",") + " %" : "факт ОПиУ"));
+        return '<div class="pr-param' + (ch || rub ? " changed" : "") + '"><div><div class="lbl">' + d.lbl + '</div><div class="hint">' + esc(d.hint) + (fact ? " · " + fact : "") + '</div></div><div class="ctl"><input type="number" data-k="' + d.k + '" min="0" max="' + (rub ? 100000 : d.max) + '" step="' + (rub ? 10 : d.step) + '" value="' + v + '"><span class="unit">' + (rub ? "₽" : "%") + '</span>' + (d.rub ? '<span class="pr-mode"><button type="button" data-pm="' + d.k + '" data-m="pct" class="' + (rub ? "" : "on") + '">%</button><button type="button" data-pm="' + d.k + '" data-m="rub" class="' + (rub ? "on" : "") + '">₽</button></span>' : "") + '</div></div>';
+      }).join("") + '</div>';
     }).join("");
-    var chip = root.querySelector("#prFactChip"); chip.textContent = FACT.months ? "факт ОПиУ · " + FACT.months : "факт ОПиУ"; chip.title = "Эквайринг, возвраты и упаковка — доля от выручки сайта за последние 6 месяцев ОПиУ";
+    var chip = root.querySelector("#prFactChip"); chip.textContent = FACT.months ? "факт ОПиУ · " + FACT.months : "факт ОПиУ"; chip.title = "Эквайринг, возвраты, упаковка — доля от выручки сайта; постоянные — доля от всей выручки. Последние 6 месяцев ОПиУ";
   }
   function renderKpis(sets){
     var p = P(); var rs = sets.map(calcSet); var withM = rs.filter(function(r){ return r.mAct !== null; });
     var below = withM.filter(function(r){ return r.mAct < p.t; }).length, loss = withM.filter(function(r){ return r.mAct < 0; }).length;
-    var lossItems = rs.reduce(function(a, r){ return a + r.loss; }, 0), items = rs.reduce(function(a, r){ return a + r.n; }, 0);
-    var nAct = mean(withM.map(function(r){ return r.nAct; }));
-    function kpi(lbl, val, sub, c){ return '<div class="kpi"><div class="lbl">' + lbl + '</div><div class="val' + (c ? " " + c : "") + '"' + (c ? ' style="color:var(--' + (c === "bad" ? "bad" : c === "good" ? "good" : "s4") + ')"' : "") + '>' + val + '</div><div class="sub">' + sub + '</div></div>'; }
-    var mAct = mean(withM.map(function(r){ return r.mAct; })), m100 = mean(withM.map(function(r){ return r.m100; }));
+    var lossItems = rs.reduce(function(a, r){ return a + r.loss; }, 0);
+    var mAct = mean(withM.map(function(r){ return r.mAct; })), m100 = mean(withM.map(function(r){ return r.m100; })), nAct = mean(withM.map(function(r){ return r.nAct; }));
+    function kpi(lbl, val, sub, c){ return '<div class="kpi' + (c ? " " + c : "") + '"><div class="lbl">' + lbl + '</div><div class="val">' + val + '</div><div class="sub">' + sub + '</div></div>'; }
     root.querySelector("#prKpis").innerHTML =
-      kpi("Наборов в прайсе", fmtN(sets.length), sets.filter(function(s){ return s.city === "Мск"; }).length + " Мск · " + sets.filter(function(s){ return s.city === "СПб"; }).length + " СПб · услуг " + fmtN(items)) +
-      kpi("Средняя маржа наборов", fmtP(mAct), "при активации " + state.params.act + " % · среднее по наборам", mAct === null ? "" : cls(mAct, p.t)) +
-      kpi("Маржа при 100 % активации", fmtP(m100), "худший сценарий: сертификат точно используют", m100 === null ? "" : cls(m100, p.t)) +
-      kpi("Ниже целевой маржи", fmtN(below) + " из " + fmtN(withM.length), "цель " + state.params.target + " % · в убытке " + fmtN(loss), below ? "warn" : "good") +
-      kpi("Услуг убыточных при активации", fmtN(lossItems), "выплата партнёру больше цены набора минус переменные", lossItems ? "bad" : "good") +
-      kpi("Чистая прибыль с набора", fmtP(nAct), "маржа минус постоянные " + String(state.params.fixed).replace(".", ",") + " % выручки · себест.: " + (state.mode === "avg" ? "средняя" : state.mode === "max" ? "худшая" : "по активациям"), nAct === null ? "" : (nAct < 0 ? "bad" : "good"));
+      kpi("Средняя маржа наборов", fmtP(mAct), "при активации " + state.params.act + " % · " + fmtN(sets.length) + " наборов, с ценой " + fmtN(withM.length), mAct === null ? "" : cls(mAct, p.t)) +
+      kpi("Если используют все (100 %)", fmtP(m100), "худший сценарий", m100 === null ? "" : cls(m100, p.t)) +
+      kpi("Чистая прибыль с набора", fmtP(nAct), "маржа минус постоянные расходы", nAct === null ? "" : (nAct < 0 ? "bad" : "good")) +
+      kpi("Нужно переделать", fmtN(below) + " наборов · " + fmtN(lossItems) + " услуг", "наборы ниже цели " + state.params.target + " % · услуги, убыточные при активации", below || lossItems ? "warn" : "good");
   }
   function filtered(list){
     var q = state.q.trim().toLowerCase();
@@ -7953,50 +7998,50 @@ window.__salesActSetData = function(newData){
     var k = state.sort.k, g = getters[k] || getters.name, d = state.sort.d;
     return list.slice().sort(function(a, b){ var x = g(a), y = g(b); if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1; if (typeof x === "string") return x.localeCompare(y, "ru") * d; return (x - y) * d; });
   }
-  function th(k, label, title){ return '<th data-s="' + k + '" class="' + (state.sort.k === k ? "on" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '>' + label + (state.sort.k === k ? (state.sort.d > 0 ? " ↑" : " ↓") : "") + '</th>'; }
+  function th(k, label, title, key){ return '<th data-s="' + k + '" class="' + (state.sort.k === k ? "on" : "") + (key ? " key" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '>' + label + (state.sort.k === k ? (state.sort.d > 0 ? " ↑" : " ↓") : "") + '</th>'; }
   function renderSets(){
     var p = P(); var sets = filtered(allSets()); var calc = {}; sets.forEach(function(s){ calc[s.id] = calcSet(s); });
-    var g = { name: function(s){ return s.name; }, city: function(s){ return s.city; }, n: function(s){ return s.items.length; }, price: function(s){ return s.price; }, exp: function(s){ return calc[s.id].exp; }, max: function(s){ return calc[s.id].max; }, mp: function(s){ return calc[s.id].mpAct; }, m: function(s){ return calc[s.id].mAct; }, m100: function(s){ return calc[s.id].m100; }, np: function(s){ return calc[s.id].nAct; }, target: function(s){ return calc[s.id].target; }, loss: function(s){ return calc[s.id].loss; } };
+    var g = { name: function(s){ return s.name; }, price: function(s){ return s.price; }, exp: function(s){ return calc[s.id].exp; }, mp: function(s){ return calc[s.id].mpAct; }, m: function(s){ return calc[s.id].mAct; }, m100: function(s){ return calc[s.id].m100; }, np: function(s){ return calc[s.id].nAct; }, target: function(s){ return calc[s.id].target; }, loss: function(s){ return calc[s.id].loss; } };
     sets = sortBy(sets, g);
-    var html = '<table class="pr-table"><thead><tr>' + th("name", "Набор") + th("city", "Город") + th("n", "Услуг") + th("price", "Цена") + th("exp", "Ожид. себест.", "Ожидаемая выплата партнёру за выбранную услугу") + th("max", "Худшая", "Самая дорогая услуга в наборе") + th("mp", "МП, ₽", "Маржинальная прибыль с набора при заложенной активации") + th("m", "Маржа", "при заложенной активации") + th("m100", "При 100 %", "Маржа, если сертификат точно используют") + th("np", "ЧП", "Чистая прибыль: маржа минус постоянные расходы (% выручки) при заложенной активации") + th("target", "Цена для цели", "Цена, при которой маржа равна целевой") + th("loss", "Убыт. услуг", "Услуги, выплата по которым больше цены набора минус переменные") + '</tr></thead><tbody>';
-    if (!sets.length) html += '<tr><td colspan="12" class="pr-empty">' + (CRM ? "Ничего не найдено" : (crmLoading ? "Загружаю наборы из CRM…" : "Наборы не загружены")) + '</td></tr>';
+    var html = '<table class="pr-table"><thead><tr>' + th("name", "Набор") + th("price", "Цена") + th("exp", "Партнёру", "ожидаемая выплата партнёру за выбранную услугу") + th("mp", "МП, ₽", "маржинальная прибыль с набора при заложенной активации") + th("m", "Маржа", "при заложенной активации", true) + th("m100", "При 100 %", "если сертификат точно используют") + th("np", "ЧП", "чистая прибыль: маржа минус постоянные расходы") + th("target", "Цена для цели", "цена, при которой маржа равна целевой", true) + th("loss", "Проблемы", "услуги, убыточные при активации, и услуги без себестоимости") + '</tr></thead><tbody>';
+    if (!sets.length) html += '<tr><td colspan="9" class="pr-empty">' + (CRM ? "Ничего не найдено" : (crmLoading ? "Загружаю наборы из CRM…" : "Наборы не загружены")) + '</td></tr>';
     sets.forEach(function(s){
       var r = calc[s.id], open = !!state.open[s.id];
-      html += '<tr class="row set' + (open ? " open" : "") + '" data-id="' + esc(s.id) + '"><td><span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span>' + (s.custom ? '<span class="tag u">мой</span>' : s.edited ? '<span class="tag">правки</span>' : "") + (r.noCost ? '<span class="tag z" title="услуг без себестоимости">' + r.noCost + ' без себест.</span>' : "") + '</td><td>' + s.city + '</td><td>' + s.items.length + '</td>' +
+      html += '<tr class="row set' + (open ? " open" : "") + '" data-id="' + esc(s.id) + '"><td><span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + (s.custom ? '<span class="tag">мой</span>' : s.edited ? '<span class="tag">правки</span>' : "") + '</span><span class="meta">' + s.city + ' · услуг ' + s.items.length + (r.w ? " · вес по активациям" : "") + '</span></td>' +
         '<td><input class="in' + (s.basePrice !== null && s.price !== s.basePrice ? " changed" : "") + '" type="number" step="10" data-setprice="' + esc(s.id) + '" value="' + (s.price || 0) + '" title="' + (s.basePrice !== null ? "в CRM: " + fmtR(s.basePrice) : "цена набора") + '"></td>' +
-        '<td>' + fmtR(r.exp) + (r.w ? '<span class="muted" title="взвешено по активациям"> ⚖</span>' : "") + '</td><td class="muted">' + fmtR(r.max) + '</td><td class="' + cls(r.mAct, p.t) + '">' + fmtR(r.mpAct) + '</td><td class="' + cls(r.mAct, p.t) + '">' + fmtP(r.mAct) + '</td><td class="' + cls(r.m100, p.t) + '">' + fmtP(r.m100) + '</td><td class="' + (r.nAct === null ? "muted" : r.nAct < 0 ? "bad" : "good") + '">' + fmtP(r.nAct) + '</td><td' + (r.target !== null && s.price && r.target > s.price ? ' class="warn"' : "") + '>' + fmtR(r.target) + '</td><td class="' + (r.loss ? "bad" : "muted") + '">' + (r.loss || "—") + '</td></tr>';
-      if (open) html += '<tr class="pr-sub"><td colspan="12">' + renderSetItems(s, r) + '</td></tr>';
+        '<td class="muted">' + fmtR(r.exp) + '</td><td>' + fmtR(r.mpAct) + '</td><td class="' + cls(r.mAct, p.t) + '">' + fmtP(r.mAct) + '</td><td class="' + cls(r.m100, p.t) + '">' + fmtP(r.m100) + '</td><td class="' + (r.nAct === null ? "muted" : r.nAct < 0 ? "bad" : "") + '">' + fmtP(r.nAct) + '</td><td class="key">' + fmtR(r.target) + '</td><td>' + (r.loss ? '<span class="tag r" style="margin:0">' + r.loss + ' убыт.</span>' : "") + (r.noCost ? '<span class="tag z">' + r.noCost + ' без себест.</span>' : "") + (!r.loss && !r.noCost ? '<span class="muted">—</span>' : "") + '</td></tr>';
+      if (open) html += '<tr class="pr-sub"><td colspan="9">' + renderSetItems(s, r) + '</td></tr>';
     });
     html += '</tbody></table>';
     root.querySelector("#prTableWrap").innerHTML = html;
   }
   function renderSetItems(s, r){
     var p = P(); var w = r.w;
-    var h = '<div class="pr-subbox"><div class="hdr"><b>Состав набора</b><span class="muted">цена ' + fmtR(s.price) + (p.disc ? " → " + fmtR(r.price) + " после скидки" : "") + ' · переменные ' + fmtP(p.v, 1) + ' = ' + fmtR(r.V) + '</span>' +
+    var h = '<div class="pr-subbox"><div class="hdr"><b>Состав</b><span class="muted">цена ' + fmtR(s.price) + (r.price !== s.price ? " → " + fmtR(r.price) + " после скидки" : "") + ' · переменные расходы ' + fmtR(r.V) + ' · ожидаемая выплата партнёру ' + fmtR(r.exp) + '</span>' +
       (s.custom ? '<input class="in txt" style="min-width:220px;width:auto" data-setname="' + esc(s.id) + '" value="' + esc(s.name) + '" title="название набора"><span class="seg" style="padding:2px"><button type="button" data-setcity="' + esc(s.id) + '" data-c="Мск" class="' + (s.city === "Мск" ? "active" : "") + '" style="padding:2px 8px;font-size:11px">Мск</button><button type="button" data-setcity="' + esc(s.id) + '" data-c="СПб" class="' + (s.city === "СПб" ? "active" : "") + '" style="padding:2px 8px;font-size:11px">СПб</button></span>' : "") +
-      '<span style="margin-left:auto;display:flex;gap:6px">' + (r.target !== null ? '<button type="button" class="pr-btn" data-apply="' + esc(s.id) + '" title="поставить цену, при которой маржа = целевой">Цена для цели: ' + fmtR(r.target) + '</button>' : "") + '<button type="button" class="pr-btn" data-dup="' + esc(s.id) + '">Дублировать</button>' + (s.custom ? '<button type="button" class="pr-btn" data-del="' + esc(s.id) + '">Удалить</button>' : '<button type="button" class="pr-btn" data-hide="' + esc(s.id) + '" title="скрыть набор из прайса (вернуть — «Сбросить правки»)">Скрыть</button>') + '</span></div>';
-    h += '<table class="pr-items"><thead><tr><th>Услуга</th><th>Партнёр</th>' + (w ? '<th title="доля выбора по активациям партнёра за 24 мес.">Вес</th>' : "") + '<th title="выплата партнёру">Себест.</th><th title="выплата партнёру, % от цены набора">% цены</th><th title="маржинальная прибыль при заложенной активации">МП, ₽</th><th>Маржа</th><th title="если сертификат точно используют">При 100 %</th><th></th></tr></thead><tbody>';
+      '<span style="margin-left:auto;display:flex;gap:6px">' + (r.target !== null ? '<button type="button" class="pr-btn soft" data-apply="' + esc(s.id) + '" title="поставить цену, при которой маржа = целевой ' + state.params.target + ' %">Поставить цену для цели: ' + fmtR(r.target) + '</button>' : "") + '<button type="button" class="pr-btn" data-dup="' + esc(s.id) + '">Дублировать</button>' + (s.custom ? '<button type="button" class="pr-btn quiet" data-del="' + esc(s.id) + '">Удалить</button>' : '<button type="button" class="pr-btn quiet" data-hide="' + esc(s.id) + '" title="скрыть набор из прайса (вернуть — «Сбросить правки»)">Скрыть</button>') + '</span></div>';
+    h += '<table class="pr-items"><thead><tr><th>Услуга</th>' + (w ? '<th title="как часто выбирают: по активациям партнёра за 24 мес.">Вес</th>' : "") + '<th title="выплата партнёру">Партнёру</th><th title="выплата партнёру, % от цены набора">% цены</th><th title="маржинальная прибыль при заложенной активации">МП, ₽</th><th>Маржа</th><th title="если сертификат точно используют">При 100 %</th><th></th></tr></thead><tbody>';
     var items = s.items.slice().sort(function(a, b){ return (b.cost || 0) - (a.cost || 0); });
     items.forEach(function(it){
       var c = calcItem(s, it, r);
-      h += '<tr><td><span class="nm" title="' + esc(it.name) + '">' + esc(it.name) + '</span>' + (it.added ? '<span class="tag u">доб.</span>' : "") + '</td><td class="muted">' + esc(it.partner || "—") + '</td>' + (w ? '<td class="muted">' + (w[it.sid] ? fmtP(w[it.sid], 0) : "—") + '</td>' : "") +
-        '<td><input class="in' + (state.sov[it.sid] && state.sov[it.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(it.sid) + '" value="' + (it.cost || 0) + '" title="выплата партнёру (правка применится везде, где есть эта услуга)"></td><td class="muted">' + fmtP(c.share, 0) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td><button type="button" class="pr-x" data-rm="' + esc(s.id) + '" data-sid="' + esc(it.sid) + '" title="убрать из набора">×</button></td></tr>';
+      h += '<tr><td><span class="nm" title="' + esc(it.name) + '">' + esc(it.name) + (it.added ? '<span class="tag">добавлена</span>' : "") + '</span><span class="meta">' + esc(it.partner || "партнёр не указан") + '</span></td>' + (w ? '<td class="muted">' + (w[it.sid] ? fmtP(w[it.sid], 0) : "—") + '</td>' : "") +
+        '<td><input class="in' + (state.sov[it.sid] && state.sov[it.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(it.sid) + '" value="' + (it.cost || 0) + '" title="выплата партнёру (правка применится везде, где есть эта услуга)"></td><td class="muted">' + fmtP(c.share, 0) + '</td><td>' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td><button type="button" class="pr-x" data-rm="' + esc(s.id) + '" data-sid="' + esc(it.sid) + '" title="убрать из набора">×</button></td></tr>';
     });
-    h += '</tbody></table><div class="pr-add"><input type="text" data-addq="' + esc(s.id) + '" placeholder="Добавить услугу: начните вводить название или партнёра…" autocomplete="off"><div class="res" hidden></div><span class="muted" style="font-size:11px">услуги города «' + s.city + '» из прайса</span></div></div>';
+    h += '</tbody></table><div class="pr-add"><input type="text" data-addq="' + esc(s.id) + '" placeholder="Добавить услугу: начните вводить название или партнёра…" autocomplete="off"><div class="res" hidden></div><span class="muted" style="font-size:11px">из прайса услуг города «' + s.city + '»</span></div></div>';
     return h;
   }
   function renderServices(){
     var p = P(); var u = usage(); var list = filtered(allServices()).filter(function(s){ return s.custom || s.price > 0 || s.cost > 0; }); var calc = {}; list.forEach(function(s){ calc[s.sid] = calcService(s); });
-    var g = { name: function(s){ return s.name; }, partner: function(s){ return s.partner; }, city: function(s){ return s.city; }, price: function(s){ return s.price; }, cost: function(s){ return s.cost; }, share: function(s){ return calc[s.sid].share; }, mp: function(s){ return calc[s.sid].mpAct; }, m: function(s){ return calc[s.sid].mAct; }, m100: function(s){ return calc[s.sid].m100; }, np: function(s){ return calc[s.sid].nAct; }, target: function(s){ return calc[s.sid].target; }, use: function(s){ return u[s.sid] || 0; } };
+    var g = { name: function(s){ return s.name; }, price: function(s){ return s.price; }, cost: function(s){ return s.cost; }, mp: function(s){ return calc[s.sid].mpAct; }, m: function(s){ return calc[s.sid].mAct; }, m100: function(s){ return calc[s.sid].m100; }, np: function(s){ return calc[s.sid].nAct; }, target: function(s){ return calc[s.sid].target; }, use: function(s){ return u[s.sid] || 0; } };
     list = sortBy(list, g);
     var LIM = 400, total = list.length; if (list.length > LIM) list = list.slice(0, LIM);
-    var html = '<table class="pr-table"><thead><tr>' + th("name", "Услуга") + th("partner", "Партнёр") + th("city", "Город") + th("price", "Цена", "розничная цена услуги отдельным сертификатом") + th("cost", "Себест.", "выплата партнёру") + th("share", "% цены") + th("mp", "МП, ₽", "при заложенной активации") + th("m", "Маржа") + th("m100", "При 100 %") + th("np", "ЧП", "маржа минус постоянные расходы, % выручки") + th("target", "Цена для цели") + th("use", "В наборах") + '</tr></thead><tbody>';
-    if (!list.length) html += '<tr><td colspan="12" class="pr-empty">' + (CRM ? "Ничего не найдено" : "Услуги не загружены") + '</td></tr>';
+    var html = '<table class="pr-table"><thead><tr>' + th("name", "Услуга") + th("price", "Цена", "цена услуги отдельным сертификатом") + th("cost", "Партнёру", "выплата партнёру") + th("mp", "МП, ₽", "при заложенной активации") + th("m", "Маржа", "при заложенной активации", true) + th("m100", "При 100 %") + th("np", "ЧП", "маржа минус постоянные расходы") + th("target", "Цена для цели", "цена, при которой маржа равна целевой", true) + th("use", "В наборах") + '</tr></thead><tbody>';
+    if (!list.length) html += '<tr><td colspan="9" class="pr-empty">' + (CRM ? "Ничего не найдено" : "Услуги не загружены") + '</td></tr>';
     list.forEach(function(s){
       var c = calc[s.sid];
-      html += '<tr class="row" data-sid="' + esc(s.sid) + '"><td>' + (s.custom ? '<input class="in txt" data-sname="' + esc(s.sid) + '" value="' + esc(s.name) + '">' : '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span>') + (s.custom ? '<span class="tag u">моя</span>' : s.edited ? '<span class="tag">правки</span>' : "") + '</td><td>' + (s.custom ? '<input class="in txt" style="min-width:120px" data-spartner="' + esc(s.sid) + '" value="' + esc(s.partner) + '">' : '<span class="muted">' + esc(s.partner || "—") + '</span>') + '</td><td>' + s.city + '</td>' +
+      html += '<tr class="row" data-sid="' + esc(s.sid) + '"><td>' + (s.custom ? '<input class="in txt" data-sname="' + esc(s.sid) + '" value="' + esc(s.name) + '" placeholder="название услуги"><input class="in txt" style="margin-top:3px;font-size:11px" data-spartner="' + esc(s.sid) + '" value="' + esc(s.partner) + '" placeholder="партнёр">' : '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + (s.edited ? '<span class="tag">правки</span>' : "") + '</span><span class="meta">' + esc(s.partner || "партнёр не указан") + ' · ' + s.city + '</span>') + (s.custom ? '<span class="tag">моя</span>' : "") + '</td>' +
         '<td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].price !== undefined ? " changed" : "") + '" type="number" step="10" data-sprice="' + esc(s.sid) + '" value="' + (s.price || 0) + '"></td><td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(s.sid) + '" value="' + (s.cost || 0) + '"></td>' +
-        '<td class="muted">' + fmtP(c.share, 0) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td class="' + (c.nAct === null ? "muted" : c.nAct < 0 ? "bad" : "good") + '">' + fmtP(c.nAct) + '</td><td' + (c.target !== null && s.price && c.target > s.price ? ' class="warn"' : "") + '>' + fmtR(c.target) + '</td><td class="muted">' + (u[s.sid] || "—") + (s.custom ? ' <button type="button" class="pr-x" data-sdel="' + esc(s.sid) + '" title="удалить услугу">×</button>' : "") + '</td></tr>';
+        '<td>' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td class="' + (c.nAct === null ? "muted" : c.nAct < 0 ? "bad" : "") + '">' + fmtP(c.nAct) + '</td><td class="key">' + fmtR(c.target) + '</td><td class="muted">' + (u[s.sid] || "—") + (s.custom ? ' <button type="button" class="pr-x" data-sdel="' + esc(s.sid) + '" title="удалить услугу">×</button>' : "") + '</td></tr>';
     });
     html += '</tbody></table>';
     root.querySelector("#prTableWrap").innerHTML = html;
@@ -8011,6 +8056,8 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prMode").hidden = state.view !== "sets";
     root.querySelector("#prNewSet").hidden = state.view !== "sets";
     root.querySelector("#prNewService").hidden = state.view !== "services";
+    root.querySelector("#prHowSets").hidden = state.view !== "sets"; root.querySelector("#prHowServices").hidden = state.view !== "services";
+    root.querySelector("#prTitle").textContent = state.view === "sets" ? "2. Наборы" : "2. Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
     renderKpis(filtered(allSets()));
     if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
@@ -8024,7 +8071,7 @@ window.__salesActSetData = function(newData){
   function findCustomSet(id){ return state.customSets.filter(function(s){ return s.id === id; })[0]; }
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
-    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; var sib = t.parentElement.closest(".pr-param").querySelectorAll("[data-k]"); sib.forEach(function(x){ if (x !== t) x.value = v; }); save(); renderKpis(filtered(allSets())); if (state.view === "sets") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", Math.abs(v - FACT[k]) > 1e-9); return; }
+    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(filtered(allSets())); if (state.view === "sets") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
     if (t.id === "prQ"){ state.q = t.value; save(); if (state.view === "sets") renderSets(); else renderServices(); renderKpis(filtered(allSets())); return; }
     var aq = t.getAttribute("data-addq"); if (aq){ showAddResults(t, aq); return; }
   });
@@ -8042,7 +8089,8 @@ window.__salesActSetData = function(newData){
     if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); state.sort = { k: "name", d: 1 }; save(); render(); return; }
     if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); save(); render(); return; }
     if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
-    if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); save(); render(); return; }
+    if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; save(); render(); return; }
+    if ((b = t.closest("[data-pm]"))){ var pk = b.getAttribute("data-pm"), pm = b.getAttribute("data-m"); if ((state.pmode[pk] === "rub") === (pm === "rub")) return; var ref = refPrice(); var cur = state.params[pk] || 0; state.params[pk] = pm === "rub" ? Math.round(cur / 100 * ref / 10) * 10 : Math.round(cur / ref * 1000) / 10; state.pmode[pk] = pm; save(); render(); return; }
     if (t.closest("#prCrm")){ loadCrm(true); return; }
     if (t.closest("#prResetAll")){ if (!confirm("Удалить все правки цен и состава, новые наборы и услуги?")) return; state.ov = {}; state.sov = {}; state.customSets = []; state.customServices = {}; state.open = {}; save(); render(); return; }
     if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ inp.focus(); inp.select(); } return; }
