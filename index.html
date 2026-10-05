@@ -415,6 +415,7 @@
     <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
     <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
     <button class="tabbtn" data-tab="finmodel" type="button">Финмодель</button>
+    <button class="tabbtn" data-tab="pricing" type="button">Ценообразование</button>
   </div>
   <div class="docs-bar"><button type="button" class="chip docs-btn" id="docsBtn">💡 Документация</button></div>
 
@@ -425,7 +426,7 @@
         <button type="button" class="chip" id="docsClose">Закрыть</button>
       </div>
       <nav class="docs-nav">
-        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-mkt">Маркетинг</a><a href="#doc-known">Особенности</a>
+        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-mkt">Маркетинг</a><a href="#doc-pricing">Ценообразование</a><a href="#doc-known">Особенности</a>
       </nav>
       <div class="docs-body">
 
@@ -495,7 +496,18 @@
         <li><b>Контент-завод</b> — файл data/content.json, который публикует бот статистики (просмотры, переходы, ролики по креаторам за месяц). Пока файла нет, блок пустой.</li>
       </ul>
 
-      <h3 id="doc-known">11. Известные особенности и принятые решения</h3>
+      <h3 id="doc-pricing">11. Вкладка «Ценообразование»</h3>
+      <p>Конструктор наборов и прайс услуг по логике standfin (созвон 04.10.2026): в цену закладываются только <b>переменные расходы в процентах</b>, постоянные (ФОТ, аренда, маркетинг) покрываются маржой и в прайс не входят; чистая прибыль показывается справочно.</p>
+      <ul>
+        <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Прайс услуг — листы «Услуги Мск/СПб» (id, название, партнёр, цена, себестоимость). Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить из CRM» скачивает заново.</li>
+        <li><b>Параметры.</b> Эквайринг, возвраты и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Любой параметр можно сдвинуть, таблицы пересчитываются сразу; «Сбросить к факту» возвращает значения по умолчанию.</li>
+        <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка). Переменные V = P × (эквайринг + возвраты + упаковка + налоги). Ожидаемая себестоимость C — выплата партнёру за выбранную услугу: средняя по услугам набора, худшая (самая дорогая) или взвешенная по частоте активаций партнёров. МП = P − V − C × активация; маржа = МП / P. «При 100 %» — та же формула с активацией 100 % (сертификат точно используют). ЧП = МП − P × постоянные %. Цена для целевой маржи M: P = C × активация / (1 − V% − M), затем делим на (1 − скидка). Услуга «убыточна при активации», если P − V − её себестоимость &lt; 0.</li>
+        <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
+        <li><b>Конструктор.</b> «Новый набор» создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» копирует существующий набор для переработки, «Скрыть» убирает набор из прайса. «Цена для цели» ставит цену, при которой маржа равна целевой.</li>
+        <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «Скачать CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
+        <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава.</li>
+      </ul>
+      <h3 id="doc-known">12. Известные особенности и принятые решения</h3>
       <ul>
         <li>«1 % за регистрацию» в Адеске помесячно равен расчётным строкам «УСН 1 % от выручки с сайта» + «УСН по маркетплейсам». Обе группы оставлены в ОПиУ по решению Никиты от 24.09.2026, чистая прибыль ниже примерно на сумму УСН.</li>
         <li>Банковские комиссии считаются переменным расходом (решение от 24.09.2026).</li>
@@ -3770,6 +3782,105 @@ window.__salesActSetData = function(newData){
 
   </div>
 
+  <div class="tabpanel" data-panel="pricing" hidden>
+<style>
+  .pr-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pr-note { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+  .pr-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px 16px; margin-top: 12px; }
+  .pr-param label { display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 3px; }
+  .pr-param .v { display: flex; align-items: center; gap: 4px; }
+  .pr-param .v input[type=number] { width: 72px; font: inherit; font-size: 12.5px; text-align: right; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .pr-param .u { font-size: 11px; color: var(--text-muted); }
+  .pr-param input[type=range] { width: 100%; accent-color: var(--s1); margin: 4px 0 0; }
+  .pr-param .fact { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pr-param.changed label { color: var(--text-primary); font-weight: 650; }
+  .pr-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 1100px) { .pr-kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .pr-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .pr-kpis .kpi .val { font-size: 18px; }
+  .pr-kpis .kpi .sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .pr-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pr-tools input[type=search] { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); min-width: 220px; }
+  .pr-tools .sp { flex: 1; }
+  .pr-scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--border); border-radius: 10px; }
+  .pr-table { width: 100%; font-size: 12.5px; border-collapse: separate; border-spacing: 0; }
+  .pr-table th, .pr-table td { padding: 7px 9px; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  .pr-table th:first-child, .pr-table td:first-child { text-align: left; }
+  .pr-table th:nth-child(2), .pr-table td:nth-child(2) { text-align: left; }
+  .pr-table thead th { position: sticky; top: 0; background: var(--surface-2); font-size: 11px; font-weight: 650; color: var(--text-secondary); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; z-index: 1; }
+  .pr-table thead th.on { color: var(--s1); }
+  .pr-table tbody tr.row td { border-top: 1px solid var(--border); }
+  .pr-table tbody tr.row.set { cursor: pointer; }
+  .pr-table tbody tr.row:hover td { background: color-mix(in srgb, var(--s1) 6%, transparent); }
+  .pr-table tbody tr.row.open td { background: color-mix(in srgb, var(--s1) 9%, transparent); }
+  .pr-table td.good { color: var(--good); font-weight: 650; } .pr-table td.bad { color: var(--bad); font-weight: 650; } .pr-table td.warn { color: var(--s4); font-weight: 650; }
+  .pr-table td.muted, .pr-table span.muted { color: var(--text-muted); }
+  .pr-table .nm { max-width: 380px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
+  .pr-table input.in { width: 86px; font: inherit; font-size: 12px; text-align: right; padding: 3px 5px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .pr-table input.in.txt { width: 100%; min-width: 180px; text-align: left; }
+  .pr-table input.in.changed { border-color: var(--s1); font-weight: 650; }
+  .pr-table .tag { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, var(--s1) 14%, transparent); color: var(--s1); margin-left: 6px; vertical-align: 1px; }
+  .pr-table .tag.u { background: color-mix(in srgb, var(--s3) 16%, transparent); color: var(--s3); }
+  .pr-table .tag.z { background: color-mix(in srgb, var(--s4) 16%, transparent); color: var(--s4); }
+  .pr-sub td { padding: 0 0 12px 0 !important; white-space: normal; background: var(--surface-2); }
+  .pr-subbox { padding: 10px 14px 4px 24px; border-left: 3px solid color-mix(in srgb, var(--s1) 45%, transparent); margin: 0 0 0 10px; }
+  .pr-subbox .hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; }
+  .pr-subbox .hdr b { font-size: 12.5px; }
+  .pr-items { width: 100%; font-size: 11.5px; border-collapse: collapse; }
+  .pr-items th, .pr-items td { padding: 4px 8px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pr-items th:first-child, .pr-items td:first-child, .pr-items th:nth-child(2), .pr-items td:nth-child(2) { text-align: left; }
+  .pr-items th { font-size: 10.5px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); cursor: default; }
+  .pr-items tr:hover td { background: color-mix(in srgb, var(--s1) 5%, transparent); }
+  .pr-items td.good { color: var(--good); } .pr-items td.bad { color: var(--bad); font-weight: 650; } .pr-items td.warn { color: var(--s4); }
+  .pr-items .nm { max-width: 440px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; white-space: nowrap; }
+  .pr-x { font: inherit; font-size: 11px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); border-radius: 6px; padding: 1px 6px; cursor: pointer; }
+  .pr-x:hover { color: var(--bad); border-color: var(--bad); }
+  .pr-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; position: relative; }
+  .pr-add input { font: inherit; font-size: 12px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); min-width: 320px; }
+  .pr-add .res { position: absolute; left: 0; top: 100%; z-index: 5; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 260px; overflow: auto; min-width: 520px; }
+  .pr-add .res div { padding: 5px 10px; font-size: 11.5px; cursor: pointer; display: flex; gap: 10px; }
+  .pr-add .res div:hover { background: color-mix(in srgb, var(--s1) 10%, transparent); }
+  .pr-add .res div span:last-child { margin-left: auto; color: var(--text-muted); }
+  .pr-btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
+  .pr-btn.pri { background: var(--s1); border-color: var(--s1); color: #fff; }
+  .pr-btn:disabled { opacity: 0.5; cursor: default; }
+  .pr-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .pr-legend { font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .pr-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+</style>
+
+  <div class="card">
+    <div class="pr-head">
+      <h2 style="margin:0">Параметры прайса</h2>
+      <span class="chip" id="prFactChip" title="Откуда взяты значения по умолчанию">факт ОПиУ</span>
+      <button type="button" class="chip" id="prParamsReset" style="margin-left:auto">Сбросить к факту</button>
+    </div>
+    <p class="pr-note">По логике standfin: в цену закладываем только переменные расходы, в процентах от цены. Постоянные (ФОТ, аренда, маркетинг) в прайс не входят — их покрывает маржа. Маржинальная прибыль = цена − скидка − переменные % − выплата партнёру × активация. Чистая прибыль — справочно: маржа минус постоянные расходы как % выручки по факту ОПиУ.</p>
+    <div class="pr-params" id="prParams"></div>
+  </div>
+
+  <div class="pr-kpis" id="prKpis"></div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="pr-tools">
+      <div class="seg" id="prView"><button type="button" data-v="sets" class="active">Наборы</button><button type="button" data-v="services">Услуги</button></div>
+      <div class="seg" id="prCity"><button type="button" data-c="all" class="active">Все</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div>
+      <div class="seg" id="prMode" title="Какую себестоимость считать ожидаемой для набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div>
+      <input type="search" id="prQ" placeholder="Поиск по названию, партнёру…">
+      <span class="sp"></span>
+      <button type="button" class="pr-btn" id="prNewSet">+ Новый набор</button>
+      <button type="button" class="pr-btn" id="prNewService" hidden>+ Новая услуга</button>
+      <button type="button" class="pr-btn" id="prCsv">Скачать CSV</button>
+      <button type="button" class="pr-btn" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
+      <button type="button" class="pr-btn" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
+    </div>
+    <p class="pr-note" id="prStatus" style="margin:0 0 10px"></p>
+    <div class="pr-scroll" id="prTableWrap"></div>
+    <div class="pr-legend"><span><i style="background:var(--good)"></i>маржа ≥ целевой</span><span><i style="background:var(--s4)"></i>ниже целевой</span><span><i style="background:var(--bad)"></i>убыток</span><span>Маржа считается от цены набора при заложенной активации; «при 100 %» — худший сценарий, когда сертификат точно используют.</span></div>
+  </div>
+
+  </div>
+
   <footer>Финансовый дашборд WOWlife · ОПиУ (Адеск) + продажи/активации (CRM) · данные зафиксированы на момент выгрузки</footer>
 
 <script>
@@ -5614,6 +5725,7 @@ window.__salesActSetData = function(newData){
       if (target === "fot" && window.__fotRerender) window.__fotRerender();
       if (target === "finmodel" && window.__finmodelRerender) window.__finmodelRerender();
       if (target === "marketing" && window.__marketingRerender) window.__marketingRerender();
+      if (target === "pricing" && window.__pricingRerender) window.__pricingRerender();
       if (target !== "wowsales") document.title = "Финансовый дашборд WOWlife";
     });
   });
@@ -7589,6 +7701,391 @@ window.__salesActSetData = function(newData){
   else init();
 })();
 
+</script>
+
+<script>
+// ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
+// Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
+// веса по активациям — лист «Активация». Правки пользователя (цены, состав, новые наборы/услуги) — в localStorage.
+(function(){
+  var root = document.querySelector('[data-panel="pricing"]');
+  if (!root) return;
+  var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v1", ACT_KEY = "wowlife-pricing-act-v1";
+  var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
+  var state = { params: null, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+
+  var PARAM_DEFS = [
+    { k: "act", lbl: "Активация", min: 0, max: 100, step: 1, hint: "Доля сертификатов, которые используют. Факт за 2 года ≈ 60 %; 100 % — худший сценарий" },
+    { k: "acq", lbl: "Эквайринг", min: 0, max: 5, step: 0.05, hint: "Комиссия эквайринга, % от выручки сайта" },
+    { k: "ret", lbl: "Возвраты", min: 0, max: 10, step: 0.1, hint: "Возвраты, % от выручки сайта" },
+    { k: "pack", lbl: "Упаковка", min: 0, max: 10, step: 0.1, hint: "Создание продукта (коробки, шоколад, вкладыши), % от выручки сайта" },
+    { k: "tax", lbl: "Налоги с выручки", min: 0, max: 15, step: 0.5, hint: "НДС 5 % + УСН 1 % + 1 % за регистрацию" },
+    { k: "disc", lbl: "Скидка", min: 0, max: 50, step: 1, hint: "Постоянная скидка или промокод, % от цены" },
+    { k: "target", lbl: "Целевая маржа", min: 0, max: 80, step: 1, hint: "Красная линия: наборы и услуги ниже неё подсвечиваются" },
+    { k: "fixed", lbl: "Постоянные расходы", min: 0, max: 80, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. расходы — % от выручки за 6 мес. ОПиУ. В цену не закладываются, нужны только для оценки чистой прибыли: ЧП = МП − цена × этот %" }
+  ];
+
+  function fmtR(n){ return n === null || !isFinite(n) ? "—" : Math.round(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtN(n){ return n === null || !isFinite(n) ? "—" : Math.round(n).toLocaleString("ru-RU"); }
+  function fmtP(x, d){ return x === null || x === undefined || !isFinite(x) ? "—" : (x * 100).toFixed(d === undefined ? 1 : d).replace(".", ",") + " %"; }
+  function esc(s){ return String(s === undefined || s === null ? "" : s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function ruNum(s){ if (s === null || s === undefined) return 0; s = String(s).trim().replace(/[ \s]/g, "").replace(",", "."); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
+  function mean(a){ return a.length ? a.reduce(function(x, y){ return x + y; }, 0) / a.length : null; }
+  function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
+
+  // ---------- хранение ----------
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, view: state.view, city: state.city, mode: state.mode, sort: state.sort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","view","city","mode","sort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
+
+  // ---------- факт из ОПиУ для значений по умолчанию ----------
+  function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
+  function factDefaults(){
+    var d = { act: 60, acq: 2.1, ret: 1.6, pack: 2.0, tax: 7, disc: 0, target: 40, fixed: 30, months: null };
+    var all = (window.__opiuData || []).filter(function(m){ return m.revenue_total > 0; });
+    var last = all.slice(-6);
+    if (last.length){
+      var site = 0, acq = 0, ret = 0, pack = 0, rev = 0, fix = 0;
+      last.forEach(function(m){
+        rev += m.revenue_total; fix += (m.personnel_total || 0) + (m.indirect_total || 0) + (m.admin_total || 0);
+        site += pick(m.revenue_breakdown, "Wowlife МСК выручка") + pick(m.revenue_breakdown, "Wowlife СПБ Выручка");
+        acq += pick(m.direct_breakdown, "Эквайринговая комиссия"); ret += pick(m.direct_breakdown, "Возвраты"); pack += pick(m.direct_breakdown, "Создание продукта");
+      });
+      if (site > 0){ d.acq = Math.round(acq / site * 1000) / 10; d.ret = Math.round(ret / site * 1000) / 10; d.pack = Math.round(pack / site * 1000) / 10; }
+      if (rev > 0) d.fixed = Math.round(fix / rev * 200) / 2;
+      d.months = last[0].label + " … " + last[last.length - 1].label;
+    }
+    return d;
+  }
+  var FACT = null;
+  function ensureParams(){ if (!FACT) FACT = factDefaults(); if (!state.params){ state.params = {}; PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); } }
+
+  // ---------- CRM: наборы и услуги ----------
+  async function fetchSheet(sheetName){
+    var url = "https://docs.google.com/spreadsheets/d/" + NIKITA_ID + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+    var res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status + " для листа «" + sheetName + "»");
+    var text = await res.text();
+    var rows = [], row = [], field = "", q = false;
+    for (var i = 0; i < text.length; i++){
+      var c = text[i];
+      if (q){ if (c === '"'){ if (text[i+1] === '"'){ field += '"'; i++; } else q = false; } else field += c; }
+      else { if (c === '"') q = true; else if (c === ",") { row.push(field); field = ""; } else if (c === "\r") {} else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; } else field += c; }
+    }
+    if (field.length || row.length){ row.push(field); rows.push(row); }
+    if (!rows.length) throw new Error("Пустой ответ для листа «" + sheetName + "»");
+    return rows;
+  }
+  function parseSets(rows, city){
+    var sets = [], cur = null;
+    rows.forEach(function(r){
+      var a = (r[0] || "").trim();
+      if (!a) return;
+      var ms = a.match(/^service_(\d+)_(\d+)$/);
+      if (ms){
+        if (!cur) return;
+        var nm = (r[2] || "").trim().replace(/^\d+\)\s*/, "");
+        if (!nm) return;
+        cur.items.push({ sid: ms[2], name: nm, price: ruNum(r[3]), cost: ruNum(r[4]) });
+      } else {
+        var mid = a.match(/nabor_(\d+)/); if (!mid) return;
+        var title = (r[1] || "").trim().replace(/^Набор\s+/, "");
+        var mp = title.match(/\(([\d.,]+)\)\s*-\s*Изменен:\s*(\S+)/);
+        var name = title.replace(/\s*\([\d.,]*\)\s*-\s*Изменен:.*$/, "").replace(/^Подарочный набор\s*/, "").replace(/,\s*Москва$/, "").trim();
+        cur = { id: mid[1], name: name, city: city, price: mp ? ruNum(mp[1]) : 0, changed: mp ? mp[2].slice(0, 10) : "", items: [] };
+        sets.push(cur);
+      }
+    });
+    return sets;
+  }
+  function parseCatalog(rows, city, cat){
+    rows.slice(1).forEach(function(r){
+      var id = (r[0] || "").trim(); if (!/^\d+$/.test(id)) return;
+      var nm = (r[1] || "").trim(); if (!nm) return;
+      cat[id] = { sid: id, name: nm, partner: (r[2] || "").trim(), price: ruNum(r[3]), cost: ruNum(r[4]), city: city };
+    });
+  }
+  async function loadCrm(force){
+    if (crmLoading) return;
+    if (!force){ try { var c = JSON.parse(localStorage.getItem(CRM_KEY) || "null"); if (c && c.sets && c.catalog && (Date.now() - new Date(c.savedAt).getTime()) < 36e5 * 24){ CRM = c; render(); return; } } catch (e) {} }
+    crmLoading = true; setStatus("Загружаю наборы и услуги из CRM…"); render();
+    try {
+      var r = await Promise.all([fetchSheet("Наборы Мск"), fetchSheet("Наборы СПб"), fetchSheet("Услуги Мск"), fetchSheet("Услуги СПб")]);
+      var cat = {}; parseCatalog(r[2], "Мск", cat); parseCatalog(r[3], "СПб", cat);
+      CRM = { sets: parseSets(r[0], "Мск").concat(parseSets(r[1], "СПб")), catalog: cat, savedAt: new Date().toISOString() };
+      try { localStorage.setItem(CRM_KEY, JSON.stringify(CRM)); } catch (e) {}
+      setStatus("");
+    } catch (e) { setStatus("Не удалось загрузить CRM: " + e.message + ". Проверьте доступ к таблице «Никита»."); }
+    crmLoading = false; render();
+  }
+  // ---------- активации: частоты по партнёрам за последние 24 месяца ----------
+  async function loadAct(){
+    if (ACT || actLoading) return;
+    try { var c = JSON.parse(localStorage.getItem(ACT_KEY) || "null"); if (c && c.counts && (Date.now() - new Date(c.savedAt).getTime()) < 36e5 * 24){ ACT = c; render(); return; } } catch (e) {}
+    actLoading = true; setStatus("Загружаю активации для весов…"); render();
+    try {
+      var rows = await fetchSheet("Активация");
+      var h = rows[0].map(function(x){ return x.trim().toLowerCase(); });
+      var iD = h.indexOf("дата активации"), iP = h.indexOf("партнеры"), iC = h.indexOf("город");
+      var since = new Date(); since.setMonth(since.getMonth() - 24); var s = since.toISOString().slice(0, 10);
+      var counts = { "Мск": {}, "СПб": {} }, n = 0;
+      rows.slice(1).forEach(function(r){
+        var d = (r[iD] || "").slice(0, 10); if (d < s) return;
+        var p = (r[iP] || "").trim(); if (!p) return;
+        var city = /петербург|спб/i.test(r[iC] || "") ? "СПб" : "Мск";
+        counts[city][p] = (counts[city][p] || 0) + 1; n++;
+      });
+      ACT = { counts: counts, n: n, since: s, savedAt: new Date().toISOString() };
+      try { localStorage.setItem(ACT_KEY, JSON.stringify(ACT)); } catch (e) {}
+      setStatus("");
+    } catch (e) { setStatus("Не удалось загрузить активации: " + e.message); }
+    actLoading = false; render();
+  }
+  function setStatus(t){ var el = root.querySelector("#prStatus"); if (el) el.textContent = t; }
+
+  // ---------- сборка данных с правками ----------
+  function serviceOf(sid, fallback){
+    var base = state.customServices[sid] || (CRM && CRM.catalog[sid]) || fallback || null;
+    if (!base) return null;
+    var o = state.sov[sid] || {};
+    return { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+  }
+  function allSets(){
+    var out = [];
+    (CRM ? CRM.sets : []).forEach(function(s){
+      var o = state.ov[s.id] || {};
+      if (o.hidden) return;
+      var removed = o.removed || {};
+      var items = s.items.filter(function(it){ return !removed[it.sid]; }).map(function(it){
+        var sv = serviceOf(it.sid, { name: it.name, partner: "", city: s.city, price: it.price, cost: it.cost });
+        // себестоимость берём из состава набора (так в CRM), если пользователь не правил услугу
+        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : it.cost;
+        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, price: it.price };
+      });
+      (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, price: sv.price, added: true }); });
+      out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
+    });
+    state.customSets.forEach(function(s){
+      var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, price: sv.price } : null; }).filter(Boolean);
+      out.push({ id: s.id, name: s.name, city: s.city, price: s.price, basePrice: null, items: items, custom: true });
+    });
+    return out;
+  }
+  function allServices(){
+    var ids = {}; var out = [];
+    if (CRM) Object.keys(CRM.catalog).forEach(function(id){ ids[id] = 1; });
+    Object.keys(state.customServices).forEach(function(id){ ids[id] = 1; });
+    Object.keys(ids).forEach(function(id){ var sv = serviceOf(id); if (sv) out.push(sv); });
+    return out;
+  }
+  function usage(){ var u = {}; allSets().forEach(function(s){ s.items.forEach(function(it){ u[it.sid] = (u[it.sid] || 0) + 1; }); }); return u; }
+
+  // ---------- расчёт ----------
+  function P(){ var p = state.params; return { a: p.act / 100, v: (p.acq + p.ret + p.pack + p.tax) / 100, disc: p.disc / 100, t: p.target / 100, f: (p.fixed || 0) / 100 }; }
+  function weights(set){
+    if (state.mode !== "act" || !ACT) return null;
+    var cnt = ACT.counts[set.city] || {}; var per = {};
+    set.items.forEach(function(it){ if (it.cost > 0 && it.partner) per[it.partner] = (per[it.partner] || 0) + 1; });
+    var w = {}, sum = 0;
+    set.items.forEach(function(it){ if (it.cost > 0 && it.partner && cnt[it.partner]){ w[it.sid] = cnt[it.partner] / per[it.partner]; sum += w[it.sid]; } });
+    if (!sum) return null;
+    Object.keys(w).forEach(function(k){ w[k] /= sum; });
+    return w;
+  }
+  function calcSet(s){
+    var p = P(); var price = s.price * (1 - p.disc); var V = price * p.v;
+    var costs = s.items.filter(function(it){ return it.cost > 0; }).map(function(it){ return it.cost; });
+    var avg = mean(costs), max = costs.length ? Math.max.apply(null, costs) : null;
+    var w = weights(s), wavg = null;
+    if (w){ wavg = 0; s.items.forEach(function(it){ if (w[it.sid]) wavg += w[it.sid] * it.cost; }); }
+    var exp = state.mode === "max" ? max : (state.mode === "act" && wavg !== null ? wavg : avg);
+    var den = 1 - p.v - p.t;
+    var r = { price: price, V: V, avg: avg, max: max, wavg: wavg, exp: exp, w: w, noCost: s.items.length - costs.length, n: s.items.length, target: exp !== null && den > 0 ? exp * p.a / den / (1 - p.disc) : null };
+    if (exp === null || !s.price){ r.mpAct = r.mAct = r.mp100 = r.m100 = r.npAct = r.nAct = null; r.loss = r.below = 0; return r; }
+    r.mpAct = price - V - exp * p.a; r.mAct = r.mpAct / price; r.npAct = r.mpAct - price * p.f; r.nAct = r.npAct / price;
+    r.mp100 = price - V - exp; r.m100 = r.mp100 / price;
+    r.loss = s.items.filter(function(it){ return it.cost > 0 && price - V - it.cost < 0; }).length;
+    r.below = s.items.filter(function(it){ return it.cost > 0 && (price - V - it.cost * p.a) / price < p.t; }).length;
+    return r;
+  }
+  function calcItem(set, it, r){
+    var p = P(); if (!(it.cost > 0) || !r.price) return { mpAct: null, mAct: null, m100: null, share: null };
+    var mpAct = r.price - r.V - it.cost * p.a, mp100 = r.price - r.V - it.cost;
+    return { mpAct: mpAct, mAct: mpAct / r.price, m100: mp100 / r.price, share: it.cost / set.price };
+  }
+  function calcService(sv){
+    var p = P(); var price = sv.price * (1 - p.disc); var V = price * p.v;
+    var den = 1 - p.v - p.t;
+    if (!(sv.price > 0) || !(sv.cost > 0)) return { mpAct: null, mAct: null, m100: null, nAct: null, share: sv.price > 0 && sv.cost > 0 ? sv.cost / sv.price : null, target: sv.cost > 0 && den > 0 ? sv.cost * p.a / den / (1 - p.disc) : null };
+    var mpAct = price - V - sv.cost * p.a, mp100 = price - V - sv.cost;
+    return { mpAct: mpAct, mAct: mpAct / price, m100: mp100 / price, nAct: (mpAct - price * p.f) / price, share: sv.cost / sv.price, target: den > 0 ? sv.cost * p.a / den / (1 - p.disc) : null };
+  }
+
+  // ---------- рендер ----------
+  function renderParams(){
+    var box = root.querySelector("#prParams");
+    box.innerHTML = PARAM_DEFS.map(function(d){
+      var v = state.params[d.k], f = FACT[d.k], ch = Math.abs(v - f) > 1e-9;
+      return '<div class="pr-param' + (ch ? " changed" : "") + '" title="' + esc(d.hint) + '"><label>' + d.lbl + '</label><div class="v"><input type="number" data-k="' + d.k + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '" value="' + v + '"><span class="u">%</span></div><input type="range" data-k="' + d.k + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '" value="' + v + '"><div class="fact">' + (ch ? "по умолчанию " + String(f).replace(".", ",") + " %" : (d.k === "acq" || d.k === "ret" || d.k === "pack" || d.k === "fixed" ? "факт ОПиУ" : d.k === "act" ? "история: ≤ 60 %" : "&nbsp;")) + '</div></div>';
+    }).join("");
+    var chip = root.querySelector("#prFactChip"); chip.textContent = FACT.months ? "факт ОПиУ · " + FACT.months : "факт ОПиУ"; chip.title = "Эквайринг, возвраты и упаковка — доля от выручки сайта за последние 6 месяцев ОПиУ";
+  }
+  function renderKpis(sets){
+    var p = P(); var rs = sets.map(calcSet); var withM = rs.filter(function(r){ return r.mAct !== null; });
+    var below = withM.filter(function(r){ return r.mAct < p.t; }).length, loss = withM.filter(function(r){ return r.mAct < 0; }).length;
+    var lossItems = rs.reduce(function(a, r){ return a + r.loss; }, 0), items = rs.reduce(function(a, r){ return a + r.n; }, 0);
+    var nAct = mean(withM.map(function(r){ return r.nAct; }));
+    function kpi(lbl, val, sub, c){ return '<div class="kpi"><div class="lbl">' + lbl + '</div><div class="val' + (c ? " " + c : "") + '"' + (c ? ' style="color:var(--' + (c === "bad" ? "bad" : c === "good" ? "good" : "s4") + ')"' : "") + '>' + val + '</div><div class="sub">' + sub + '</div></div>'; }
+    var mAct = mean(withM.map(function(r){ return r.mAct; })), m100 = mean(withM.map(function(r){ return r.m100; }));
+    root.querySelector("#prKpis").innerHTML =
+      kpi("Наборов в прайсе", fmtN(sets.length), sets.filter(function(s){ return s.city === "Мск"; }).length + " Мск · " + sets.filter(function(s){ return s.city === "СПб"; }).length + " СПб · услуг " + fmtN(items)) +
+      kpi("Средняя маржа наборов", fmtP(mAct), "при активации " + state.params.act + " % · среднее по наборам", mAct === null ? "" : cls(mAct, p.t)) +
+      kpi("Маржа при 100 % активации", fmtP(m100), "худший сценарий: сертификат точно используют", m100 === null ? "" : cls(m100, p.t)) +
+      kpi("Ниже целевой маржи", fmtN(below) + " из " + fmtN(withM.length), "цель " + state.params.target + " % · в убытке " + fmtN(loss), below ? "warn" : "good") +
+      kpi("Услуг убыточных при активации", fmtN(lossItems), "выплата партнёру больше цены набора минус переменные", lossItems ? "bad" : "good") +
+      kpi("Чистая прибыль с набора", fmtP(nAct), "маржа минус постоянные " + String(state.params.fixed).replace(".", ",") + " % выручки · себест.: " + (state.mode === "avg" ? "средняя" : state.mode === "max" ? "худшая" : "по активациям"), nAct === null ? "" : (nAct < 0 ? "bad" : "good"));
+  }
+  function filtered(list){
+    var q = state.q.trim().toLowerCase();
+    return list.filter(function(x){ return (state.city === "all" || x.city === state.city) && (!q || (x.name + " " + (x.partner || "") + " " + (x.items ? x.items.map(function(i){ return i.name + " " + i.partner; }).join(" ") : "")).toLowerCase().indexOf(q) >= 0); });
+  }
+  function sortBy(list, getters){
+    var k = state.sort.k, g = getters[k] || getters.name, d = state.sort.d;
+    return list.slice().sort(function(a, b){ var x = g(a), y = g(b); if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1; if (typeof x === "string") return x.localeCompare(y, "ru") * d; return (x - y) * d; });
+  }
+  function th(k, label, title){ return '<th data-s="' + k + '" class="' + (state.sort.k === k ? "on" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '>' + label + (state.sort.k === k ? (state.sort.d > 0 ? " ↑" : " ↓") : "") + '</th>'; }
+  function renderSets(){
+    var p = P(); var sets = filtered(allSets()); var calc = {}; sets.forEach(function(s){ calc[s.id] = calcSet(s); });
+    var g = { name: function(s){ return s.name; }, city: function(s){ return s.city; }, n: function(s){ return s.items.length; }, price: function(s){ return s.price; }, exp: function(s){ return calc[s.id].exp; }, max: function(s){ return calc[s.id].max; }, mp: function(s){ return calc[s.id].mpAct; }, m: function(s){ return calc[s.id].mAct; }, m100: function(s){ return calc[s.id].m100; }, np: function(s){ return calc[s.id].nAct; }, target: function(s){ return calc[s.id].target; }, loss: function(s){ return calc[s.id].loss; } };
+    sets = sortBy(sets, g);
+    var html = '<table class="pr-table"><thead><tr>' + th("name", "Набор") + th("city", "Город") + th("n", "Услуг") + th("price", "Цена") + th("exp", "Ожид. себест.", "Ожидаемая выплата партнёру за выбранную услугу") + th("max", "Худшая", "Самая дорогая услуга в наборе") + th("mp", "МП, ₽", "Маржинальная прибыль с набора при заложенной активации") + th("m", "Маржа", "при заложенной активации") + th("m100", "При 100 %", "Маржа, если сертификат точно используют") + th("np", "ЧП", "Чистая прибыль: маржа минус постоянные расходы (% выручки) при заложенной активации") + th("target", "Цена для цели", "Цена, при которой маржа равна целевой") + th("loss", "Убыт. услуг", "Услуги, выплата по которым больше цены набора минус переменные") + '</tr></thead><tbody>';
+    if (!sets.length) html += '<tr><td colspan="12" class="pr-empty">' + (CRM ? "Ничего не найдено" : (crmLoading ? "Загружаю наборы из CRM…" : "Наборы не загружены")) + '</td></tr>';
+    sets.forEach(function(s){
+      var r = calc[s.id], open = !!state.open[s.id];
+      html += '<tr class="row set' + (open ? " open" : "") + '" data-id="' + esc(s.id) + '"><td><span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span>' + (s.custom ? '<span class="tag u">мой</span>' : s.edited ? '<span class="tag">правки</span>' : "") + (r.noCost ? '<span class="tag z" title="услуг без себестоимости">' + r.noCost + ' без себест.</span>' : "") + '</td><td>' + s.city + '</td><td>' + s.items.length + '</td>' +
+        '<td><input class="in' + (s.basePrice !== null && s.price !== s.basePrice ? " changed" : "") + '" type="number" step="10" data-setprice="' + esc(s.id) + '" value="' + (s.price || 0) + '" title="' + (s.basePrice !== null ? "в CRM: " + fmtR(s.basePrice) : "цена набора") + '"></td>' +
+        '<td>' + fmtR(r.exp) + (r.w ? '<span class="muted" title="взвешено по активациям"> ⚖</span>' : "") + '</td><td class="muted">' + fmtR(r.max) + '</td><td class="' + cls(r.mAct, p.t) + '">' + fmtR(r.mpAct) + '</td><td class="' + cls(r.mAct, p.t) + '">' + fmtP(r.mAct) + '</td><td class="' + cls(r.m100, p.t) + '">' + fmtP(r.m100) + '</td><td class="' + (r.nAct === null ? "muted" : r.nAct < 0 ? "bad" : "good") + '">' + fmtP(r.nAct) + '</td><td' + (r.target !== null && s.price && r.target > s.price ? ' class="warn"' : "") + '>' + fmtR(r.target) + '</td><td class="' + (r.loss ? "bad" : "muted") + '">' + (r.loss || "—") + '</td></tr>';
+      if (open) html += '<tr class="pr-sub"><td colspan="12">' + renderSetItems(s, r) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    root.querySelector("#prTableWrap").innerHTML = html;
+  }
+  function renderSetItems(s, r){
+    var p = P(); var w = r.w;
+    var h = '<div class="pr-subbox"><div class="hdr"><b>Состав набора</b><span class="muted">цена ' + fmtR(s.price) + (p.disc ? " → " + fmtR(r.price) + " после скидки" : "") + ' · переменные ' + fmtP(p.v, 1) + ' = ' + fmtR(r.V) + '</span>' +
+      (s.custom ? '<input class="in txt" style="min-width:220px;width:auto" data-setname="' + esc(s.id) + '" value="' + esc(s.name) + '" title="название набора"><span class="seg" style="padding:2px"><button type="button" data-setcity="' + esc(s.id) + '" data-c="Мск" class="' + (s.city === "Мск" ? "active" : "") + '" style="padding:2px 8px;font-size:11px">Мск</button><button type="button" data-setcity="' + esc(s.id) + '" data-c="СПб" class="' + (s.city === "СПб" ? "active" : "") + '" style="padding:2px 8px;font-size:11px">СПб</button></span>' : "") +
+      '<span style="margin-left:auto;display:flex;gap:6px">' + (r.target !== null ? '<button type="button" class="pr-btn" data-apply="' + esc(s.id) + '" title="поставить цену, при которой маржа = целевой">Цена для цели: ' + fmtR(r.target) + '</button>' : "") + '<button type="button" class="pr-btn" data-dup="' + esc(s.id) + '">Дублировать</button>' + (s.custom ? '<button type="button" class="pr-btn" data-del="' + esc(s.id) + '">Удалить</button>' : '<button type="button" class="pr-btn" data-hide="' + esc(s.id) + '" title="скрыть набор из прайса (вернуть — «Сбросить правки»)">Скрыть</button>') + '</span></div>';
+    h += '<table class="pr-items"><thead><tr><th>Услуга</th><th>Партнёр</th>' + (w ? '<th title="доля выбора по активациям партнёра за 24 мес.">Вес</th>' : "") + '<th title="выплата партнёру">Себест.</th><th title="выплата партнёру, % от цены набора">% цены</th><th title="маржинальная прибыль при заложенной активации">МП, ₽</th><th>Маржа</th><th title="если сертификат точно используют">При 100 %</th><th></th></tr></thead><tbody>';
+    var items = s.items.slice().sort(function(a, b){ return (b.cost || 0) - (a.cost || 0); });
+    items.forEach(function(it){
+      var c = calcItem(s, it, r);
+      h += '<tr><td><span class="nm" title="' + esc(it.name) + '">' + esc(it.name) + '</span>' + (it.added ? '<span class="tag u">доб.</span>' : "") + '</td><td class="muted">' + esc(it.partner || "—") + '</td>' + (w ? '<td class="muted">' + (w[it.sid] ? fmtP(w[it.sid], 0) : "—") + '</td>' : "") +
+        '<td><input class="in' + (state.sov[it.sid] && state.sov[it.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(it.sid) + '" value="' + (it.cost || 0) + '" title="выплата партнёру (правка применится везде, где есть эта услуга)"></td><td class="muted">' + fmtP(c.share, 0) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td><button type="button" class="pr-x" data-rm="' + esc(s.id) + '" data-sid="' + esc(it.sid) + '" title="убрать из набора">×</button></td></tr>';
+    });
+    h += '</tbody></table><div class="pr-add"><input type="text" data-addq="' + esc(s.id) + '" placeholder="Добавить услугу: начните вводить название или партнёра…" autocomplete="off"><div class="res" hidden></div><span class="muted" style="font-size:11px">услуги города «' + s.city + '» из прайса</span></div></div>';
+    return h;
+  }
+  function renderServices(){
+    var p = P(); var u = usage(); var list = filtered(allServices()).filter(function(s){ return s.custom || s.price > 0 || s.cost > 0; }); var calc = {}; list.forEach(function(s){ calc[s.sid] = calcService(s); });
+    var g = { name: function(s){ return s.name; }, partner: function(s){ return s.partner; }, city: function(s){ return s.city; }, price: function(s){ return s.price; }, cost: function(s){ return s.cost; }, share: function(s){ return calc[s.sid].share; }, mp: function(s){ return calc[s.sid].mpAct; }, m: function(s){ return calc[s.sid].mAct; }, m100: function(s){ return calc[s.sid].m100; }, np: function(s){ return calc[s.sid].nAct; }, target: function(s){ return calc[s.sid].target; }, use: function(s){ return u[s.sid] || 0; } };
+    list = sortBy(list, g);
+    var LIM = 400, total = list.length; if (list.length > LIM) list = list.slice(0, LIM);
+    var html = '<table class="pr-table"><thead><tr>' + th("name", "Услуга") + th("partner", "Партнёр") + th("city", "Город") + th("price", "Цена", "розничная цена услуги отдельным сертификатом") + th("cost", "Себест.", "выплата партнёру") + th("share", "% цены") + th("mp", "МП, ₽", "при заложенной активации") + th("m", "Маржа") + th("m100", "При 100 %") + th("np", "ЧП", "маржа минус постоянные расходы, % выручки") + th("target", "Цена для цели") + th("use", "В наборах") + '</tr></thead><tbody>';
+    if (!list.length) html += '<tr><td colspan="12" class="pr-empty">' + (CRM ? "Ничего не найдено" : "Услуги не загружены") + '</td></tr>';
+    list.forEach(function(s){
+      var c = calc[s.sid];
+      html += '<tr class="row" data-sid="' + esc(s.sid) + '"><td>' + (s.custom ? '<input class="in txt" data-sname="' + esc(s.sid) + '" value="' + esc(s.name) + '">' : '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span>') + (s.custom ? '<span class="tag u">моя</span>' : s.edited ? '<span class="tag">правки</span>' : "") + '</td><td>' + (s.custom ? '<input class="in txt" style="min-width:120px" data-spartner="' + esc(s.sid) + '" value="' + esc(s.partner) + '">' : '<span class="muted">' + esc(s.partner || "—") + '</span>') + '</td><td>' + s.city + '</td>' +
+        '<td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].price !== undefined ? " changed" : "") + '" type="number" step="10" data-sprice="' + esc(s.sid) + '" value="' + (s.price || 0) + '"></td><td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(s.sid) + '" value="' + (s.cost || 0) + '"></td>' +
+        '<td class="muted">' + fmtP(c.share, 0) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td class="' + (c.nAct === null ? "muted" : c.nAct < 0 ? "bad" : "good") + '">' + fmtP(c.nAct) + '</td><td' + (c.target !== null && s.price && c.target > s.price ? ' class="warn"' : "") + '>' + fmtR(c.target) + '</td><td class="muted">' + (u[s.sid] || "—") + (s.custom ? ' <button type="button" class="pr-x" data-sdel="' + esc(s.sid) + '" title="удалить услугу">×</button>' : "") + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    root.querySelector("#prTableWrap").innerHTML = html;
+    if (total > LIM) setStatus("Показаны первые " + LIM + " из " + total + " услуг — уточните поиск или город.");
+  }
+  function render(){
+    ensureParams();
+    renderParams();
+    root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-v") === state.view); });
+    root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-c") === state.city); });
+    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-m") === state.mode); });
+    root.querySelector("#prMode").hidden = state.view !== "sets";
+    root.querySelector("#prNewSet").hidden = state.view !== "sets";
+    root.querySelector("#prNewService").hidden = state.view !== "services";
+    var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
+    renderKpis(filtered(allSets()));
+    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
+    if (state.view === "sets") renderSets(); else renderServices();
+  }
+
+  // ---------- события ----------
+  function newId(){ return "u" + Date.now().toString(36); }
+  function ov(id){ return state.ov[id] = state.ov[id] || {}; }
+  function sov(id){ return state.sov[id] = state.sov[id] || {}; }
+  function findCustomSet(id){ return state.customSets.filter(function(s){ return s.id === id; })[0]; }
+  root.addEventListener("input", function(e){
+    var t = e.target; var k = t.getAttribute("data-k");
+    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; var sib = t.parentElement.closest(".pr-param").querySelectorAll("[data-k]"); sib.forEach(function(x){ if (x !== t) x.value = v; }); save(); renderKpis(filtered(allSets())); if (state.view === "sets") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", Math.abs(v - FACT[k]) > 1e-9); return; }
+    if (t.id === "prQ"){ state.q = t.value; save(); if (state.view === "sets") renderSets(); else renderServices(); renderKpis(filtered(allSets())); return; }
+    var aq = t.getAttribute("data-addq"); if (aq){ showAddResults(t, aq); return; }
+  });
+  root.addEventListener("change", function(e){
+    var t = e.target, id;
+    if ((id = t.getAttribute("data-setprice"))){ var v = ruNum(t.value); var cs = findCustomSet(id); if (cs) cs.price = v; else ov(id).price = v; save(); render(); return; }
+    if ((id = t.getAttribute("data-setname"))){ var cs2 = findCustomSet(id); if (cs2) cs2.name = t.value.trim() || "Новый набор"; save(); render(); return; }
+    if ((id = t.getAttribute("data-cost"))){ sov(id).cost = ruNum(t.value); save(); render(); return; }
+    if ((id = t.getAttribute("data-sprice"))){ sov(id).price = ruNum(t.value); save(); render(); return; }
+    if ((id = t.getAttribute("data-sname"))){ if (state.customServices[id]) state.customServices[id].name = t.value.trim() || "Новая услуга"; save(); render(); return; }
+    if ((id = t.getAttribute("data-spartner"))){ if (state.customServices[id]) state.customServices[id].partner = t.value.trim(); save(); render(); return; }
+  });
+  root.addEventListener("click", function(e){
+    var t = e.target, b, id;
+    if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); state.sort = { k: "name", d: 1 }; save(); render(); return; }
+    if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); save(); render(); return; }
+    if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
+    if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); save(); render(); return; }
+    if (t.closest("#prCrm")){ loadCrm(true); return; }
+    if (t.closest("#prResetAll")){ if (!confirm("Удалить все правки цен и состава, новые наборы и услуги?")) return; state.ov = {}; state.sov = {}; state.customSets = []; state.customServices = {}; state.open = {}; save(); render(); return; }
+    if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ inp.focus(); inp.select(); } return; }
+    if (t.closest("#prNewService")){ var sid = newId(); state.customServices[sid] = { sid: sid, name: "Новая услуга", partner: "", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, cost: 0 }; state.q = ""; save(); render(); var i2 = root.querySelector('[data-sname="' + sid + '"]'); if (i2){ i2.scrollIntoView({ block: "center" }); i2.focus(); i2.select(); } return; }
+    if (t.closest("#prCsv")){ exportCsv(); return; }
+    if ((b = t.closest("th[data-s]"))){ var k = b.getAttribute("data-s"); if (state.sort.k === k) state.sort.d = -state.sort.d; else state.sort = { k: k, d: (k === "name" || k === "partner" || k === "city") ? 1 : -1 }; save(); render(); return; }
+    if ((b = t.closest("[data-apply]"))){ id = b.getAttribute("data-apply"); var s = allSets().filter(function(x){ return x.id === id; })[0]; if (!s) return; var r = calcSet(s); if (r.target === null) return; var np = Math.ceil(r.target / 10) * 10; var cs = findCustomSet(id); if (cs) cs.price = np; else ov(id).price = np; save(); render(); return; }
+    if ((b = t.closest("[data-dup]"))){ id = b.getAttribute("data-dup"); var src = allSets().filter(function(x){ return x.id === id; })[0]; if (!src) return; var d = { id: newId(), name: src.name + " (копия)", city: src.city, price: src.price, items: src.items.map(function(i){ return i.sid; }) }; src.items.forEach(function(i){ if (!state.customServices[i.sid] && !(CRM && CRM.catalog[i.sid])) state.customServices[i.sid] = { sid: i.sid, name: i.name, partner: i.partner, city: src.city, price: i.price, cost: i.cost }; }); state.customSets.unshift(d); state.open = {}; state.open[d.id] = true; save(); render(); return; }
+    if ((b = t.closest("[data-del]"))){ id = b.getAttribute("data-del"); state.customSets = state.customSets.filter(function(x){ return x.id !== id; }); delete state.open[id]; save(); render(); return; }
+    if ((b = t.closest("[data-hide]"))){ id = b.getAttribute("data-hide"); ov(id).hidden = true; delete state.open[id]; save(); render(); return; }
+    if ((b = t.closest("[data-sdel]"))){ id = b.getAttribute("data-sdel"); delete state.customServices[id]; delete state.sov[id]; state.customSets.forEach(function(s){ s.items = (s.items || []).filter(function(x){ return x !== id; }); }); save(); render(); return; }
+    if ((b = t.closest("[data-setcity]"))){ id = b.getAttribute("data-setcity"); var cs3 = findCustomSet(id); if (cs3) cs3.city = b.getAttribute("data-c"); save(); render(); return; }
+    if ((b = t.closest("[data-rm]"))){ id = b.getAttribute("data-rm"); var sid2 = b.getAttribute("data-sid"); var cs4 = findCustomSet(id); if (cs4) cs4.items = cs4.items.filter(function(x){ return x !== sid2; }); else { var o = ov(id); if (o.added && o.added.indexOf(sid2) >= 0) o.added = o.added.filter(function(x){ return x !== sid2; }); else { o.removed = o.removed || {}; o.removed[sid2] = 1; } } save(); render(); return; }
+    if ((b = t.closest(".pr-add .res div[data-pick]"))){ var box = b.closest(".pr-add"); var setId = box.querySelector("[data-addq]").getAttribute("data-addq"); var pid = b.getAttribute("data-pick"); var cs5 = findCustomSet(setId); if (cs5){ if (cs5.items.indexOf(pid) < 0) cs5.items.push(pid); } else { var o2 = ov(setId); o2.added = o2.added || []; if (o2.added.indexOf(pid) < 0) o2.added.push(pid); if (o2.removed) delete o2.removed[pid]; } save(); render(); return; }
+    if (t.closest(".pr-add") || t.closest("input, button, select")) return;
+    if ((b = t.closest("tr.row.set"))){ id = b.getAttribute("data-id"); if (state.open[id]) delete state.open[id]; else state.open[id] = true; render(); return; }
+  });
+  function showAddResults(inp, setId){
+    var box = inp.closest(".pr-add"), res = box.querySelector(".res"); var q = inp.value.trim().toLowerCase();
+    if (q.length < 2){ res.hidden = true; return; }
+    var set = allSets().filter(function(x){ return x.id === setId; })[0]; var have = {}; if (set) set.items.forEach(function(i){ have[i.sid] = 1; });
+    var list = allServices().filter(function(s){ return (!set || s.city === set.city) && !have[s.sid] && (s.name + " " + s.partner).toLowerCase().indexOf(q) >= 0; }).slice(0, 25);
+    res.innerHTML = list.length ? list.map(function(s){ return '<div data-pick="' + esc(s.sid) + '"><span>' + esc(s.name) + '</span><span class="muted">' + esc(s.partner) + '</span><span>' + fmtR(s.cost) + '</span></div>'; }).join("") : '<div class="muted">ничего не найдено</div>';
+    res.hidden = false;
+  }
+  function exportCsv(){
+    var rows = [];
+    if (state.view === "sets"){
+      rows.push(["Набор", "Город", "Услуг", "Цена", "Ожидаемая себестоимость", "Худшая себестоимость", "МП при активации " + state.params.act + "%", "Маржа", "Маржа при 100%", "Чистая прибыль", "Цена для целевой маржи", "Убыточных услуг"]);
+      filtered(allSets()).forEach(function(s){ var r = calcSet(s); rows.push([s.name, s.city, s.items.length, s.price, r.exp, r.max, r.mpAct, r.mAct, r.m100, r.nAct, r.target, r.loss]); });
+    } else {
+      rows.push(["Услуга", "Партнёр", "Город", "Цена", "Себестоимость", "МП при активации " + state.params.act + "%", "Маржа", "Маржа при 100%", "Чистая прибыль", "Цена для целевой маржи"]);
+      filtered(allServices()).forEach(function(s){ var c = calcService(s); rows.push([s.name, s.partner, s.city, s.price, s.cost, c.mpAct, c.mAct, c.m100, c.nAct, c.target]); });
+    }
+    var csv = "﻿" + rows.map(function(r){ return r.map(function(v){ if (v === null || v === undefined) return ""; if (typeof v === "number") return String(Math.round(v * 10000) / 10000).replace(".", ","); return '"' + String(v).replace(/"/g, '""') + '"'; }).join(";"); }).join("\n");
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = (state.view === "sets" ? "nabory" : "uslugi") + "-prais-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+  }
+  document.addEventListener("click", function(e){ if (!e.target.closest(".pr-add")) root.querySelectorAll(".pr-add .res").forEach(function(r){ r.hidden = true; }); });
+
+  load();
+  window.__pricingRerender = function(){ FACT = null; ensureParams(); if (!started){ started = true; loadCrm(false); if (state.mode === "act") loadAct(); } render(); };
+  if (!root.hidden) window.__pricingRerender();
+})();
 </script>
 
 </html>
