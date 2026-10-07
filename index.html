@@ -443,7 +443,7 @@
       <table class="docs-table">
         <thead><tr><th>Источник</th><th>Листы и что берём</th><th>Кто и как обновляет</th></tr></thead>
         <tbody>
-          <tr><td><b>Адеск</b> → «выгрузка адеск»<br><a href="https://docs.google.com/spreadsheets/d/1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM/edit" target="_blank" rel="noopener">открыть</a> (владелец isit-555@mail.ru)</td><td>«выгрузка» — все операции Адеска по дням; «сборка ОПиУ» — помесячный ОПиУ, собранный формулами из выгрузки; «сборка ОДДС» — план-факт денег. «Аналитика продаж» читает напрямую листы «выгрузка», «маркетплейсы» и «Выручка New» (классификатор активностей). Полный CSV-экспорт включает строки, скрытые фильтрами исходной таблицы.</td><td>Выгрузка из Адеска обновляется ежедневно (финансы).</td></tr>
+          <tr><td><b>Адеск</b> → «выгрузка адеск»<br><a href="https://docs.google.com/spreadsheets/d/1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM/edit" target="_blank" rel="noopener">открыть</a> (владелец isit-555@mail.ru)</td><td>«выгрузка» — все операции Адеска по дням; «сборка ОПиУ» — помесячный ОПиУ, собранный формулами из выгрузки; «сборка ОДДС» — план-факт денег. «Аналитика продаж» читает напрямую листы «выгрузка», «маркетплейсы», «маркетплейсы-25» (только 2025 год) и «Выручка New» (классификатор активностей). Полный CSV-экспорт включает строки, скрытые фильтрами исходной таблицы.</td><td>Выгрузка из Адеска обновляется ежедневно (финансы).</td></tr>
           <tr><td><b>«ОПИУ Дашборд копия данных»</b><br><a href="https://docs.google.com/spreadsheets/d/1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU/edit" target="_blank" rel="noopener">открыть</a> (по ссылке, владелец Никита)</td><td>«Лист1» — зеркало «сборки ОПиУ» через IMPORTRANGE; отсюда берётся всё, что касается ОПиУ, ФОТ и финмодели. Необязательный лист «Операции» (дата зачисления, статья, сумма) включает расчёт ОПиУ по дням.</td><td>Пересчитывается Google автоматически. Пока тяжёлая исходная книга пересчитывается, IMPORTRANGE может отдать часть ячеек нулями, см. защиту в разделе 3.</td></tr>
           <tr><td><b>Таблица «Никита»</b> (экспорт CRM Битрикс24)<br><a href="https://docs.google.com/spreadsheets/d/1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M/edit" target="_blank" rel="noopener">открыть</a></td><td>«Маркетинг» — сделки (стадия, тип товара, город, дата оплаты, сумма, источник, «из лида», описание); «Активация» — активации сертификатов у партнёров (дата, себестоимость, партнёр, услуга, город); «Кредиторка» — долг партнёрам по сделкам; «Партнеры» — справочник партнёров с юрлицами.</td><td>Выгружается из CRM. Фильтр, включённый на листе, обрезает экспорт: дашборд увидит только видимые строки.</td></tr>
           <tr><td><b>WOWlife_feed</b><br><a href="https://docs.google.com/spreadsheets/d/1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA/edit" target="_blank" rel="noopener">открыть</a></td><td>Прежние зеркала исходных листов Адеска через IMPORTRANGE. С 07.10.2026 дашборд эту книгу не читает.</td><td>Ошибки IMPORTRANGE в этой книге больше не влияют на обновление «Аналитики продаж».</td></tr>
@@ -462,6 +462,7 @@
       </ul>
 
       <h3 id="doc-opiu">4. Вкладка «ОПиУ»</h3>
+      <p><b>Исключение для 2025 года.</b> Выручка маркетплейсов берётся из листа «маркетплейсы-25» по той же логике, что за 2026: сумма розничной цены по месяцу, площадке и городу. Она заменяет строки выручки МП в ОПиУ; разница пересчитывает общую выручку и прибыль. Расходы и налоги остаются из исходного ОПиУ, где они уже учтены. Строки 2024 года из исторического листа не добавляются. В ОПиУ входят только строки с совпавшими площадкой и городом, как в формулах 2026 года.</p>
       <p><b>Период.</b> Пресеты: текущий месяц, прошлый, 3 и 6 месяцев, текущий календарный год и «2025 г» (весь 2025 год). «Выбрать диапазон» открывает две даты. Если даты не совпадают с границами месяцев, включается расчёт по дням (нужен лист «Операции» в книге-копии): месячные суммы ОПиУ раскладываются по дням пропорционально операциям тех же статей по дате начисления; маркетплейсы и расчётные налоги внутри месяца делятся поровну по дням; любой диапазон из целых месяцев даёт те же цифры, что помесячный режим. Без листа «Операции» даты округляются до месяцев.</p>
       <p><b>Плитки.</b> Выручка — «Выручка с НДС» Адеска. Выручка по сайту — Wowlife МСК + Wowlife СПБ + B2B. Выручка по маркетплейсам — ВБ, Ozon, Яндекс Маркет, Flowwow по обоим городам. Переменные расходы (TVC) — раздел «Прямые расходы» целиком: активация, комиссии площадок, эквайринг, банковские комиссии, возвраты, создание продукта. Операционные расходы (OE) — персонал + косвенные + административные + сервисы разработки + проценты + налоги. Throughput — выручка минус переменные. EBITDA — «Операционная прибыль» Адеска минус сервисы разработки. Чистая прибыль — «чистая прибыль» Адеска минус сервисы разработки. Процент под плиткой — к предыдущему такому же периоду, серым — к прошлому месяцу.</p>
       <p><b>Выручка за период и три диаграммы.</b> Суммы — из Адеска. Диаграммы «в штуках» и «Электронные/Физические» — из CRM (лист «Маркетинг»): сделки со стадией «Сделка успешна» по дате оплаты; количество сертификатов берётся из описания сделки по шаблону «x2 —», без множителя считается одна штука; канал определяется по полю «источник» (Ozon, Wildberries, ЯМ, Flowwow — маркетплейсы, всё остальное — сайт) и городу. Электронные/физические — только сайт, доплаты в суммы не попадают.</p>
@@ -472,7 +473,7 @@
       <p>Источник — таблица «Никита». <b>Продажи</b> — сделки со стадией «Сделка успешна» по дате оплаты (лист «Маркетинг»), в штуках (сделки) и рублях. <b>Активации</b> — все строки листа «Активация» по дате активации, включая все стадии воронки, с себестоимостью. <b>Бэклог</b> — накопленная разница между проданными и активированными сертификатами с начала данных: сколько проданных сертификатов ещё не активировано. Периоды — день, неделя (с понедельника), месяц.</p>
 
       <h3 id="doc-ws">6. Вкладка «Аналитика продаж»</h3>
-      <p>Источники — исходная «выгрузка адеск» и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «выгрузка» Адеска) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «маркетплейсы» Адеска по артикулам. Каждая продажа относится к группе, подгруппе и активности по классификатору «Выручка New» Адеска; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
+      <p>Источники — исходная «выгрузка адеск» и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «выгрузка» Адеска) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «маркетплейсы» Адеска по артикулам; для 2025 года — только строки 2025 года из листа «маркетплейсы-25», по той же методике. Данные 2025 из текущего листа заменяются историей, чтобы исключить двойной учёт. Каждая продажа относится к группе, подгруппе и активности по классификатору «Выручка New» Адеска; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
 
       <h3 id="doc-kred">7. Вкладка «Кредиторка»</h3>
       <p>Источник — лист «Кредиторка» таблицы «Никита». <b>Долг</b> — сделки в стадиях «Ожидает оплаты» и «Ждем сверку». <b>Погашено</b> — стадия «Погашен», по месяцу. «Себес | отдел активаций» — внутренний учёт, долгом не считается. Имя партнёра подтягивается по id партнёра из листа «Активация», юрлицо — из листа «Партнеры» (если их несколько, через точку с запятой). Список партнёров: долги меньше 50 000 ₽ свёрнуты. <b>Долг по месяцам (свечи)</b> — фактический непогашенный долг, возникший в каждом месяце. <b>Успеваем ли платить</b> — новый долг месяца против погашенного за месяц. <b>Как прилетает долг и как мы гасим</b> — долг из CRM против оплат по статье «Активация» в ОПиУ Адеска за тот же месяц.</p>
@@ -6827,7 +6828,78 @@ window.__salesActSetData = function(newData){
   var PRODUCT_CREATION_LABELS = ["Коробки","Пакеты","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"];
   var TAXES_LABELS = ["Налоги и пошлины","НДС 5% от выручки с сайта","НДС по маркетплейсам","УСН 1% от выручки с сайта","УСН по маркетплейсам"];
 
-  function computeOpiu(rows){
+  function marketplaceHistory2025(rows){
+    if (!rows || !rows.length || rows[0][0] !== "Дата операции" || rows[0][1] !== "Цена розничная"){
+      throw new Error("Маркетплейсы 2025: не удалось прочитать лист «маркетплейсы-25»");
+    }
+    var history = rows.slice(1).filter(function(row){
+      var date = anyDateToIso(row[0]);
+      return date && date.slice(0, 4) === "2025";
+    });
+    if (!history.length) throw new Error("Маркетплейсы 2025: в историческом листе нет данных за 2025 год");
+    return history;
+  }
+
+  function withMarketplaceRevenue2025(rows, historyRows){
+    // gviz drops mixed-type C/D metadata; use the same platform/city pairs as source SUMIFS.
+    var dimensions = {
+      "Выручка ВБ  СПБ": ["ВБ", "Санкт-Петербург"], "Выручка ВБ  МСК": ["ВБ", "Москва"],
+      "Выручка ОЗОН СПБ": ["ОЗОН", "Санкт-Петербург"], "Выручка ОЗОН МСК": ["ОЗОН", "Москва"],
+      "Выручка ЯМ СПБ": ["ЯМ", "Санкт-Петербург"], "Выручка ЯМ МСК": ["ЯМ", "Москва"],
+      "Выручка Flowwow_СПБ": ["Flowwow_СПБ", "Санкт-Петербург"], "Выручка Flowwow_МСК": ["Flowwow_МСК", "Москва"]
+    };
+    var header = rows[0] || [], columns = [];
+    for (var c = 0; c < header.length - 1; c++){
+      var date = ddmmyyyyToIso(header[c]);
+      if (!date || ddmmyyyyToIso(header[c + 1]) !== date) continue;
+      if (date.slice(0, 4) === "2025") columns.push({ index: c + 1, month: date.slice(0, 7) });
+      c++;
+    }
+    if (!columns.length) return rows;
+    var totals = {};
+    marketplaceHistory2025(historyRows).forEach(function(row){
+      var key = [anyDateToIso(row[0]).slice(0, 7), (row[6] || "").trim(), (row[5] || "").trim()].join("|");
+      totals[key] = (totals[key] || 0) + ruNum(row[1]);
+    });
+    var patched = rows.map(function(row){ return row.slice(); });
+    var revenueRows = [], totalRows = [];
+    var totalLabels = ["Выручка с НДС", "маржинальная прибыль", "валовая прибыль", "ebitda", "Операционная прибыль", "чистая прибыль", "прибыль после выплаты тела кредита и дивидендов"];
+    patched.forEach(function(row, index){
+      var label = (row[1] || "").trim();
+      if (dimensions[label]) revenueRows.push(index);
+      if (totalLabels.indexOf((row[0] || "").trim()) >= 0) totalRows.push(index);
+    });
+    if (revenueRows.length !== 8 || totalRows.length !== 6) throw new Error("ОПиУ 2025: изменилась структура строк выручки или прибыли");
+    columns.forEach(function(column){
+      var oldRevenue = 0, newRevenue = 0;
+      revenueRows.forEach(function(index){
+        var row = patched[index];
+        var pair = dimensions[(row[1] || "").trim()];
+        var key = [column.month, pair[0], pair[1]].join("|");
+        oldRevenue += ruNum(row[column.index]);
+        var value = Math.round((totals[key] || 0) * 100) / 100;
+        row[column.index] = value.toFixed(2);
+        newRevenue += value;
+      });
+      var delta = newRevenue - oldRevenue;
+      // Costs and taxes already include marketplace history in the source OПиУ.
+      // Replace missing revenue and carry its difference through profit totals once.
+      totalRows.forEach(function(index){
+        patched[index][column.index] = (ruNum(patched[index][column.index]) + delta).toFixed(2);
+      });
+    });
+    return patched;
+  }
+
+  function marketplaceRowsWithHistory(currentRows, historyRows){
+    return [currentRows[0]].concat(currentRows.slice(1).filter(function(row){
+      var date = anyDateToIso(row[0]);
+      return !date || date.slice(0, 4) !== "2025";
+    }), marketplaceHistory2025(historyRows));
+  }
+
+  function computeOpiu(rows, historyRows){
+    rows = withMarketplaceRevenue2025(rows, historyRows);
     var labelRowA = {}, labelRowB = {};
     rows.forEach(function(row, idx){
       if (!row) return;
@@ -7598,6 +7670,7 @@ window.__salesActSetData = function(newData){
       safeFetch("adeskCatalog", ADESK_SOURCE_ID, "Выручка New", 357398149),
       safeFetch("adeskTransactions", ADESK_SOURCE_ID, "выгрузка", 0),
       safeFetch("adeskMarketplaces", ADESK_SOURCE_ID, "маркетплейсы", 984275438),
+      safeFetch("adeskMarketplaces2025", ADESK_SOURCE_ID, "маркетплейсы-25", 787702201),
       // лист «Операции» необязателен (нужен только для расчёта ОПиУ по дням) — его отсутствие не считаем ошибкой
       (async function(){ try { fetches.adeskOps = await fetchSheet(ADESK_ID, "Операции"); } catch (e) { fetches.adeskOps = null; } })(),
       // файлы, которые кладут в репозиторий серверные сборщики (Метрика, бот контент-завода); их отсутствие — не ошибка
@@ -7610,7 +7683,7 @@ window.__salesActSetData = function(newData){
     // OПиУ
     if (fetches.adeskList1){
       try {
-        var opiuData = computeOpiu(fetches.adeskList1);
+        var opiuData = computeOpiu(fetches.adeskList1, fetches.adeskMarketplaces2025);
         // Защита от «полупустого» снимка: IMPORTRANGE в книге-копии иногда отдаёт часть ячеек нулями,
         // пока тяжёлая исходная книга пересчитывается. Если по уже известному месяцу выручка упала
         // больше чем вдвое — считаем снимок битым и оставляем прошлые данные.
@@ -7652,7 +7725,7 @@ window.__salesActSetData = function(newData){
     // Аналитика продаж
     if (fetches.adeskCatalog && fetches.adeskTransactions && fetches.adeskMarketplaces && fetches.nikitaActivation){
       try {
-        var wsData = computeWowsales(fetches.adeskCatalog, fetches.adeskTransactions, fetches.adeskMarketplaces, fetches.nikitaActivation);
+        var wsData = computeWowsales(fetches.adeskCatalog, fetches.adeskTransactions, marketplaceRowsWithHistory(fetches.adeskMarketplaces, fetches.adeskMarketplaces2025), fetches.nikitaActivation);
         window.__wowSalesSetData(wsData.sales, wsData.activations, wsData.partners);
         var totalRev = wsData.sales.rows.reduce(function(a,r){return a+r.revenue;},0);
         results.wowsales = "Аналитика продаж: выручка за весь период " + Math.round(totalRev).toLocaleString("ru-RU") + " ₽";
