@@ -422,7 +422,7 @@
   <div class="docs-overlay" id="docsOverlay" hidden>
     <div class="docs-panel" role="dialog" aria-modal="true" aria-label="Документация дашборда">
       <div class="docs-head">
-        <div><div class="docs-title">💡 Документация дашборда</div><div class="docs-sub">Что откуда тянется и как считается. Обновлено 02.10.2026</div></div>
+        <div><div class="docs-title">💡 Документация дашборда</div><div class="docs-sub">Что откуда тянется и как считается. Обновлено 07.10.2026</div></div>
         <button type="button" class="chip" id="docsClose">Закрыть</button>
       </div>
       <nav class="docs-nav">
@@ -443,10 +443,10 @@
       <table class="docs-table">
         <thead><tr><th>Источник</th><th>Листы и что берём</th><th>Кто и как обновляет</th></tr></thead>
         <tbody>
-          <tr><td><b>Адеск</b> → «выгрузка адеск»<br><a href="https://docs.google.com/spreadsheets/d/1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM/edit" target="_blank" rel="noopener">открыть</a> (закрытая, владелец isit-555@mail.ru)</td><td>«выгрузка» — все операции Адеска по дням; «сборка ОПиУ» — помесячный ОПиУ, собранный формулами из выгрузки; «сборка ОДДС» — план-факт денег. Дашборд напрямую эту книгу не читает.</td><td>Выгрузка из Адеска обновляется ежедневно (финансы).</td></tr>
+          <tr><td><b>Адеск</b> → «выгрузка адеск»<br><a href="https://docs.google.com/spreadsheets/d/1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM/edit" target="_blank" rel="noopener">открыть</a> (владелец isit-555@mail.ru)</td><td>«выгрузка» — все операции Адеска по дням; «сборка ОПиУ» — помесячный ОПиУ, собранный формулами из выгрузки; «сборка ОДДС» — план-факт денег. «Аналитика продаж» читает напрямую листы «выгрузка», «маркетплейсы» и «Выручка New» (классификатор активностей). Полный CSV-экспорт включает строки, скрытые фильтрами исходной таблицы.</td><td>Выгрузка из Адеска обновляется ежедневно (финансы).</td></tr>
           <tr><td><b>«ОПИУ Дашборд копия данных»</b><br><a href="https://docs.google.com/spreadsheets/d/1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU/edit" target="_blank" rel="noopener">открыть</a> (по ссылке, владелец Никита)</td><td>«Лист1» — зеркало «сборки ОПиУ» через IMPORTRANGE; отсюда берётся всё, что касается ОПиУ, ФОТ и финмодели. Необязательный лист «Операции» (дата зачисления, статья, сумма) включает расчёт ОПиУ по дням.</td><td>Пересчитывается Google автоматически. Пока тяжёлая исходная книга пересчитывается, IMPORTRANGE может отдать часть ячеек нулями, см. защиту в разделе 3.</td></tr>
           <tr><td><b>Таблица «Никита»</b> (экспорт CRM Битрикс24)<br><a href="https://docs.google.com/spreadsheets/d/1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M/edit" target="_blank" rel="noopener">открыть</a></td><td>«Маркетинг» — сделки (стадия, тип товара, город, дата оплаты, сумма, источник, «из лида», описание); «Активация» — активации сертификатов у партнёров (дата, себестоимость, партнёр, услуга, город); «Кредиторка» — долг партнёрам по сделкам; «Партнеры» — справочник партнёров с юрлицами.</td><td>Выгружается из CRM. Фильтр, включённый на листе, обрезает экспорт: дашборд увидит только видимые строки.</td></tr>
-          <tr><td><b>WOWlife_feed</b><br><a href="https://docs.google.com/spreadsheets/d/1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA/edit" target="_blank" rel="noopener">открыть</a></td><td>«Лист1» — классификатор активностей (группа → подгруппа → активность → название для отчётов); «Выгрузка» — зеркало операций Адеска (IMPORTRANGE) для выручки сайта по товарам; «Маркетплейсы» — продажи на площадках по артикулам.</td><td>«Выгрузка» тянется из «выгрузки адеск»; если IMPORTRANGE выдаёт «результат слишком большой», лист пустеет и «Аналитика продаж» не обновляется.</td></tr>
+          <tr><td><b>WOWlife_feed</b><br><a href="https://docs.google.com/spreadsheets/d/1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA/edit" target="_blank" rel="noopener">открыть</a></td><td>Прежние зеркала исходных листов Адеска через IMPORTRANGE. С 07.10.2026 дашборд эту книгу не читает.</td><td>Ошибки IMPORTRANGE в этой книге больше не влияют на обновление «Аналитики продаж».</td></tr>
         </tbody>
       </table>
 
@@ -472,7 +472,7 @@
       <p>Источник — таблица «Никита». <b>Продажи</b> — сделки со стадией «Сделка успешна» по дате оплаты (лист «Маркетинг»), в штуках (сделки) и рублях. <b>Активации</b> — все строки листа «Активация» по дате активации, включая все стадии воронки, с себестоимостью. <b>Бэклог</b> — накопленная разница между проданными и активированными сертификатами с начала данных: сколько проданных сертификатов ещё не активировано. Периоды — день, неделя (с понедельника), месяц.</p>
 
       <h3 id="doc-ws">6. Вкладка «Аналитика продаж»</h3>
-      <p>Источники — WOWlife_feed и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «Выгрузка» фида) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «Маркетплейсы» фида по артикулам. Каждая продажа относится к группе, подгруппе и активности по классификатору «Лист1» фида; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
+      <p>Источники — исходная «выгрузка адеск» и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «выгрузка» Адеска) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «маркетплейсы» Адеска по артикулам. Каждая продажа относится к группе, подгруппе и активности по классификатору «Выручка New» Адеска; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
 
       <h3 id="doc-kred">7. Вкладка «Кредиторка»</h3>
       <p>Источник — лист «Кредиторка» таблицы «Никита». <b>Долг</b> — сделки в стадиях «Ожидает оплаты» и «Ждем сверку». <b>Погашено</b> — стадия «Погашен», по месяцу. «Себес | отдел активаций» — внутренний учёт, долгом не считается. Имя партнёра подтягивается по id партнёра из листа «Активация», юрлицо — из листа «Партнеры» (если их несколько, через точку с запятой). Список партнёров: долги меньше 50 000 ₽ свёрнуты. <b>Долг по месяцам (свечи)</b> — фактический непогашенный долг, возникший в каждом месяце. <b>Успеваем ли платить</b> — новый долг месяца против погашенного за месяц. <b>Как прилетает долг и как мы гасим</b> — долг из CRM против оплат по статье «Активация» в ОПиУ Адеска за тот же месяц.</p>
@@ -514,7 +514,7 @@
         <li>Активации учитываются по факту оплат партнёрам, а не по начислению: сертификат могут активировать в течение двух лет или не активировать вовсе.</li>
         <li>Коробки и шоколадки с октября 2026 учитываются по списанию, а не по оплате: в «выгрузке адеск» ведётся лист «упаковка» (дата, вид упаковки, количество, цена за единицу, сумма), и строки «Коробки» и «Шоколадки» в «сборке ОПиУ» берут сумму списания за месяц оттуда. Названия строк не менялись, поэтому дашборд, управленческая структура и финмодель читают их как раньше; закупка коробок как платёж видна только в БДДС.</li>
         <li>Лист «Маркетинг» таблицы «Никита» время от времени содержит только текущий месяц или обрезан фильтром; тогда «Продажи и активации» и диаграммы «в штуках» показывают неполные данные.</li>
-        <li>Лист «Выгрузка» фида пустеет, когда IMPORTRANGE не помещается в лимит; лечится импортом частями друг под другом.</li>
+        <li>«Аналитика продаж» читает исходные листы Адеска напрямую и не зависит от IMPORTRANGE в WOWlife_feed.</li>
         <li>Сентябрь 2026 и ранее в «сборке ОПиУ» январь–апрель частично заведены вручную, поэтому расчёт по дням для этих месяцев опирается на профиль операций, а суммы — на сборку.</li>
       </ul>
       </div>
@@ -6723,7 +6723,7 @@ window.__salesActSetData = function(newData){
 (function(){
   var ADESK_ID = "1w5fyEPQCPxAZ7YNvIwwUWsjMSQ93g3WlmUSR3WoL4oU";
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var FEED_ID = "1pGQbQQmvZ3WEe7GlwbV5OQ7yuP1dIeRLc4c60iFUKbA";
+  var ADESK_SOURCE_ID = "1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM";
   var CACHE_KEY = "wowlife-dashboard-cache-v1";
 
   // ---------- generic helpers ----------
@@ -6748,8 +6748,10 @@ window.__salesActSetData = function(newData){
     return rows;
   }
 
-  async function fetchSheet(id, sheetName){
-    var url = "https://docs.google.com/spreadsheets/d/" + id + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+  async function fetchSheet(id, sheetName, sheetId){
+    // CSV export keeps rows hidden by filters; gviz only returns visible rows.
+    var base = "https://docs.google.com/spreadsheets/d/" + id;
+    var url = sheetId !== undefined ? base + "/export?format=csv&gid=" + sheetId : base + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
     var res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status + " для листа «" + sheetName + "»");
     var text = await res.text();
@@ -6775,7 +6777,7 @@ window.__salesActSetData = function(newData){
     return yyyy + "-" + mm + "-" + dd;
   }
 
-  // Никита-таблица отдаёт даты уже в ISO (YYYY-MM-DD), Адеск/WOWlife_feed — в ДД.ММ.ГГГГ
+  // Никита-таблица отдаёт даты уже в ISO (YYYY-MM-DD), Адеск — в ДД.ММ.ГГГГ
   function anyDateToIso(s){
     if (!s) return null;
     s = String(s).trim();
@@ -7186,23 +7188,23 @@ window.__salesActSetData = function(newData){
     return result;
   }
 
-  // ================= Аналитика продаж (WOWlife_feed + "Никита"/Активация) =================
+  // ================= Аналитика продаж (исходный Адеск + "Никита"/Активация) =================
   var REVENUE_STATYI = { "Wowlife СПБ Выручка":1, "Wowlife МСК выручка":1, "Выручка":1, "B2B выручка":1 };
   var PLATFORM_MAP = { "ВБ":"Wildberries", "ОЗОН":"Ozon", "ЯМ":"Яндекс Маркет", "Flowwow_СПБ":"Flowwow", "Flowwow_МСК":"Flowwow" };
   var ACT_EXCLUDED_STAGES = { "Просроченные":1, "Сделка провалена":1, "Не погашен":1, "Забытые оплаты":1, "Не посетил":1, "Не дозвонились":1 };
   var PARTNER_UNSPECIFIED = "Партнёр не указан";
 
-  function buildTaxonomy(feedList1Rows){
+  function buildTaxonomy(catalogRows){
     var taxonomy = [];
-    for (var i = 4; i < feedList1Rows.length; i++){ // python min_row=5 (1-indexed) -> js index 4
-      var r = feedList1Rows[i];
+    for (var i = 4; i < catalogRows.length; i++){ // python min_row=5 (1-indexed) -> js index 4
+      var r = catalogRows[i];
       if (!r) continue;
       var aFlag = r[0], grp = r[1], subgrp = r[2], act = r[3];
       if ((aFlag === "" || aFlag === undefined) && act){
         taxonomy.push([grp || "", (subgrp || "").trim(), act]);
       }
     }
-    if (taxonomy.length < 300) throw new Error("Каталог категорий подозрительно мал (" + taxonomy.length + ") — структура WOWlife_feed!Лист1 изменилась?");
+    if (taxonomy.length < 300) throw new Error("Каталог категорий подозрительно мал (" + taxonomy.length + ") — структура Адеск!Выручка New изменилась?");
     var activityToGs = {}, activitiesSorted = [];
     var subgroupToG = {}, subgroupsSorted = [];
     var groupsSet = {};
@@ -7308,8 +7310,8 @@ window.__salesActSetData = function(newData){
     return { asOf: new Date().toISOString().slice(0, 10), totalUnpaid: Math.round(totalUnpaid * 100) / 100, unpaidDeals: unpaidDeals, paidByMonth: paidByMonth };
   }
 
-  function computeWowsales(feedList1Rows, siteRows, mpRows, actRows){
-    var classify = buildTaxonomy(feedList1Rows);
+  function computeWowsales(catalogRows, siteRows, mpRows, actRows){
+    var classify = buildTaxonomy(catalogRows);
 
     // ---- Site (Выгрузка) ----
     var sh = siteRows[0];
@@ -7362,7 +7364,7 @@ window.__salesActSetData = function(newData){
     }
 
     // ---- Marketplaces ----
-    // header row is auto-merged by gviz into one row; fixed positions match known layout
+    // One header row in the source CSV export; fixed positions match known layout
     var mpTotal = 0;
     for (var r2 = 1; r2 < mpRows.length; r2++){
       var row2 = mpRows[r2];
@@ -7570,8 +7572,8 @@ window.__salesActSetData = function(newData){
     var errors = [];
 
     var fetches = {};
-    async function safeFetch(key, id, sheet){
-      try { fetches[key] = await fetchSheet(id, sheet); }
+    async function safeFetch(key, id, sheet, sheetId){
+      try { fetches[key] = await fetchSheet(id, sheet, sheetId); }
       catch (e) { fetches[key] = null; errors.push("Не удалось скачать «" + sheet + "»: " + e.message); }
     }
     await Promise.all([
@@ -7580,9 +7582,9 @@ window.__salesActSetData = function(newData){
       safeFetch("nikitaActivation", NIKITA_ID, "Активация"),
       safeFetch("nikitaKreditorka", NIKITA_ID, "Кредиторка"),
       safeFetch("nikitaPartners", NIKITA_ID, "Партнеры"),
-      safeFetch("feedList1", FEED_ID, "Лист1"),
-      safeFetch("feedVygruzka", FEED_ID, "Выгрузка"),
-      safeFetch("feedMarketplaces", FEED_ID, "Маркетплейсы"),
+      safeFetch("adeskCatalog", ADESK_SOURCE_ID, "Выручка New", 357398149),
+      safeFetch("adeskTransactions", ADESK_SOURCE_ID, "выгрузка", 0),
+      safeFetch("adeskMarketplaces", ADESK_SOURCE_ID, "маркетплейсы", 984275438),
       // лист «Операции» необязателен (нужен только для расчёта ОПиУ по дням) — его отсутствие не считаем ошибкой
       (async function(){ try { fetches.adeskOps = await fetchSheet(ADESK_ID, "Операции"); } catch (e) { fetches.adeskOps = null; } })(),
       // файлы, которые кладут в репозиторий серверные сборщики (Метрика, бот контент-завода); их отсутствие — не ошибка
@@ -7635,9 +7637,9 @@ window.__salesActSetData = function(newData){
     }
 
     // Аналитика продаж
-    if (fetches.feedList1 && fetches.feedVygruzka && fetches.feedMarketplaces && fetches.nikitaActivation){
+    if (fetches.adeskCatalog && fetches.adeskTransactions && fetches.adeskMarketplaces && fetches.nikitaActivation){
       try {
-        var wsData = computeWowsales(fetches.feedList1, fetches.feedVygruzka, fetches.feedMarketplaces, fetches.nikitaActivation);
+        var wsData = computeWowsales(fetches.adeskCatalog, fetches.adeskTransactions, fetches.adeskMarketplaces, fetches.nikitaActivation);
         window.__wowSalesSetData(wsData.sales, wsData.activations, wsData.partners);
         var totalRev = wsData.sales.rows.reduce(function(a,r){return a+r.revenue;},0);
         results.wowsales = "Аналитика продаж: выручка за весь период " + Math.round(totalRev).toLocaleString("ru-RU") + " ₽";
