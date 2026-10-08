@@ -85,7 +85,7 @@
   function series(data,options){
     var keys = keysFor(options.sources,options.city), step = options.step;
     return buckets(options.from,options.to,step).map(function(b){
-      var current = 0, previous = 0, defined = false, prevMissing = false, partial = false, ends = [];
+      var current = 0, previous = 0, defined = false, prevMissing = false, partial = false, ends = [], previousEnds = [];
       keys.forEach(function(key){
         var c = data.coverage[key];
         if (!c || b.from < c.from){ prevMissing = true; return; }
@@ -97,10 +97,11 @@
         if (step === 'day' && b.from.slice(5) === '02-29'){ prevMissing = true; return; }
         var pf = shiftYear(b.from), pt = shiftYear(end);
         if (step === 'month' && end === monthEnd(end)) pt = monthEnd(pt);
+        previousEnds.push(pt);
         if (pf < c.from){ prevMissing = true; return; }
         previous += sumRange(data,key,pf,pt);
       });
-      return {from:b.from,to:b.to,current:defined ? Math.round(current*100)/100 : null,previous:defined && !prevMissing ? Math.round(previous*100)/100 : null,partial:partial,through:ends.sort().pop() || null};
+      return {from:b.from,to:b.to,current:defined ? Math.round(current*100)/100 : null,previous:defined && !prevMissing ? Math.round(previous*100)/100 : null,partial:partial,through:ends.sort().pop() || null,previousFrom:shiftYear(b.from),previousThrough:previousEnds.sort().pop() || null};
     });
   }
   function shortDate(s){ return +s.slice(8,10)+' '+MONTHS[+s.slice(5,7)-1]; }
@@ -126,6 +127,7 @@
     var data = null, updated = false;
     var state = {sources:SOURCES.map(function(s){return s[0];}),city:'all',step:'month',preset:'year',from:'',to:''};
     var wrap=card.querySelector('#revYearWrap'), tip=card.querySelector('.rd-tooltip');
+    var hideHover=function(){tip.hidden=true;};
     function setPreset(preset){
       state.preset=preset;
       if(!data)return;
@@ -148,7 +150,7 @@
     allInput.addEventListener('change',function(){state.sources=allInput.checked ? SOURCES.map(function(s){return s[0];}) : [];render();});
     card.querySelector('#rdOnlyMarkets').addEventListener('click',function(){state.sources=['ozon','wb','ym','flowwow'];render();});
     card.querySelector('#rdClearSources').addEventListener('click',function(){state.sources=[];render();});
-    function closeSourcePicker(e){if(!picker.contains(e.target))picker.open=false;}
+    function closeSourcePicker(e){if(!picker.contains(e.target))picker.open=false;if(!wrap.contains(e.target))hideHover();}
     document.addEventListener('pointerdown',closeSourcePicker);
     document.addEventListener('click',closeSourcePicker);
     picker.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();picker.open=false;picker.querySelector('summary').focus();}});
@@ -188,7 +190,7 @@
       card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — те же даты прошлого года; неполные периоды сравниваются по доступным дням каждого источника';
       card.querySelector('#rdCurrentLegend').textContent='Текущий период: '+shortDate(state.from)+' '+state.from.slice(0,4)+' — '+shortDate(state.to)+' '+state.to.slice(0,4);
       card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(shiftYear(state.to))+' '+shiftYear(state.to).slice(0,4);
-      tip.hidden=true;
+      hideHover();
       if(!selected.length || !defined.length){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
       var width=Math.max(560,wrap.clientWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
       var height=285,left=18,right=86,top=24,bottom=45,pw=width-left-right,ph=height-top-bottom;
@@ -209,24 +211,48 @@
         if(p.current!==null) svg.push('<circle class="rd-point" cx="'+x(i)+'" cy="'+y(p.current)+'" r="'+(points.length>60?2.5:4.5)+'"/>');
         if(i%labelEvery===0 || i===points.length-1){
           var label=state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from);
-          svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis">'+esc(label)+'</text>');
+          svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label" data-i="'+i+'">'+esc(label)+'</text>');
         }
         if(p.current!==null){
           var half=points.length===1?pw/2:pw/(points.length-1)/2;
-          svg.push('<rect class="rd-hover" data-i="'+i+'" tabindex="0" role="img" aria-label="'+esc(shortDate(p.from)+': '+money(p.current)+(p.previous===null?'':', прошлый год '+money(p.previous)))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
+          svg.push('<rect class="rd-hover" data-i="'+i+'" tabindex="0" role="img" aria-describedby="rdRevenueTooltip" aria-label="'+esc(shortDate(p.from)+': '+money(p.current)+(p.previous===null?'':', прошлый год '+money(p.previous)))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
         }
       });
+      svg.push('<g class="rd-crosshair" visibility="hidden" pointer-events="none"><line class="rd-guide" y1="'+top+'" y2="'+(top+ph)+'"/><circle class="rd-active-halo" r="11"/><circle class="rd-active-current" r="5"/><circle class="rd-active-previous" r="4.5"/></g>');
       wrap.innerHTML='<svg role="img" aria-label="Динамика выручки: сплошная линия — текущий период, пунктир — прошлый год" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>';
+      var svgEl=wrap.querySelector('svg'),crosshair=svgEl.querySelector('.rd-crosshair');
+      hideHover=function(){
+        tip.hidden=true;crosshair.setAttribute('visibility','hidden');
+        svgEl.querySelectorAll('.rd-period-label.is-active').forEach(function(label){label.classList.remove('is-active');});
+      };
+      function periodLabel(from,to){
+        return from===to ? shortDate(from)+' '+from.slice(0,4) : shortDate(from)+' — '+shortDate(to)+' '+to.slice(0,4)+(from.slice(0,4)!==to.slice(0,4)?' (с '+from.slice(0,4)+')':'');
+      }
+      function tipLine(previous){return '<svg class="rd-tip-line" viewBox="0 0 32 14" aria-hidden="true"><path class="'+(previous?'rd-previous':'rd-current')+'" d="M1 7 H31"/></svg>';}
       wrap.querySelectorAll('.rd-hover').forEach(function(zone){
         function show(event){
-          var p=points[+zone.dataset.i];
-          tip.innerHTML='<b>'+esc(shortDate(p.from)+' '+p.from.slice(0,4)+(p.to===p.from?'':' — '+shortDate(p.to)+' '+p.to.slice(0,4)))+'</b><div class="rd-tip-current">Текущий период: '+money(p.current)+'</div><div class="rd-tip-previous">Прошлый год: '+(p.previous===null?'нет данных':money(p.previous))+'</div>'+(p.partial?'<small>Неполный период · по '+esc(shortDate(p.through))+'</small>':'');
+          var i=+zone.dataset.i,p=points[i],cx=x(i);
+          crosshair.setAttribute('visibility','visible');
+          var guide=crosshair.querySelector('.rd-guide');guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);
+          ['.rd-active-halo','.rd-active-current'].forEach(function(sel){var c=crosshair.querySelector(sel);c.setAttribute('cx',cx);c.setAttribute('cy',y(p.current));});
+          var prevDot=crosshair.querySelector('.rd-active-previous');prevDot.setAttribute('visibility',p.previous===null?'hidden':'visible');
+          if(p.previous!==null){prevDot.setAttribute('cx',cx);prevDot.setAttribute('cy',y(p.previous));}
+          svgEl.querySelectorAll('.rd-period-label').forEach(function(label){label.classList.toggle('is-active',+label.dataset.i===i);});
+          var change=p.previous!==null && p.previous!==0 ? (p.current-p.previous)/Math.abs(p.previous)*100 : null;
+          var delta=change===null?'':'<span class="rd-tip-delta '+(change>=0?'up':'down')+'">'+(change>0?'+':'')+change.toLocaleString('ru-RU',{maximumFractionDigits:1})+'%</span>';
+          tip.innerHTML='<div class="rd-tip-heading"><span>Период</span><span>Выручка</span></div>'+
+            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(periodLabel(p.from,p.through))+'</span></div><strong>'+money(p.current)+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.through)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
+            (delta?'<div class="rd-tip-change"><span>К прошлому году</span>'+delta+'</div>':'')+
+            (p.partial?'<div class="rd-tip-note">Неполный период · по доступным дням каждого источника</div>':'');
           tip.hidden=false;
-          var cr=card.getBoundingClientRect(),zr=zone.getBoundingClientRect(),xx=event.clientX===undefined?zr.x+zr.width/2:event.clientX;
-          tip.style.left=Math.max(12,Math.min(cr.width-tip.offsetWidth-12,xx-cr.left+14))+'px';
-          tip.style.top=(wrap.offsetTop+30)+'px';
+          var cr=card.getBoundingClientRect(),sr=svgEl.getBoundingClientRect(),anchorX=sr.left+cx*sr.width/width-cr.left;
+          var left=Math.max(12,Math.min(cr.width-tip.offsetWidth-12,anchorX-tip.offsetWidth/2));
+          tip.style.left=left+'px';
+          tip.style.top=Math.max(12,sr.top-cr.top+top*sr.height/height-tip.offsetHeight-14)+'px';
+          tip.style.setProperty('--rd-tip-arrow',Math.max(16,Math.min(tip.offsetWidth-16,anchorX-left))+'px');
         }
-        zone.addEventListener('mousemove',show);zone.addEventListener('focus',show);zone.addEventListener('mouseleave',function(){tip.hidden=true;});zone.addEventListener('blur',function(){tip.hidden=true;});
+        zone.addEventListener('mousemove',show);zone.addEventListener('focus',show);zone.addEventListener('click',show);zone.addEventListener('mouseleave',hideHover);zone.addEventListener('blur',hideHover);
       });
     }
     ['yearFromDate','yearToDate'].forEach(function(id){card.querySelector('#'+id).addEventListener('change',function(){
