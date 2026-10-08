@@ -3895,6 +3895,86 @@ window.__salesActSetData = function(newData){
   .pr-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 13px; }
   .pr-legend { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
   .pr-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+  /* Pricing hierarchy: main tabs, separate filter groups and readable financial data. */
+  .viz-root:has(.tabpanel[data-panel="pricing"]:not([hidden])) .wrap { max-width: 1680px; }
+  .pr { --pr-accent: #246dcc; --pr-text-size: 17px; --pr-control-size: 16px; --pr-detail-size: 14px; font-size: var(--pr-text-size); }
+  .pr .card { padding: 28px 32px; border-radius: 16px; }
+  .pr-top { gap: 12px 18px; margin-bottom: 18px; }
+  .pr-top h2 { font-size: 26px; line-height: 1.3; letter-spacing: -.4px; }
+  .pr-top .sub { font-size: 16px; margin-bottom: 0; }
+  .pr-howto { gap: 18px 26px; padding: 20px 24px; margin: 18px 0 24px; font-size: 15px; line-height: 1.55; }
+  .pr-howto b { font-size: 13px; margin-bottom: 5px; }
+  .pr-groups { gap: 20px 32px; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); }
+  .pr-group h4 { font-size: 14px; margin: 10px 0 12px; }
+  .pr-param { padding: 12px 0; gap: 4px 18px; }
+  .pr-param .lbl { font-size: 17px; }
+  .pr-param .hint { font-size: 14px; margin-top: 5px; line-height: 1.45; }
+  .pr-param input[type=number] { width: 108px; min-height: 42px; font-size: 17px; padding: 8px 10px; border-radius: 10px; }
+  .pr-param .unit { font-size: 16px; width: 20px; }
+  .pr-mode button { font-size: 14px; min-height: 36px; padding: 6px 10px; }
+  .pr-kpis { gap: 20px; margin: 24px 0; }
+  .pr-kpis .kpi { padding: 20px 24px; }
+  .pr-kpis .kpi .val { font-size: 30px; }
+  .pr-kpis .kpi .sub { font-size: 14px; margin-top: 8px; }
+  .pr-navigation { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 8px 0 28px; border-bottom: 1px solid var(--border); }
+  .pr-tabs { display: flex; gap: 32px; min-width: 0; }
+  .pr-tabs button { position: relative; display: inline-flex; align-items: center; gap: 14px; padding: 18px 18px 22px; min-height: 72px; border: 0; background: transparent; color: var(--text-secondary); font: inherit; font-size: 23px; font-weight: 500; cursor: pointer; }
+  .pr-tabs button.active { color: var(--text-primary); }
+  .pr-tabs button.active:after { content: ""; position: absolute; height: 3px; bottom: -1px; left: 0; right: 0; border-radius: 3px 3px 0 0; background: var(--pr-accent); }
+  .pr-tabs svg { width: 26px; height: 26px; fill: none; stroke: var(--pr-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .pr-filters { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; margin-bottom: 22px; }
+  .pr-filter-group { display: flex; flex-direction: column; gap: 10px; }
+  .pr-filter-label { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
+  .pr .seg { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; display: inline-flex; gap: 4px; width: fit-content; }
+  .pr .seg button { font-size: 16px; min-height: 42px; padding: 10px 18px; border-radius: 8px; }
+  .pr .seg button.active { color: var(--text-primary); background: var(--surface-1); box-shadow: 0 1px 4px #0001; }
+  .pr-search { display: flex; flex-direction: column; gap: 10px; min-width: 300px; width: min(440px,100%); }
+  .pr-search-field { position: relative; display: block; }
+  .pr-search-field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; fill: none; stroke: var(--text-muted); stroke-width: 1.8; }
+  .pr-search input { width: 100%; min-height: 50px; padding: 12px 16px 12px 46px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); color: var(--text-primary); font: inherit; font-size: 16px; }
+  .pr-calculation { display: flex; align-items: center; gap: 16px 24px; flex-wrap: wrap; padding: 18px 0 24px; margin-bottom: 22px; border-bottom: 1px solid var(--border); }
+  .pr-utilities { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 20px; }
+  .pr-utilities .reset { margin-left: auto; }
+  .pr-btn { font-size: 16px; min-height: 46px; padding: 11px 18px; border-radius: 11px; }
+  .pr-btn.pri { background: var(--pr-accent); border-color: var(--pr-accent); }
+  .pr-btn.quiet { color: var(--text-secondary); }
+  .pr-btn.reset { color: var(--bad); }
+  .pr-btn:hover { filter: brightness(.96); }
+  .pr-tabs button:focus-visible,.pr-btn:focus-visible,.pr .seg button:focus-visible,.pr input:focus-visible { outline: 2px solid var(--pr-accent); outline-offset: 3px; }
+  .pr-help { margin: 0 0 20px; }
+  .pr-help summary { width: fit-content; cursor: pointer; color: var(--text-secondary); font-size: 15px; padding: 6px 0; }
+  .pr-help .pr-howto { margin-bottom: 0; }
+  .pr-status { font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+  .pr-scroll { max-height: 78vh; border-radius: 12px; }
+  .pr-table { min-width: 1400px; font-size: var(--pr-text-size); }
+  .pr-table th,.pr-table td { padding: 16px 18px; }
+  .pr-table th:first-child,.pr-table td:first-child { min-width: 290px; max-width: 420px; position: sticky; left: 0; background: var(--surface-1); z-index: 2; }
+  .pr-table thead th { font-size: 13px; line-height: 1.4; padding: 18px; white-space: normal; min-width: 104px; }
+  .pr-table thead th:first-child { z-index: 3; background: var(--surface-2); }
+  .pr-table .nm { white-space: normal; min-width: 230px; line-height: 1.45; }
+  .pr-table .meta { font-size: 14px; line-height: 1.4; margin-top: 5px; }
+  .pr-table input.in { width: 116px; min-height: 42px; padding: 8px 12px; font-size: 17px; border-radius: 9px; }
+  .pr-table input.in.txt { width: 100%; }
+  .pr-table .pr-sub > td { position: static; max-width: none; min-width: 0; background: var(--surface-2); z-index: auto; }
+  .pr-table .tag { font-size: 12px; padding: 3px 8px; }
+  .pr-subbox { padding: 24px 28px; }
+  .pr-subbox .hdr { font-size: 16px; gap: 14px; margin-bottom: 18px; }
+  .pr-items { font-size: 16px; }
+  .pr-items th,.pr-items td { padding: 12px 14px; }
+  .pr-items th { font-size: 13px; }
+  .pr-items .meta { font-size: 14px; }
+  .pr-items .nm { white-space: normal; line-height: 1.4; }
+  .pr-x { font-size: 16px; padding: 6px 10px; }
+  .pr-add { gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+  .pr-add input { font-size: 16px; min-height: 44px; min-width: 340px; padding: 10px 14px; }
+  .pr-add .res { min-width: min(540px,100%); }
+  .pr-add .res div { font-size: 16px; padding: 12px 14px; }
+  .pr-legend { font-size: 14px; gap: 12px 22px; margin-top: 18px; }
+  .pr-legend i { width: 15px; height: 15px; margin-right: 7px; }
+  .pr-empty { font-size: 16px; padding: 40px; }
+  @media(max-width:1000px){.pr .card{padding:24px;}.pr-tabs{gap:12px;}.pr-tabs button{font-size:21px;padding-left:12px;padding-right:12px;}.pr-calculation{align-items:flex-start;flex-direction:column;}}
+  @media(max-width:600px){.pr .card{padding:20px 16px;}.pr-top h2{font-size:24px;}.pr-navigation{align-items:flex-start;flex-direction:column;gap:18px;padding-bottom:18px;}.pr-tabs{width:100%;}.pr-tabs button{font-size:20px;flex:1;justify-content:center;gap:9px;padding-left:6px;padding-right:6px;}.pr-search{min-width:0;width:100%;}.pr-filter-group{width:100%;}.pr .seg{display:flex;width:100%;}.pr .seg button{flex:1;min-width:0;font-size:15px;padding:10px 8px;white-space:normal;}.pr-groups{grid-template-columns:1fr;}.pr-utilities .reset{margin-left:0;}.pr-howto{grid-template-columns:1fr;padding:18px;}.pr-param .lbl{font-size:16px;}}
+
 </style>
 <div class="pr">
 
@@ -3913,7 +3993,26 @@ window.__salesActSetData = function(newData){
   <div class="pr-kpis" id="prKpis"></div>
 
   <div class="card" style="margin-top:16px">
-    <div class="pr-top"><h2 id="prTitle">2. Наборы</h2><span class="sub" id="prTitleSub">конструктор: состав, цена, маржа</span></div>
+    <div class="pr-top"><h2 id="prTitle">Наборный прайс</h2><span class="sub" id="prTitleSub">конструктор: состав, цена, маржа</span></div>
+    <div class="pr-navigation">
+      <div class="pr-tabs" id="prView" role="tablist" aria-label="Вид прайса">
+        <button type="button" data-v="services" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3M9 3h6v4H9zM8 11h8M8 15h8M8 19h5"/></svg>Базовый</button>
+        <button type="button" data-v="sets" class="active" role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="2" width="11" height="6" rx="1.5"/><rect x="10" y="10" width="11" height="5" rx="1.5"/><rect x="10" y="18" width="11" height="5" rx="1.5"/><path d="M6 8v13h4M6 12.5h4"/></svg>Наборный</button>
+      </div>
+      <button type="button" class="pr-btn pri" id="prNewSet">+ Новый набор</button>
+      <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
+    </div>
+    <div class="pr-filters">
+      <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
+      <label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название или партнёр" aria-label="Поиск по названию или партнёру"></span></label>
+    </div>
+    <div class="pr-calculation" id="prModeGroup"><span class="pr-filter-label">Ожидаемая выплата партнёру</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Какую выплату партнёру считать ожидаемой для набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div>
+    <div class="pr-utilities">
+      <button type="button" class="pr-btn" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
+      <button type="button" class="pr-btn" id="prCsv">Экспорт CSV</button>
+      <button type="button" class="pr-btn quiet reset" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
+    </div>
+    <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
       <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: «+ Новый набор» → название, город, услуги поиском.</span></div>
       <div><b>Что получаем</b><span>По каждому набору: ожидаемая выплата партнёру, маржа при заложенной активации и при 100 %, чистая прибыль, цена под целевую маржу.</span></div>
@@ -3926,18 +4025,7 @@ window.__salesActSetData = function(newData){
       <div><b>Зачем</b><span>Услуги — кирпичи наборов: убыточная услуга делает убыточным любой набор, куда входит.</span></div>
       <div><b>Почему так</b><span>Цена и себестоимость берутся из прайса CRM (листы «Услуги Мск/СПб»); правки здесь CRM не меняют — это модель для решения, что менять.</span></div>
     </div>
-    <div class="pr-tools">
-      <div class="seg" id="prView"><button type="button" data-v="sets" class="active">Наборы</button><button type="button" data-v="services">Услуги</button></div>
-      <div class="seg" id="prCity"><button type="button" data-c="all" class="active">Все</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div>
-      <div class="seg" id="prMode" title="Какую выплату партнёру считать ожидаемой для набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div>
-      <input type="search" id="prQ" placeholder="Поиск по названию, партнёру…">
-      <span class="sp"></span>
-      <button type="button" class="pr-btn pri" id="prNewSet">+ Новый набор</button>
-      <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
-      <button type="button" class="pr-btn" id="prCsv">CSV</button>
-      <button type="button" class="pr-btn quiet" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
-      <button type="button" class="pr-btn quiet" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
-    </div>
+    </details>
     <p class="pr-status" id="prStatus"></p>
     <div class="pr-scroll" id="prTableWrap"></div>
     <div class="pr-legend"><span><i style="background:var(--pr-good-bg)"></i>маржа не ниже целевой</span><span><i style="background:var(--pr-warn-bg)"></i>ниже целевой</span><span><i style="background:var(--pr-bad-bg)"></i>убыток</span><span><i style="background:var(--pr-key-bg)"></i>главное</span></div>
@@ -8058,7 +8146,7 @@ window.__salesActSetData = function(newData){
       h += '<tr><td><span class="nm" title="' + esc(it.name) + '">' + esc(it.name) + (it.added ? '<span class="tag">добавлена</span>' : "") + '</span><span class="meta">' + esc(it.partner || "партнёр не указан") + '</span></td>' + (w ? '<td class="muted">' + (w[it.sid] ? fmtP(w[it.sid], 0) : "—") + '</td>' : "") +
         '<td><input class="in' + (state.sov[it.sid] && state.sov[it.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(it.sid) + '" value="' + (it.cost || 0) + '" title="выплата партнёру (правка применится везде, где есть эта услуга)"></td><td class="muted">' + fmtP(c.share, 0) + '</td><td>' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td><button type="button" class="pr-x" data-rm="' + esc(s.id) + '" data-sid="' + esc(it.sid) + '" title="убрать из набора">×</button></td></tr>';
     });
-    h += '</tbody></table><div class="pr-add"><input type="text" data-addq="' + esc(s.id) + '" placeholder="Добавить услугу: начните вводить название или партнёра…" autocomplete="off"><div class="res" hidden></div><span class="muted" style="font-size:11px">из прайса услуг города «' + s.city + '»</span></div></div>';
+    h += '</tbody></table><div class="pr-add"><input type="text" data-addq="' + esc(s.id) + '" placeholder="Добавить услугу: начните вводить название или партнёра…" autocomplete="off"><div class="res" hidden></div><span class="muted" style="font-size:14px">из прайса услуг города «' + s.city + '»</span></div></div>';
     return h;
   }
   function renderServices(){
@@ -8070,7 +8158,7 @@ window.__salesActSetData = function(newData){
     if (!list.length) html += '<tr><td colspan="9" class="pr-empty">' + (CRM ? "Ничего не найдено" : "Услуги не загружены") + '</td></tr>';
     list.forEach(function(s){
       var c = calc[s.sid];
-      html += '<tr class="row" data-sid="' + esc(s.sid) + '"><td>' + (s.custom ? '<input class="in txt" data-sname="' + esc(s.sid) + '" value="' + esc(s.name) + '" placeholder="название услуги"><input class="in txt" style="margin-top:3px;font-size:11px" data-spartner="' + esc(s.sid) + '" value="' + esc(s.partner) + '" placeholder="партнёр">' : '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + (s.edited ? '<span class="tag">правки</span>' : "") + '</span><span class="meta">' + esc(s.partner || "партнёр не указан") + ' · ' + s.city + '</span>') + (s.custom ? '<span class="tag">моя</span>' : "") + '</td>' +
+      html += '<tr class="row" data-sid="' + esc(s.sid) + '"><td>' + (s.custom ? '<input class="in txt" data-sname="' + esc(s.sid) + '" value="' + esc(s.name) + '" placeholder="название услуги"><input class="in txt" style="margin-top:6px;font-size:14px" data-spartner="' + esc(s.sid) + '" value="' + esc(s.partner) + '" placeholder="партнёр">' : '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + (s.edited ? '<span class="tag">правки</span>' : "") + '</span><span class="meta">' + esc(s.partner || "партнёр не указан") + ' · ' + s.city + '</span>') + (s.custom ? '<span class="tag">моя</span>' : "") + '</td>' +
         '<td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].price !== undefined ? " changed" : "") + '" type="number" step="10" data-sprice="' + esc(s.sid) + '" value="' + (s.price || 0) + '"></td><td><input class="in' + (state.sov[s.sid] && state.sov[s.sid].cost !== undefined ? " changed" : "") + '" type="number" step="10" data-cost="' + esc(s.sid) + '" value="' + (s.cost || 0) + '"></td>' +
         '<td>' + fmtR(c.mpAct) + '</td><td class="' + cls(c.mAct, p.t) + '">' + fmtP(c.mAct) + '</td><td class="' + cls(c.m100, p.t) + '">' + fmtP(c.m100) + '</td><td class="' + (c.nAct === null ? "muted" : c.nAct < 0 ? "bad" : "") + '">' + fmtP(c.nAct) + '</td><td class="key">' + fmtR(c.target) + '</td><td class="muted">' + (u[s.sid] || "—") + (s.custom ? ' <button type="button" class="pr-x" data-sdel="' + esc(s.sid) + '" title="удалить услугу">×</button>' : "") + '</td></tr>';
     });
@@ -8081,18 +8169,20 @@ window.__salesActSetData = function(newData){
   function render(){
     ensureParams();
     renderParams();
-    root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-v") === state.view); });
-    root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-c") === state.city); });
-    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-m") === state.mode); });
-    root.querySelector("#prMode").hidden = state.view !== "sets";
+    root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-v") === state.view; b.classList.toggle("active", selected); b.setAttribute("aria-selected", String(selected)); b.setAttribute("aria-controls", "prTableWrap"); b.tabIndex = selected ? 0 : -1; });
+    root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-c") === state.city; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
+    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-m") === state.mode; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
+    root.querySelector("#prModeGroup").hidden = state.view !== "sets";
     root.querySelector("#prNewSet").hidden = state.view !== "sets";
     root.querySelector("#prNewService").hidden = state.view !== "services";
     root.querySelector("#prHowSets").hidden = state.view !== "sets"; root.querySelector("#prHowServices").hidden = state.view !== "services";
-    root.querySelector("#prTitle").textContent = state.view === "sets" ? "2. Наборы" : "2. Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
+    root.querySelector("#prTitle").textContent = state.view === "sets" ? "Наборный прайс" : "Базовый прайс"; root.querySelector("#prTitleSub").textContent = state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
     renderKpis(filtered(allSets()));
     if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
     if (state.view === "sets") renderSets(); else renderServices();
+    root.querySelector("#prTableWrap").setAttribute("role", "tabpanel");
+    root.querySelector("#prTableWrap").setAttribute("aria-label", state.view === "sets" ? "Наборный прайс" : "Базовый прайс");
   }
 
   // ---------- события ----------
@@ -8100,6 +8190,13 @@ window.__salesActSetData = function(newData){
   function ov(id){ return state.ov[id] = state.ov[id] || {}; }
   function sov(id){ return state.sov[id] = state.sov[id] || {}; }
   function findCustomSet(id){ return state.customSets.filter(function(s){ return s.id === id; })[0]; }
+  root.querySelector("#prView").addEventListener("keydown", function(e){
+    var current = e.target.closest("button[data-v]");
+    if (!current || ["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(e.key) < 0) return;
+    var tabs = Array.prototype.slice.call(root.querySelectorAll("#prView button"));
+    var index = e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : (tabs.indexOf(current) + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    e.preventDefault(); tabs[index].click(); tabs[index].focus();
+  });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
     if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(filtered(allSets())); if (state.view === "sets") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
