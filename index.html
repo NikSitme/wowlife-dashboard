@@ -393,6 +393,33 @@
   .sortarrow { opacity: .5; font-size: 10px; margin-left: 3px; }
 
   footer { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+
+.revenue-dynamics{position:relative;--rd-current:#2899ff;--rd-previous:#8c7bff;}
+.rd-controls{display:flex;flex-direction:column;gap:10px;margin:18px 0 20px;}
+.rd-control-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;}
+.rd-label{width:82px;flex-shrink:0;color:var(--text-muted);font-size:12px;}
+.revenue-dynamics .presets{margin:0;display:flex;gap:6px;flex-wrap:wrap;}
+.rd-dates{display:flex;gap:10px;flex-wrap:wrap;}
+.rd-dates label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);}
+.rd-dates input{font:inherit;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:7px 10px;min-width:130px;}
+.rd-summary{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.rd-summary strong{font-size:29px;letter-spacing:-.8px;}
+.rd-summary span{color:var(--text-secondary);font-size:13px;}
+#revYearWrap{overflow-x:auto;min-height:285px;}
+#revYearWrap svg{display:block;}
+.rd-grid{stroke:var(--border);stroke-dasharray:2 6;}
+.rd-axis{fill:var(--text-secondary);font-size:12px;}
+.rd-current,.rd-previous{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;}
+.rd-current{stroke:var(--rd-current);}.rd-previous{stroke:var(--rd-previous);stroke-dasharray:5 6;}
+.rd-point{fill:var(--surface-1);stroke:var(--rd-current);stroke-width:2.5;}
+.rd-hover{fill:transparent;cursor:crosshair;}.rd-hover:focus{outline:none;fill:color-mix(in srgb,var(--rd-current) 8%,transparent);}
+.rd-legend{display:flex;gap:18px 28px;flex-wrap:wrap;margin:10px 0;}
+.rd-legend>span{display:flex;align-items:center;gap:9px;font-size:13px;}
+.rd-key{display:inline-block;width:25px;border-top:3px solid var(--rd-current);border-radius:3px;}
+.rd-key.previous{border-color:var(--rd-previous);border-top-style:dashed;}
+.rd-tooltip{position:absolute;z-index:30;pointer-events:none;max-width:310px;padding:12px 15px;background:var(--surface-1);color:var(--text-primary);border:1px solid var(--border);box-shadow:0 8px 28px #0002;border-radius:12px;font-size:13px;line-height:1.8;}
+.rd-tooltip[hidden]{display:none;}.rd-tip-current{color:var(--rd-current);}.rd-tip-previous{color:var(--rd-previous);}.rd-tooltip small{color:var(--text-muted);}.rd-empty{padding:80px 20px;text-align:center;}
+@media(max-width:600px){.rd-label{width:100%;}.rd-summary strong{font-size:25px;}.rd-control-row{gap:7px;}.rd-legend{gap:12px;}.rd-legend>span{font-size:12px;}}
 </style>
 
 <div class="viz-root">
@@ -471,6 +498,8 @@
 
       <h3 id="doc-sales">5. Вкладка «Продажи и активации»</h3>
       <p>Источник — таблица «Никита». <b>Продажи</b> — сделки со стадией «Сделка успешна» по дате оплаты (лист «Маркетинг»), в штуках (сделки) и рублях. <b>Активации</b> — все строки листа «Активация» по дате активации, включая все стадии воронки, с себестоимостью. <b>Бэклог</b> — накопленная разница между проданными и активированными сертификатами с начала данных: сколько проданных сертификатов ещё не активировано. Периоды — день, неделя (с понедельника), месяц.</p>
+
+      <p><b>Динамика выручки</b> — сплошная линия показывает выбранный период, пунктир — те же даты прошлого года. По умолчанию выбран текущий год с шагом по месяцам. Источники (сайт, Ozon, Wildberries, Яндекс Маркет, Flowwow, B2B) можно выбирать одновременно; «Все маркеты» выбирает четыре площадки. Шаги: день, неделя с понедельника, месяц, год; период задаётся независимо. Сайт и B2B — положительные поступления по дате зачисления и статьям ОПиУ; маркетплейсы — розничная цена по дате продажи и городам МСК/СПБ. Неполный период сравнивается с такими же доступными днями каждого источника в прошлом году. Будущие даты и отсутствующая история не рисуются как нулевая выручка. Для 2025 года используется архив «маркетплейсы-25».</p>
 
       <h3 id="doc-ws">6. Вкладка «Аналитика продаж»</h3>
       <p>Источники — исходная «выгрузка адеск» и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «выгрузка» Адеска) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «маркетплейсы» Адеска по артикулам; для 2025 года — только строки 2025 года из листа «маркетплейсы-25», по той же методике. Данные 2025 из текущего листа заменяются историей, чтобы исключить двойной учёт. Каждая продажа относится к группе, подгруппе и активности по классификатору «Выручка New» Адеска; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
@@ -627,20 +656,19 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Динамика выручки за год</h2>
-    <p class="cap">Выручка по месяцам, текущий месяц выделен · пунктир — линия тренда</p>
-    <div class="legend" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
-      <div style="display:flex; gap:14px; flex-wrap:wrap;">
-        <span class="item"><span class="key" style="background:var(--s1)"></span>Выручка</span>
-        <span class="item"><span class="key trend" style="background:var(--s3)"></span>Тренд</span>
-      </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
-        <div class="presets" id="yearChannelPresets" style="margin-left:0;"></div>
-        <div class="presets" id="yearCityPresets" style="margin-left:0;"></div>
-      </div>
+  <div class="card revenue-dynamics" id="revenueDynamics">
+    <h2>Динамика выручки</h2>
+    <div class="rd-controls">
+      <div class="rd-control-row"><span class="rd-label">Источники</span><div class="presets" id="yearChannelPresets"></div></div>
+      <div class="rd-control-row"><span class="rd-label">Города</span><div class="presets" id="yearCityPresets"></div></div>
+      <div class="rd-control-row"><span class="rd-label">Шаг</span><div class="presets" id="yearStepPresets"></div></div>
+      <div class="rd-control-row"><span class="rd-label">Период</span><div class="presets" id="yearRangePresets"></div><div class="rd-dates"><label>С <input type="date" id="yearFromDate"></label><label>По <input type="date" id="yearToDate"></label></div></div>
     </div>
+    <div class="rd-summary"><strong id="rdTotal"></strong><span id="rdDelta"></span></div>
     <div class="chart-wrap" id="revYearWrap"></div>
+    <div class="rd-legend"><span><i class="rd-key"></i><span id="rdCurrentLegend">Текущий период</span></span><span><i class="rd-key previous"></i><span id="rdPreviousLegend">Прошлый год</span></span></div>
+    <p class="cap" id="rdCaption">Пунктир — показатели за прошлый год. Можно выбрать несколько источников.</p>
+    <div class="rd-tooltip" hidden></div>
   </div>
 
   <div class="card">
@@ -4268,6 +4296,7 @@ window.__salesActSetData = function(newData){
 </div>
 </div>
 
+<script src="scripts/revenue-dynamics.js"></script>
 <script>
 (function(){
   var DATA = [{"date":"2026-01-01","label":"2026-01","revenue_total":8963812.3,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":1941913.68},{"name":"Wowlife СПБ Выручка","value":2470365.61},{"name":"Выручка ВБ  СПБ","value":326222},{"name":"Выручка ВБ  МСК","value":665236.01},{"name":"Выручка ОЗОН СПБ","value":1514654},{"name":"Выручка ОЗОН МСК","value":1540503},{"name":"Выручка ЯМ СПБ","value":88138},{"name":"Выручка ЯМ МСК","value":175978},{"name":"Выручка Flowwow_СПБ","value":177475},{"name":"Выручка Flowwow_МСК","value":63327},{"name":"B2B выручка","value":0}],"direct_costs_total":4714568.14,"direct_breakdown":[{"name":"Расходы ВБ","value":543581.99},{"name":"Расходы ОЗОН","value":2151964.99},{"name":"Расходы ЯМ","value":106140.58},{"name":"Расходы ФВ","value":47363},{"name":"Активация","value":1458154},{"name":"Эквайринговая комиссия","value":115913.01},{"name":"Банковские комиссии","value":12091.57},{"name":"Возвраты","value":29359},{"name":"Создание продукта","value":250000}],"gross_profit":4249244.16,"personnel_total":60750,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":0},{"name":"ФОТ Маркетинга","value":0},{"name":"ФОТ ОЗ:","value":0},{"name":"ФОТ ОП","value":0},{"name":"ФОТ разработки","value":0},{"name":"ФОТ Административный","value":15750},{"name":"Отдел активации","value":0},{"name":"Отдел м-плейсов","value":45000}],"indirect_total":61077,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":36077},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":0},{"name":"Сервисы маркетинговые","value":0},{"name":"Закупка рекламы","value":25000},{"name":"Консалтинг","value":0},{"name":"Телефония","value":0},{"name":"СМС","value":0},{"name":"B2B","value":0}],"admin_total":36748.24,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":34718.24},{"name":"Найм сотрудников","value":0},{"name":"Расходы офиса","value":2030},{"name":"Сервисы административные","value":0},{"name":"Подарки команде","value":0},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":158575.24,"ebitda":4090668.92,"interest":0,"taxes":405713.72,"net_profit":3684955.2,"loan_principal":0,"dividends":0,"final_profit":3684955.2},{"date":"2026-02-01","label":"2026-02","revenue_total":11882431.57,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":3182592.19},{"name":"Wowlife СПБ Выручка","value":3504972.8},{"name":"Выручка ВБ  СПБ","value":342929},{"name":"Выручка ВБ  МСК","value":755754.57},{"name":"Выручка ОЗОН СПБ","value":1983044},{"name":"Выручка ОЗОН МСК","value":1289568.01},{"name":"Выручка ЯМ СПБ","value":175184},{"name":"Выручка ЯМ МСК","value":408523},{"name":"Выручка Flowwow_СПБ","value":134493},{"name":"Выручка Flowwow_МСК","value":105371},{"name":"B2B выручка","value":0}],"direct_costs_total":5104701.32,"direct_breakdown":[{"name":"Расходы ВБ","value":555831.67},{"name":"Расходы ОЗОН","value":1958918.96},{"name":"Расходы ЯМ","value":146059.53},{"name":"Расходы ФВ","value":53329},{"name":"Активация","value":1416442.01},{"name":"Эквайринговая комиссия","value":160110.65},{"name":"Банковские комиссии","value":13541.5},{"name":"Возвраты","value":97128},{"name":"Создание продукта","value":703340}],"gross_profit":6777730.25,"personnel_total":295750,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":0},{"name":"ФОТ Маркетинга","value":0},{"name":"ФОТ ОЗ:","value":0},{"name":"ФОТ ОП","value":0},{"name":"ФОТ разработки","value":190000},{"name":"ФОТ Административный","value":15750},{"name":"Отдел активации","value":0},{"name":"Отдел м-плейсов","value":90000}],"indirect_total":90685,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":73895},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":0},{"name":"Сервисы маркетинговые","value":1790},{"name":"Закупка рекламы","value":0},{"name":"Консалтинг","value":0},{"name":"Телефония","value":0},{"name":"СМС","value":15000},{"name":"B2B","value":0}],"admin_total":55159.57,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":52099.57},{"name":"Найм сотрудников","value":0},{"name":"Расходы офиса","value":3060},{"name":"Сервисы административные","value":0},{"name":"Подарки команде","value":0},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":441594.57,"ebitda":6336135.68,"interest":0,"taxes":542230.86,"net_profit":5793904.82,"loan_principal":0,"dividends":0,"final_profit":5793904.82},{"date":"2026-03-01","label":"2026-03","revenue_total":10166161.02,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":2294857.6},{"name":"Wowlife СПБ Выручка","value":3409388.33},{"name":"Выручка ВБ  СПБ","value":291560.09},{"name":"Выручка ВБ  МСК","value":425103},{"name":"Выручка ОЗОН СПБ","value":1704881},{"name":"Выручка ОЗОН МСК","value":1208714},{"name":"Выручка ЯМ СПБ","value":187164},{"name":"Выручка ЯМ МСК","value":438832},{"name":"Выручка Flowwow_СПБ","value":115455},{"name":"Выручка Flowwow_МСК","value":90206},{"name":"B2B выручка","value":0}],"direct_costs_total":4485230.58,"direct_breakdown":[{"name":"Расходы ВБ","value":367413.2},{"name":"Расходы ОЗОН","value":1742346.41},{"name":"Расходы ЯМ","value":152167.14},{"name":"Расходы ФВ","value":48810},{"name":"Активация","value":1894162.98},{"name":"Эквайринговая комиссия","value":138420.57},{"name":"Банковские комиссии","value":14623.28},{"name":"Возвраты","value":85420},{"name":"Создание продукта","value":41867}],"gross_profit":5680930.44,"personnel_total":155750,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":0},{"name":"ФОТ Маркетинга","value":0},{"name":"ФОТ ОЗ:","value":0},{"name":"ФОТ ОП","value":0},{"name":"ФОТ разработки","value":50000},{"name":"ФОТ Административный","value":15750},{"name":"Отдел активации","value":0},{"name":"Отдел м-плейсов","value":90000}],"indirect_total":822230,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":45440},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":0},{"name":"Сервисы маркетинговые","value":1790},{"name":"Закупка рекламы","value":750000},{"name":"Консалтинг","value":0},{"name":"Телефония","value":0},{"name":"СМС","value":25000},{"name":"B2B","value":0}],"admin_total":57920.43,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":55880.43},{"name":"Найм сотрудников","value":0},{"name":"Расходы офиса","value":2040},{"name":"Сервисы административные","value":0},{"name":"Подарки команде","value":0},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":1035900.43,"ebitda":4645030.01,"interest":0,"taxes":483231.72,"net_profit":4161798.29,"loan_principal":0,"dividends":0,"final_profit":4161798.29},{"date":"2026-04-01","label":"2026-04","revenue_total":8993109.17,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":1714853.2},{"name":"Wowlife СПБ Выручка","value":3078862.97},{"name":"Выручка ВБ  СПБ","value":157708},{"name":"Выручка ВБ  МСК","value":282135},{"name":"Выручка ОЗОН СПБ","value":1853145},{"name":"Выручка ОЗОН МСК","value":1492075},{"name":"Выручка ЯМ СПБ","value":55753},{"name":"Выручка ЯМ МСК","value":190373},{"name":"Выручка Flowwow_СПБ","value":114629},{"name":"Выручка Flowwow_МСК","value":53575},{"name":"B2B выручка","value":0}],"direct_costs_total":5579048.2,"direct_breakdown":[{"name":"Расходы ВБ","value":232735.06},{"name":"Расходы ОЗОН","value":2122579.64},{"name":"Расходы ЯМ","value":67970.21},{"name":"Расходы ФВ","value":44120},{"name":"Активация","value":2619771.49},{"name":"Эквайринговая комиссия","value":107623.63},{"name":"Банковские комиссии","value":17394.17},{"name":"Возвраты","value":87564},{"name":"Создание продукта","value":279290}],"gross_profit":3414060.97,"personnel_total":155750,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":0},{"name":"ФОТ Маркетинга","value":0},{"name":"ФОТ ОЗ:","value":0},{"name":"ФОТ ОП","value":0},{"name":"ФОТ разработки","value":50000},{"name":"ФОТ Административный","value":15750},{"name":"Отдел активации","value":0},{"name":"Отдел м-плейсов","value":90000}],"indirect_total":725260,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":39470},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":20000},{"name":"Сервисы маркетинговые","value":33790},{"name":"Закупка рекламы","value":600000},{"name":"Консалтинг","value":0},{"name":"Телефония","value":0},{"name":"СМС","value":32000},{"name":"B2B","value":0}],"admin_total":67886.76,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":54176.76},{"name":"Найм сотрудников","value":0},{"name":"Расходы офиса","value":12840},{"name":"Сервисы административные","value":870},{"name":"Подарки команде","value":0},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":948896.76,"ebitda":2465164.21,"interest":161850,"taxes":428599.93,"net_profit":1874714.28,"loan_principal":541700,"dividends":1470000,"final_profit":-136985.72},{"date":"2026-05-01","label":"2026-05","revenue_total":9701670.98,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":1747322.37},{"name":"Wowlife СПБ Выручка","value":3329220.61},{"name":"Выручка ВБ  СПБ","value":163154},{"name":"Выручка ВБ  МСК","value":285248},{"name":"Выручка ОЗОН СПБ","value":2099213},{"name":"Выручка ОЗОН МСК","value":1585852},{"name":"Выручка ЯМ СПБ","value":54840},{"name":"Выручка ЯМ МСК","value":136872},{"name":"Выручка Flowwow_СПБ","value":75951},{"name":"Выручка Flowwow_МСК","value":43998},{"name":"B2B выручка","value":180000}],"direct_costs_total":5543408.01,"direct_breakdown":[{"name":"Расходы ВБ","value":240592.34},{"name":"Расходы ОЗОН","value":2301411.08},{"name":"Расходы ЯМ","value":78917.45},{"name":"Расходы ФВ","value":29979},{"name":"Активация","value":2367227.44},{"name":"Эквайринговая комиссия","value":122131.57},{"name":"Банковские комиссии","value":23647.13},{"name":"Возвраты","value":179622},{"name":"Создание продукта","value":199880}],"gross_profit":4158262.97,"personnel_total":724750,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":125000},{"name":"ФОТ Маркетинга","value":150000},{"name":"ФОТ ОЗ:","value":0},{"name":"ФОТ ОП","value":66000},{"name":"ФОТ разработки","value":50000},{"name":"ФОТ Административный","value":125750},{"name":"Отдел активации","value":60000},{"name":"Отдел м-плейсов","value":148000}],"indirect_total":925200,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":60812},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":50660},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":20000},{"name":"Сервисы маркетинговые","value":31631},{"name":"Закупка рекламы","value":724400},{"name":"Консалтинг","value":0},{"name":"Телефония","value":750},{"name":"СМС","value":36947},{"name":"B2B","value":0}],"admin_total":244982,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":44200},{"name":"Найм сотрудников","value":12423},{"name":"Расходы офиса","value":15230},{"name":"Сервисы административные","value":5129},{"name":"Подарки команде","value":0},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":168000},{"name":"Страховые взносы ИП","value":0}],"operating_total":1894932,"ebitda":2263330.97,"interest":161850,"taxes":445569.54,"net_profit":1655911.43,"loan_principal":541700,"dividends":1037000,"final_profit":77211.43},{"date":"2026-06-01","label":"2026-06","revenue_total":12179802.38,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":2364568.05},{"name":"Wowlife СПБ Выручка","value":4972709.33},{"name":"Выручка ВБ  СПБ","value":366217},{"name":"Выручка ВБ  МСК","value":475745},{"name":"Выручка ОЗОН СПБ","value":2234520},{"name":"Выручка ОЗОН МСК","value":1270602},{"name":"Выручка ЯМ СПБ","value":87076},{"name":"Выручка ЯМ МСК","value":152607},{"name":"Выручка Flowwow_СПБ","value":84743},{"name":"Выручка Flowwow_МСК","value":80591},{"name":"B2B выручка","value":90424}],"direct_costs_total":6723066.97,"direct_breakdown":[{"name":"Расходы ВБ","value":429661.61},{"name":"Расходы ОЗОН","value":2229858.14},{"name":"Расходы ЯМ","value":74710.22},{"name":"Расходы ФВ","value":56097},{"name":"Активация","value":3527811.56},{"name":"Эквайринговая комиссия","value":142052.48},{"name":"Банковские комиссии","value":33886.56},{"name":"Возвраты","value":184175.4},{"name":"Создание продукта","value":44814}],"gross_profit":5456735.41,"personnel_total":1739721,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":160000},{"name":"ФОТ Маркетинга","value":195000},{"name":"ФОТ ОЗ:","value":145000},{"name":"ФОТ ОП","value":499995},{"name":"ФОТ разработки","value":232000},{"name":"ФОТ Административный","value":175750},{"name":"Отдел активации","value":178205},{"name":"Отдел м-плейсов","value":153771}],"indirect_total":784297.6,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":63215},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":0},{"name":"Email рассылка","value":20000},{"name":"Сервисы маркетинговые","value":33290},{"name":"Закупка рекламы","value":626022.6},{"name":"Консалтинг","value":0},{"name":"Телефония","value":1770},{"name":"СМС","value":40000},{"name":"B2B","value":0}],"admin_total":783690.37,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":210000},{"name":"Аренда офиса Мск","value":36866.63},{"name":"Найм сотрудников","value":20846},{"name":"Расходы офиса","value":468178},{"name":"Сервисы административные","value":37769},{"name":"Подарки команде","value":10000},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":30.74},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":3307708.97,"ebitda":2149026.44,"interest":161850,"taxes":581214.93,"net_profit":1405961.51,"loan_principal":541700,"dividends":605000,"final_profit":259261.51},{"date":"2026-07-01","label":"2026-07","revenue_total":13481355.83,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":2370174.77},{"name":"Wowlife СПБ Выручка","value":4543986.06},{"name":"Выручка ВБ  СПБ","value":420792},{"name":"Выручка ВБ  МСК","value":544612},{"name":"Выручка ОЗОН СПБ","value":2992734},{"name":"Выручка ОЗОН МСК","value":2021176},{"name":"Выручка ЯМ СПБ","value":52903},{"name":"Выручка ЯМ МСК","value":129630},{"name":"Выручка Flowwow_СПБ","value":64216},{"name":"Выручка Flowwow_МСК","value":89993},{"name":"B2B выручка","value":251139}],"direct_costs_total":8436659.53,"direct_breakdown":[{"name":"Расходы ВБ","value":524130.71},{"name":"Расходы ОЗОН","value":3274562.16},{"name":"Расходы ЯМ","value":60543.62},{"name":"Расходы ФВ","value":47182},{"name":"Активация","value":4027252.98},{"name":"Эквайринговая комиссия","value":144400.55},{"name":"Банковские комиссии","value":30357.01},{"name":"Возвраты","value":275621.5},{"name":"Создание продукта","value":52609}],"gross_profit":5044696.3,"personnel_total":1788943,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":160000},{"name":"ФОТ Маркетинга","value":165000},{"name":"ФОТ ОЗ:","value":195000},{"name":"ФОТ ОП","value":305000},{"name":"ФОТ разработки","value":275000},{"name":"ФОТ Административный","value":343000},{"name":"Отдел активации","value":186000},{"name":"Отдел м-плейсов","value":159943}],"indirect_total":991887,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":74049},{"name":"Доставка Далли","value":87768},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":36000},{"name":"Email рассылка","value":20000},{"name":"Сервисы маркетинговые","value":17740},{"name":"Закупка рекламы","value":710430},{"name":"Консалтинг","value":0},{"name":"Телефония","value":900},{"name":"СМС","value":45000},{"name":"B2B","value":0}],"admin_total":1027531.27,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":230149.9},{"name":"Аренда офиса Мск","value":61458.37},{"name":"Найм сотрудников","value":11957},{"name":"Расходы офиса","value":512886},{"name":"Сервисы административные","value":73499},{"name":"Подарки команде","value":28581},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":109000},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":3808361.27,"ebitda":1236335.03,"interest":0,"taxes":737529.71,"net_profit":498805.32,"loan_principal":541300,"dividends":600000,"final_profit":-642494.68},{"date":"2026-08-01","label":"2026-08","revenue_total":10629766.06,"revenue_breakdown":[{"name":"Wowlife МСК выручка","value":2006139.4},{"name":"Wowlife СПБ Выручка","value":3625166.25},{"name":"Выручка ВБ  СПБ","value":193360},{"name":"Выручка ВБ  МСК","value":486280.41},{"name":"Выручка ОЗОН СПБ","value":2164990},{"name":"Выручка ОЗОН МСК","value":1703117},{"name":"Выручка ЯМ СПБ","value":50040},{"name":"Выручка ЯМ МСК","value":114754},{"name":"Выручка Flowwow_СПБ","value":103556},{"name":"Выручка Flowwow_МСК","value":96833},{"name":"B2B выручка","value":85530}],"direct_costs_total":6612341.66,"direct_breakdown":[{"name":"Расходы ВБ","value":340870.71},{"name":"Расходы ОЗОН","value":2618692.22},{"name":"Расходы ЯМ","value":34262.04},{"name":"Расходы ФВ","value":60976},{"name":"Активация","value":3130082.34},{"name":"Эквайринговая комиссия","value":107875.91},{"name":"Банковские комиссии","value":29473.44},{"name":"Возвраты","value":207149},{"name":"Создание продукта","value":82960}],"gross_profit":4017424.4,"personnel_total":1402792,"personnel_breakdown":[{"name":"ФОТ отдела продукта","value":260000},{"name":"ФОТ Маркетинга","value":175000},{"name":"ФОТ ОЗ:","value":105000},{"name":"ФОТ ОП","value":142752},{"name":"ФОТ разработки","value":183000},{"name":"ФОТ Административный","value":197456},{"name":"Отдел активации","value":195000},{"name":"Отдел м-плейсов","value":144584}],"indirect_total":588213,"indirect_breakdown":[{"name":"Сервисы продукта","value":0},{"name":"Доставка","value":54873},{"name":"Доставка Далли","value":0},{"name":"Доставка СДЭК","value":0},{"name":"Доставка 5Post","value":0},{"name":"Оборудование","value":0},{"name":"Открытие нового города","value":0},{"name":"Съёмки","value":0},{"name":"Монтаж","value":0},{"name":"Подрядчики маркетинговые","value":1500},{"name":"Email рассылка","value":31040},{"name":"Сервисы маркетинговые","value":30800},{"name":"Закупка рекламы","value":430000},{"name":"Консалтинг","value":0},{"name":"Телефония","value":0},{"name":"СМС","value":40000},{"name":"B2B","value":0}],"admin_total":409817.5,"admin_breakdown":[{"name":"Административный отдел","value":0},{"name":"Аренда и содержание офиса","value":0},{"name":"Аренда офиса Мск","value":0},{"name":"Найм сотрудников","value":7574},{"name":"Расходы офиса","value":259174},{"name":"Сервисы административные","value":20678},{"name":"Подарки команде","value":122391.5},{"name":"Подарки партнерам","value":0},{"name":"Прочие административные расходы","value":0},{"name":"1% за регистрацию","value":0},{"name":"Страховые взносы ИП","value":0}],"operating_total":2400822.5,"ebitda":1616601.9,"interest":0,"taxes":337878.34,"net_profit":1278723.56,"loan_principal":0,"dividends":600000,"final_profit":678723.56}];
@@ -5452,115 +5481,17 @@ window.__salesActSetData = function(newData){
     });
   }
 
-  var yearChartState = { channel: "all", city: "all" };
-  var YEAR_CHANNEL_OPTS = [["all","Все"],["site","Сайт"],["mp","Маркетплейсы"]];
-  var YEAR_CITY_OPTS = [["all","Все"],["msk","МСК"],["spb","СПБ"]];
-
-  function monthRevenueFiltered(m, channel, city){
-    var rb = m.revenue_breakdown;
-    function val(i){ return rb[i] ? rb[i].value : 0; }
-    // порядок REVENUE_LABELS: 0 Wowlife МСК, 1 Wowlife СПБ, 2 ВБ СПБ, 3 ВБ МСК, 4 ОЗОН СПБ,
-    // 5 ОЗОН МСК, 6 ЯМ СПБ, 7 ЯМ МСК, 8 Flowwow СПБ, 9 Flowwow МСК, 10 B2B (без города)
-    var siteMsk = val(0), siteSpb = val(1);
-    var mpSpb = val(2)+val(4)+val(6)+val(8), mpMsk = val(3)+val(5)+val(7)+val(9);
-    var b2b = val(10);
-    var siteVal = city === "msk" ? siteMsk : city === "spb" ? siteSpb : siteMsk + siteSpb;
-    var mpVal = city === "msk" ? mpMsk : city === "spb" ? mpSpb : mpMsk + mpSpb;
-    if (channel === "site") return siteVal;
-    if (channel === "mp") return mpVal;
-    return siteVal + mpVal + (city === "all" ? b2b : 0);
-  }
-
-  function initYearFilters(){
-    function build(container, opts, key){
-      if (container.dataset.built) return;
-      container.dataset.built = "1";
-      opts.forEach(function(opt){
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "chip" + (yearChartState[key] === opt[0] ? " active" : "");
-        b.textContent = opt[1];
-        b.addEventListener("click", function(){
-          yearChartState[key] = opt[0];
-          Array.prototype.forEach.call(container.children, function(c){ c.classList.toggle("active", c === b); });
-          renderRevenueYearChart();
-        });
-        container.appendChild(b);
-      });
-    }
-    build(root.querySelector("#yearChannelPresets"), YEAR_CHANNEL_OPTS, "channel");
-    build(root.querySelector("#yearCityPresets"), YEAR_CITY_OPTS, "city");
-  }
-
+  var yearChartController = null;
   function renderRevenueYearChart(){
-    var wrap = root.querySelector("#revYearWrap");
-    if (!wrap) return;
-    initYearFilters();
-    var yearStr = DATA[DATA.length-1].date.slice(0,4);
-    var months = DATA.filter(function(m){ return m.date.slice(0,4) === yearStr; });
-    var startIdx = DATA.length - months.length;
-    var n = months.length;
-    if (!n) { wrap.innerHTML = '<p class="cap" style="margin:0">Нет данных за год</p>'; return; }
-
-    var w = Math.max(560, wrap.parentElement.clientWidth - 40);
-    var h = 220, padL = 54, padB = 28, padT = 14, padR = 14;
-    var plotW = w - padL - padR, plotH = h - padT - padB;
-
-    var revenues = months.map(function(m){ return monthRevenueFiltered(m, yearChartState.channel, yearChartState.city); });
-    var maxVal = Math.max.apply(null, revenues.concat([0])) * 1.15 || 1;
-    function yScale(v){ return padT + plotH - (v/maxVal)*plotH; }
-
-    var groupW = plotW / n;
-    var barW = Math.min(40, groupW * 0.5);
-
-    var svgParts = [];
-    var steps = 4;
-    for (var s=0;s<=steps;s++){
-      var gv = maxVal*s/steps;
-      var gy = yScale(gv);
-      svgParts.push('<line class="gridline" x1="'+padL+'" x2="'+(w-padR)+'" y1="'+gy.toFixed(1)+'" y2="'+gy.toFixed(1)+'"/>');
-      svgParts.push('<text class="axis-label" x="'+(padL-8)+'" y="'+(gy+3).toFixed(1)+'" text-anchor="end">'+fmtAxis(gv)+'</text>');
-    }
-
-    // linear regression trend line over the year's months
-    var sumX=0, sumY=0, sumXY=0, sumXX=0;
-    revenues.forEach(function(v,i){ sumX+=i; sumY+=v; sumXY+=i*v; sumXX+=i*i; });
-    var denom = (n*sumXX - sumX*sumX) || 1;
-    var slope = (n*sumXY - sumX*sumY) / denom;
-    var intercept = (sumY - slope*sumX) / n;
-    function trendVal(i){ return intercept + slope*i; }
-
-    months.forEach(function(m, i){
-      var cx = padL + groupW*i + groupW/2;
-      var bx = cx - barW/2;
-      var rv = revenues[i];
-      var ry = yScale(rv);
-      var rh = Math.max(padT+plotH - ry, 1);
-      var isCurrent = (startIdx + i) === DATA.length - 1;
-      var color = isCurrent ? "var(--s1)" : "color-mix(in srgb, var(--s1) 38%, transparent)";
-      svgParts.push('<rect x="'+bx.toFixed(1)+'" y="'+ry.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+rh.toFixed(1)+'" rx="5" fill="'+color+'" class="hoverbar"/>');
-      svgParts.push('<text class="axis-label" x="'+cx.toFixed(1)+'" y="'+(h-8)+'" text-anchor="middle"'+(isCurrent?' style="fill:var(--text-primary);font-weight:650"':'')+'>'+monthLabel(m)+'</text>');
-      svgParts.push('<rect x="'+(padL+groupW*i)+'" y="'+padT+'" width="'+groupW+'" height="'+plotH+'" fill="transparent" class="hoverzone" data-i="'+i+'"/>');
-    });
-
-    var trendPts = months.map(function(m,i){ return [padL+groupW*i+groupW/2, yScale(trendVal(i))]; });
-    var trendPath = trendPts.map(function(p,i){ return (i===0?"M":"L")+p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" ");
-    svgParts.push('<path d="'+trendPath+'" fill="none" stroke="var(--s3)" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"/>');
-
-    wrap.innerHTML = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+svgParts.join("")+'</svg>';
-
-    var svgEl = wrap.querySelector("svg");
-    svgEl.querySelectorAll(".hoverzone").forEach(function(z){
-      z.addEventListener("mousemove", function(ev){
-        var i = parseInt(z.getAttribute("data-i"),10);
-        var m = months[i];
-        var html = '<div class="t-title">'+monthLabel(m)+'</div>' +
-          row("var(--s1)", "Выручка", fmt(revenues[i])) +
-          row("var(--s3)", "Тренд", fmt(trendVal(i)));
-        showTip(ev.clientX + window.scrollX, ev.clientY + window.scrollY, html);
-      });
-      z.addEventListener("mouseleave", hideTip);
-    });
+    var card = root.querySelector("#revenueDynamics");
+    if (!card || !window.RevenueDynamics) return;
+    if (!yearChartController) yearChartController = window.RevenueDynamics.mount(card);
+    yearChartController.render();
   }
+  window.__revenueDynamicsSetData = function(data){
+    if (!yearChartController) renderRevenueYearChart();
+    if (yearChartController) yearChartController.setData(data);
+  };
 
   var MODE_OPTS = [["rub","В рублях"],["count","В штуках"]];
   function buildModeToggle(containerSel, stateObj, onChange){
@@ -7680,6 +7611,16 @@ window.__salesActSetData = function(newData){
     if (fetches.metrika && fetches.metrika.months && Object.keys(fetches.metrika.months).length && window.__marketingSetMetrika) window.__marketingSetMetrika(fetches.metrika);
     if (fetches.content && window.__marketingSetContent) window.__marketingSetContent(fetches.content);
 
+    var revenueTimeline = null;
+    if (fetches.adeskTransactions && fetches.adeskMarketplaces && fetches.adeskMarketplaces2025){
+      try {
+        var now = new Date();
+        var today = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+        revenueTimeline = window.RevenueDynamics.fromRows(fetches.adeskTransactions, marketplaceRowsWithHistory(fetches.adeskMarketplaces, fetches.adeskMarketplaces2025), today);
+        window.__revenueDynamicsSetData(revenueTimeline);
+      } catch (e) { errors.push(e.message); }
+    }
+
     // OПиУ
     if (fetches.adeskList1){
       try {
@@ -7746,6 +7687,7 @@ window.__salesActSetData = function(newData){
     if (okParts.length){
       try {
         var cache = loadCache() || {};
+        if (revenueTimeline) cache.revenueTimeline = revenueTimeline;
         if (opiuData) cache.opiu = opiuData;
         if (opiuTree){ cache.opiuTree = opiuTree; cache.ops = opsData || null; }
         if (saData) cache.salesact = saData;
@@ -7780,6 +7722,7 @@ window.__salesActSetData = function(newData){
 
   function applyCache(cache){
     try {
+      if (cache.revenueTimeline && window.__revenueDynamicsSetData) window.__revenueDynamicsSetData(cache.revenueTimeline);
       if (cache.opiu) window.__opiuSetData(cache.opiu);
       if (cache.opiuTree && window.__opiuSetDaily) window.__opiuSetDaily(cache.ops || null, cache.opiuTree);
       if (cache.salesact) window.__salesActSetData(cache.salesact);
