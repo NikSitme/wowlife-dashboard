@@ -128,34 +128,54 @@
     var wrap=card.querySelector('#revYearWrap'), tip=card.querySelector('.rd-tooltip');
     function setPreset(preset){
       state.preset=preset;
+      if(!data)return;
       var year=data.asOf.slice(0,4), first=Object.keys(data.coverage).map(function(k){return data.coverage[k].from;}).sort()[0];
       state.from=preset==='all' ? first : preset==='30' ? addDays(data.asOf,-29) : preset==='90' ? addDays(data.asOf,-89) : year+'-01-01';
       state.to=preset==='year' ? year+'-12-31' : data.asOf;
     }
-    function chips(id,opts,selected,onClick,multiple){
-      var el=card.querySelector('#'+id); el.innerHTML='';
-      opts.forEach(function(opt){
-        var b=document.createElement('button'); b.type='button'; b.className='chip'+(selected(opt[0])?' active':''); b.textContent=opt[1];
-        b.setAttribute('aria-pressed',String(selected(opt[0])));
-        b.addEventListener('click',function(){onClick(opt[0]);render();}); el.appendChild(b);
+    var picker=card.querySelector('#rdSourcePicker'), sourceInputs={}, allInput=card.querySelector('#rdSelectAllSources');
+    SOURCES.forEach(function(source){
+      var label=document.createElement('label'),input=document.createElement('input');
+      input.type='checkbox'; input.value=source[0]; input.checked=true; sourceInputs[source[0]]=input;
+      label.appendChild(input); label.appendChild(document.createTextNode(source[1]));
+      input.addEventListener('change',function(){
+        state.sources=input.checked ? state.sources.filter(function(s){return s!==source[0];}).concat(source[0]) : state.sources.filter(function(s){return s!==source[0];});
+        render();
       });
-      if (multiple) el.setAttribute('aria-label','Можно выбрать несколько источников');
-    }
+      card.querySelector('#yearChannelPresets').appendChild(label);
+    });
+    allInput.checked=true;
+    allInput.addEventListener('change',function(){state.sources=allInput.checked ? SOURCES.map(function(s){return s[0];}) : [];render();});
+    card.querySelector('#rdOnlyMarkets').addEventListener('click',function(){state.sources=['ozon','wb','ym','flowwow'];render();});
+    card.querySelector('#rdClearSources').addEventListener('click',function(){state.sources=[];render();});
+    function closeSourcePicker(e){if(!picker.contains(e.target))picker.open=false;}
+    document.addEventListener('pointerdown',closeSourcePicker);
+    document.addEventListener('click',closeSourcePicker);
+    picker.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();picker.open=false;picker.querySelector('summary').focus();}});
+    card.querySelector('#yearCityPresets').addEventListener('change',function(e){state.city=e.target.value;render();});
+    card.querySelector('#yearStepPresets').addEventListener('change',function(e){
+      state.step=e.target.value;
+      if(state.preset!=='custom')setPreset(state.step==='day'?'30':state.step==='week'?'90':state.step==='year'?'all':'year');
+      render();
+    });
+    card.querySelector('#yearRangePresets').addEventListener('change',function(e){
+      if(e.target.value==='custom')state.preset='custom';else setPreset(e.target.value);
+      render();
+      if(state.preset==='custom')card.querySelector('#yearFromDate').focus();
+    });
     function render(){
       if (!data){wrap.innerHTML='<p class="cap">Загружаю выручку…</p>';return;}
       if (!state.from) setPreset('year');
       var all=state.sources.length===SOURCES.length;
-      chips('yearChannelPresets',[['all','Все'],['mp','Все маркеты']].concat(SOURCES),function(k){return k==='all' ? all : k==='mp' ? ['ozon','wb','ym','flowwow'].every(function(s){return state.sources.includes(s);}) : state.sources.includes(k);},function(k){
-        if(k==='all') state.sources=all ? [] : SOURCES.map(function(s){return s[0];});
-        else if(k==='mp') state.sources=['ozon','wb','ym','flowwow'];
-        else state.sources=state.sources.includes(k) ? state.sources.filter(function(s){return s!==k;}) : state.sources.concat(k);
-      },true);
-      chips('yearCityPresets',[['all','Все города'],['msk','МСК'],['spb','СПБ']],function(k){return state.city===k;},function(k){state.city=k;});
-      chips('yearStepPresets',[['day','По дням'],['week','По неделям'],['month','По месяцам'],['year','По годам']],function(k){return state.step===k;},function(k){
-        state.step=k;
-        if(state.preset!=='custom') setPreset(k==='day'?'30':k==='week'?'90':k==='year'?'all':'year');
-      });
-      chips('yearRangePresets',[['year','Текущий год'],['30','30 дней'],['90','90 дней'],['all','Всё время']],function(k){return state.preset===k;},setPreset);
+      SOURCES.forEach(function(s){sourceInputs[s[0]].checked=state.sources.includes(s[0]);});
+      allInput.checked=all; allInput.indeterminate=!all && state.sources.length>0;
+      var selectedNames=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];});
+      var sourceLabel=all ? 'Все источники' : !selectedNames.length ? 'Выберите источники' : selectedNames.length<=2 ? selectedNames.join(' + ') : 'Выбрано источников: '+selectedNames.length;
+      card.querySelector('#rdSourcesValue').textContent=sourceLabel;
+      picker.querySelector('summary').title=selectedNames.join(', ');
+      card.querySelector('#yearCityPresets').value=state.city;
+      card.querySelector('#yearStepPresets').value=state.step;
+      card.querySelector('#yearRangePresets').value=state.preset;
       card.querySelector('#yearFromDate').value=state.from; card.querySelector('#yearToDate').value=state.to;
       var selected=keysFor(state.sources,state.city), points=series(data,state), defined=points.filter(function(p){return p.current!==null;});
       var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.previous!==null;}) ? defined.reduce(function(a,p){return a+p.previous;},0) : null;
