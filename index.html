@@ -565,7 +565,7 @@
         <li><b>Параметры.</b> Эквайринг, возвраты и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
         <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (самая дорогая) или взвешенная по частоте активаций партнёров. МП = P − V − C × активация; маржа = МП / P. «При 100 %» — та же формула с активацией 100 %. ЧП = МП − постоянные (P × % или ₽). Цена для целевой маржи M: P = (₽ расходы + C × активация) / (1 − V% − M), затем возвращаем скидку. Услуга «убыточна при активации», если P − V − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
-        <li><b>Конструктор.</b> «Новый набор» создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» копирует существующий набор для переработки, «Скрыть» убирает набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
+        <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся в «Наборном». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
         <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
         <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава.</li>
       </ul>
@@ -3956,7 +3956,7 @@ window.__salesActSetData = function(newData){
   .pr-kpis .kpi .val { font-size: 30px; }
   .pr-kpis .kpi .sub { font-size: 14px; margin-top: 8px; }
   .pr-navigation { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 8px 0 28px; border-bottom: 1px solid var(--border); }
-  .pr-tabs { display: flex; gap: 32px; min-width: 0; }
+  .pr-tabs { display: flex; gap: 24px; min-width: 0; overflow-x: auto; }
   .pr-tabs button { position: relative; display: inline-flex; align-items: center; gap: 14px; padding: 18px 18px 22px; min-height: 72px; border: 0; background: transparent; color: var(--text-secondary); font: inherit; font-size: 23px; font-weight: 500; cursor: pointer; }
   .pr-tabs button.active { color: var(--text-primary); }
   .pr-tabs button.active:after { content: ""; position: absolute; height: 3px; bottom: -1px; left: 0; right: 0; border-radius: 3px 3px 0 0; background: var(--pr-accent); }
@@ -3966,7 +3966,7 @@ window.__salesActSetData = function(newData){
   .pr-filter-label { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
   .pr .seg { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; display: inline-flex; gap: 4px; width: fit-content; }
   .pr .seg button { font-size: 16px; min-height: 42px; padding: 10px 18px; border-radius: 8px; }
-  .pr .seg button.active { color: var(--text-primary); background: var(--surface-1); box-shadow: 0 1px 4px #0001; }
+  .pr .seg button.active { color: #fff; background: var(--pr-accent); box-shadow: 0 2px 6px #246dcc26; }
   .pr-search { display: flex; flex-direction: column; gap: 10px; min-width: 300px; width: min(440px,100%); }
   .pr-search-field { position: relative; display: block; }
   .pr-search-field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; fill: none; stroke: var(--text-muted); stroke-width: 1.8; }
@@ -3988,8 +3988,12 @@ window.__salesActSetData = function(newData){
   .pr-table { min-width: 1400px; font-size: var(--pr-text-size); }
   .pr-table th,.pr-table td { padding: 16px 18px; }
   .pr-table th:first-child,.pr-table td:first-child { min-width: 290px; max-width: 420px; position: sticky; left: 0; background: var(--surface-1); z-index: 2; }
-  .pr-table thead th { font-size: 13px; line-height: 1.4; padding: 18px; white-space: normal; min-width: 104px; }
-  .pr-table thead th:first-child { z-index: 3; background: var(--surface-2); }
+  .pr { --pr-header-bg: #f1f3f6; --pr-header-key-bg: #e3ecf9; }
+  :root[data-theme="dark"] .pr { --pr-header-bg: #242b35; --pr-header-key-bg: #263a53; }
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr{--pr-header-bg:#242b35;--pr-header-key-bg:#263a53;}}
+  .pr-table thead th { font-size: 13px; line-height: 1.4; padding: 18px; white-space: normal; min-width: 104px; background: var(--pr-header-bg); z-index: 4; }
+  .pr-table thead th.key { background: var(--pr-header-key-bg); }
+  .pr-table thead th:first-child { z-index: 5; background: var(--pr-header-bg); }
   .pr-table .nm { white-space: normal; min-width: 230px; line-height: 1.45; }
   .pr-table .meta { font-size: 14px; line-height: 1.4; margin-top: 5px; }
   .pr-table input.in { width: 116px; min-height: 42px; padding: 8px 12px; font-size: 17px; border-radius: 9px; }
@@ -4037,6 +4041,7 @@ window.__salesActSetData = function(newData){
       <div class="pr-tabs" id="prView" role="tablist" aria-label="Вид прайса">
         <button type="button" data-v="services" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3M9 3h6v4H9zM8 11h8M8 15h8M8 19h5"/></svg>Базовый</button>
         <button type="button" data-v="sets" class="active" role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="2" width="11" height="6" rx="1.5"/><rect x="10" y="10" width="11" height="5" rx="1.5"/><rect x="10" y="18" width="11" height="5" rx="1.5"/><path d="M6 8v13h4M6 12.5h4"/></svg>Наборный</button>
+        <button type="button" data-v="newsets" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 5V3h8v2M12 10v7M8.5 13.5h7"/></svg>Новые наборы</button>
       </div>
       <button type="button" class="pr-btn pri" id="prNewSet">+ Новый набор</button>
       <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
@@ -4053,7 +4058,7 @@ window.__salesActSetData = function(newData){
     </div>
     <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
-      <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: «+ Новый набор» → название, город, услуги поиском.</span></div>
+      <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: вкладка «Новые наборы» → «+ Новый набор» → название, город, услуги поиском. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
       <div><b>Что получаем</b><span>По каждому набору: ожидаемая выплата партнёру, маржа при заложенной активации и при 100 %, чистая прибыль, цена под целевую маржу.</span></div>
       <div><b>Зачем</b><span>Пересобрать наборы и цены так, чтобы каждый набор был маржинальным, даже если сертификат точно используют.</span></div>
       <div><b>Почему так</b><span>Покупатель платит цену набора, какую услугу ни выберут, — поэтому маржа услуги считается от цены набора. Какую выберут, заранее неизвестно — берём среднюю, худшую или по частоте активаций партнёров.</span></div>
@@ -8169,17 +8174,22 @@ window.__salesActSetData = function(newData){
     var q = state.q.trim().toLowerCase();
     return list.filter(function(x){ return (state.city === "all" || x.city === state.city) && (!q || (x.name + " " + (x.partner || "") + " " + (x.items ? x.items.map(function(i){ return i.name + " " + i.partner; }).join(" ") : "")).toLowerCase().indexOf(q) >= 0); });
   }
+  function visibleSets(){ return filtered(allSets().filter(function(s){ return state.view === "newsets" ? s.custom : !s.custom; })); }
   function sortBy(list, getters){
     var k = state.sort.k, g = getters[k] || getters.name, d = state.sort.d;
     return list.slice().sort(function(a, b){ var x = g(a), y = g(b); if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1; if (typeof x === "string") return x.localeCompare(y, "ru") * d; return (x - y) * d; });
   }
   function th(k, label, title, key){ return '<th data-s="' + k + '" class="' + (state.sort.k === k ? "on" : "") + (key ? " key" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '>' + label + (state.sort.k === k ? (state.sort.d > 0 ? " ↑" : " ↓") : "") + '</th>'; }
   function renderSets(){
-    var p = P(); var sets = filtered(allSets()); var calc = {}; sets.forEach(function(s){ calc[s.id] = calcSet(s); });
+    var p = P(); var sets = visibleSets(); var calc = {}; sets.forEach(function(s){ calc[s.id] = calcSet(s); });
+    if (state.view === "newsets" && !sets.length){
+      root.querySelector("#prTableWrap").innerHTML = '<div class="pr-empty">' + (state.customSets.length ? "Ничего не найдено — проверьте город и поиск" : "Здесь будут новые наборы. Нажмите «+ Новый набор», задайте название, цену и добавьте услуги.") + '</div>';
+      return;
+    }
     var g = { name: function(s){ return s.name; }, price: function(s){ return s.price; }, exp: function(s){ return calc[s.id].exp; }, mp: function(s){ return calc[s.id].mpAct; }, m: function(s){ return calc[s.id].mAct; }, m100: function(s){ return calc[s.id].m100; }, np: function(s){ return calc[s.id].nAct; }, target: function(s){ return calc[s.id].target; }, loss: function(s){ return calc[s.id].loss; } };
     sets = sortBy(sets, g);
     var html = '<table class="pr-table"><thead><tr>' + th("name", "Набор") + th("price", "Цена") + th("exp", "Партнёру", "ожидаемая выплата партнёру за выбранную услугу") + th("mp", "МП, ₽", "маржинальная прибыль с набора при заложенной активации") + th("m", "Маржа", "при заложенной активации", true) + th("m100", "При 100 %", "если сертификат точно используют") + th("np", "ЧП", "чистая прибыль: маржа минус постоянные расходы") + th("target", "Цена для цели", "цена, при которой маржа равна целевой", true) + th("loss", "Проблемы", "услуги, убыточные при активации, и услуги без себестоимости") + '</tr></thead><tbody>';
-    if (!sets.length) html += '<tr><td colspan="9" class="pr-empty">' + (CRM ? "Ничего не найдено" : (crmLoading ? "Загружаю наборы из CRM…" : "Наборы не загружены")) + '</td></tr>';
+    if (!sets.length) html += '<tr><td colspan="9" class="pr-empty">' + (state.view === "newsets" ? (state.customSets.length ? "Ничего не найдено — проверьте город и поиск" : "Здесь будут новые наборы. Нажмите «+ Новый набор», задайте название, цену и добавьте услуги.") : (CRM ? "Ничего не найдено" : (crmLoading ? "Загружаю наборы из CRM…" : "Наборы не загружены"))) + '</td></tr>';
     sets.forEach(function(s){
       var r = calc[s.id], open = !!state.open[s.id];
       html += '<tr class="row set' + (open ? " open" : "") + '" data-id="' + esc(s.id) + '"><td><span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + (s.custom ? '<span class="tag">мой</span>' : s.edited ? '<span class="tag">правки</span>' : "") + '</span><span class="meta">' + s.city + ' · услуг ' + s.items.length + (r.w ? " · вес по активациям" : "") + '</span></td>' +
@@ -8228,17 +8238,17 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-v") === state.view; b.classList.toggle("active", selected); b.setAttribute("aria-selected", String(selected)); b.setAttribute("aria-controls", "prTableWrap"); b.tabIndex = selected ? 0 : -1; });
     root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-c") === state.city; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
     root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-m") === state.mode; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
-    root.querySelector("#prModeGroup").hidden = state.view !== "sets";
-    root.querySelector("#prNewSet").hidden = state.view !== "sets";
+    root.querySelector("#prModeGroup").hidden = state.view === "services";
+    root.querySelector("#prNewSet").hidden = state.view === "services";
     root.querySelector("#prNewService").hidden = state.view !== "services";
-    root.querySelector("#prHowSets").hidden = state.view !== "sets"; root.querySelector("#prHowServices").hidden = state.view !== "services";
-    root.querySelector("#prTitle").textContent = state.view === "sets" ? "Наборный прайс" : "Базовый прайс"; root.querySelector("#prTitleSub").textContent = state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
+    root.querySelector("#prHowSets").hidden = state.view === "services"; root.querySelector("#prHowServices").hidden = state.view !== "services";
+    root.querySelector("#prTitle").textContent = state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборный прайс" : "Базовый прайс"; root.querySelector("#prTitleSub").textContent = state.view === "newsets" ? "создавайте и сравнивайте новые наборы" : state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
-    renderKpis(filtered(allSets()));
-    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
-    if (state.view === "sets") renderSets(); else renderServices();
+    renderKpis(visibleSets());
+    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
+    if (state.view !== "services") renderSets(); else renderServices();
     root.querySelector("#prTableWrap").setAttribute("role", "tabpanel");
-    root.querySelector("#prTableWrap").setAttribute("aria-label", state.view === "sets" ? "Наборный прайс" : "Базовый прайс");
+    root.querySelector("#prTableWrap").setAttribute("aria-label", state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборный прайс" : "Базовый прайс");
   }
 
   // ---------- события ----------
@@ -8255,8 +8265,8 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
-    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(filtered(allSets())); if (state.view === "sets") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
-    if (t.id === "prQ"){ state.q = t.value; save(); if (state.view === "sets") renderSets(); else renderServices(); renderKpis(filtered(allSets())); return; }
+    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
+    if (t.id === "prQ"){ state.q = t.value; save(); if (state.view !== "services") renderSets(); else renderServices(); renderKpis(visibleSets()); return; }
     var aq = t.getAttribute("data-addq"); if (aq){ showAddResults(t, aq); return; }
   });
   root.addEventListener("change", function(e){
@@ -8270,19 +8280,19 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("click", function(e){
     var t = e.target, b, id;
-    if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); state.sort = { k: "name", d: 1 }; save(); render(); return; }
+    if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); state.sort = { k: "name", d: 1 }; save(); render(); root.querySelector("#prTableWrap").scrollLeft = 0; root.querySelector("#prTableWrap").scrollTop = 0; return; }
     if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); save(); render(); return; }
     if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
     if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; save(); render(); return; }
     if ((b = t.closest("[data-pm]"))){ var pk = b.getAttribute("data-pm"), pm = b.getAttribute("data-m"); if ((state.pmode[pk] === "rub") === (pm === "rub")) return; var ref = refPrice(); var cur = state.params[pk] || 0; state.params[pk] = pm === "rub" ? Math.round(cur / 100 * ref / 10) * 10 : Math.round(cur / ref * 1000) / 10; state.pmode[pk] = pm; save(); render(); return; }
     if (t.closest("#prCrm")){ loadCrm(true); return; }
     if (t.closest("#prResetAll")){ if (!confirm("Удалить все правки цен и состава, новые наборы и услуги?")) return; state.ov = {}; state.sov = {}; state.customSets = []; state.customServices = {}; state.open = {}; save(); render(); return; }
-    if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ inp.focus(); inp.select(); } return; }
+    if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.view = "newsets"; state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ root.querySelector("#prTableWrap").scrollTop = 0; inp.focus(); inp.select(); } return; }
     if (t.closest("#prNewService")){ var sid = newId(); state.customServices[sid] = { sid: sid, name: "Новая услуга", partner: "", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, cost: 0 }; state.q = ""; save(); render(); var i2 = root.querySelector('[data-sname="' + sid + '"]'); if (i2){ i2.scrollIntoView({ block: "center" }); i2.focus(); i2.select(); } return; }
     if (t.closest("#prCsv")){ exportCsv(); return; }
     if ((b = t.closest("th[data-s]"))){ var k = b.getAttribute("data-s"); if (state.sort.k === k) state.sort.d = -state.sort.d; else state.sort = { k: k, d: (k === "name" || k === "partner" || k === "city") ? 1 : -1 }; save(); render(); return; }
     if ((b = t.closest("[data-apply]"))){ id = b.getAttribute("data-apply"); var s = allSets().filter(function(x){ return x.id === id; })[0]; if (!s) return; var r = calcSet(s); if (r.target === null) return; var np = Math.ceil(r.target / 10) * 10; var cs = findCustomSet(id); if (cs) cs.price = np; else ov(id).price = np; save(); render(); return; }
-    if ((b = t.closest("[data-dup]"))){ id = b.getAttribute("data-dup"); var src = allSets().filter(function(x){ return x.id === id; })[0]; if (!src) return; var d = { id: newId(), name: src.name + " (копия)", city: src.city, price: src.price, items: src.items.map(function(i){ return i.sid; }) }; src.items.forEach(function(i){ if (!state.customServices[i.sid] && !(CRM && CRM.catalog[i.sid])) state.customServices[i.sid] = { sid: i.sid, name: i.name, partner: i.partner, city: src.city, price: i.price, cost: i.cost }; }); state.customSets.unshift(d); state.open = {}; state.open[d.id] = true; save(); render(); return; }
+    if ((b = t.closest("[data-dup]"))){ id = b.getAttribute("data-dup"); var src = allSets().filter(function(x){ return x.id === id; })[0]; if (!src) return; var d = { id: newId(), name: src.name + " (копия)", city: src.city, price: src.price, items: src.items.map(function(i){ return i.sid; }) }; src.items.forEach(function(i){ if (!state.customServices[i.sid] && !(CRM && CRM.catalog[i.sid])) state.customServices[i.sid] = { sid: i.sid, name: i.name, partner: i.partner, city: src.city, price: i.price, cost: i.cost }; }); state.customSets.unshift(d); state.view = "newsets"; state.city = src.city; state.q = ""; state.open = {}; state.open[d.id] = true; save(); render(); return; }
     if ((b = t.closest("[data-del]"))){ id = b.getAttribute("data-del"); state.customSets = state.customSets.filter(function(x){ return x.id !== id; }); delete state.open[id]; save(); render(); return; }
     if ((b = t.closest("[data-hide]"))){ id = b.getAttribute("data-hide"); ov(id).hidden = true; delete state.open[id]; save(); render(); return; }
     if ((b = t.closest("[data-sdel]"))){ id = b.getAttribute("data-sdel"); delete state.customServices[id]; delete state.sov[id]; state.customSets.forEach(function(s){ s.items = (s.items || []).filter(function(x){ return x !== id; }); }); save(); render(); return; }
@@ -8302,15 +8312,15 @@ window.__salesActSetData = function(newData){
   }
   function exportCsv(){
     var rows = [];
-    if (state.view === "sets"){
+    if (state.view !== "services"){
       rows.push(["Набор", "Город", "Услуг", "Цена", "Ожидаемая себестоимость", "Худшая себестоимость", "МП при активации " + state.params.act + "%", "Маржа", "Маржа при 100%", "Чистая прибыль", "Цена для целевой маржи", "Убыточных услуг"]);
-      filtered(allSets()).forEach(function(s){ var r = calcSet(s); rows.push([s.name, s.city, s.items.length, s.price, r.exp, r.max, r.mpAct, r.mAct, r.m100, r.nAct, r.target, r.loss]); });
+      visibleSets().forEach(function(s){ var r = calcSet(s); rows.push([s.name, s.city, s.items.length, s.price, r.exp, r.max, r.mpAct, r.mAct, r.m100, r.nAct, r.target, r.loss]); });
     } else {
       rows.push(["Услуга", "Партнёр", "Город", "Цена", "Себестоимость", "МП при активации " + state.params.act + "%", "Маржа", "Маржа при 100%", "Чистая прибыль", "Цена для целевой маржи"]);
       filtered(allServices()).forEach(function(s){ var c = calcService(s); rows.push([s.name, s.partner, s.city, s.price, s.cost, c.mpAct, c.mAct, c.m100, c.nAct, c.target]); });
     }
     var csv = "﻿" + rows.map(function(r){ return r.map(function(v){ if (v === null || v === undefined) return ""; if (typeof v === "number") return String(Math.round(v * 10000) / 10000).replace(".", ","); return '"' + String(v).replace(/"/g, '""') + '"'; }).join(";"); }).join("\n");
-    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = (state.view === "sets" ? "nabory" : "uslugi") + "-prais-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = (state.view === "newsets" ? "novye-nabory" : state.view === "sets" ? "nabory" : "uslugi") + "-prais-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
   }
   document.addEventListener("click", function(e){ if (!e.target.closest(".pr-add")) root.querySelectorAll(".pr-add .res").forEach(function(r){ r.hidden = true; }); });
 
