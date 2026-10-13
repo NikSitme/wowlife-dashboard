@@ -572,7 +572,7 @@
         <li><b>Параметры.</b> Эквайринг, логистика и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; логистика — сумма статей доставки / выручка сайта за тот же период; возвраты исключены из ценообразования; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
         <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (самая дорогая) или взвешенная по частоте активаций партнёров. МП = P − V − C × активация; маржа = МП / P. «При 100 %» — та же формула с активацией 100 %. ЧП = МП − постоянные (P × % или ₽). Цена для целевой маржи M: P = (₽ расходы + C × активация) / (1 − V% − M), затем возвращаем скидку. Услуга «убыточна при активации», если P − V − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
-        <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название, город, цена, услуги добавляются поиском по прайсу города. «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
+        <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «Добавить услуги» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории сопоставляются по наименованию с классификатором Адеск «Выручка New» (снимок 13.10.2026), нераспознанные остаются в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
         <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
         <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава.</li>
       </ul>
@@ -3749,12 +3749,30 @@ window.__salesActSetData = function(newData){
   .pr-items .meta { display: block; font-size: 11px; color: var(--text-muted); }
   .pr-x { font: inherit; font-size: 12px; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; padding: 1px 6px; cursor: pointer; }
   .pr-x:hover { color: var(--bad); background: var(--pr-bad-bg); }
-  .pr-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; position: relative; }
-  .pr-add input { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); min-width: 340px; }
-  .pr-add .res { position: absolute; left: 0; top: 100%; z-index: 5; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 260px; overflow: auto; min-width: 540px; }
-  .pr-add .res div { padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; gap: 10px; }
-  .pr-add .res div:hover { background: var(--pr-key-bg); }
-  .pr-add .res div span:last-child { margin-left: auto; color: var(--text-muted); }
+  .pr-add-catalog { margin-top: 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .pr-catalog { width:min(1120px,calc(100vw - 32px)); max-width:1120px; max-height:90vh; padding:24px; border:1px solid var(--border); border-radius:20px; background:var(--surface-1); color:var(--text-primary); box-sizing:border-box; box-shadow:0 24px 90px #0005; }
+  .pr-catalog::backdrop { background:#14243b88; }
+  .pr-catalog[open] { display:flex; flex-direction:column; overflow:hidden; }
+  .pr-catalog-heading,.pr-catalog-filters,.pr-catalog-count,.pr-catalog-hint { flex-shrink:0; }
+  .pr-catalog-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+  .pr-catalog-heading h2 { font-size:24px; margin:0 0 8px; }
+  .pr-catalog-heading p { margin:0; color:var(--text-secondary); font-size:16px; }
+  .pr-catalog-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:22px; }
+  .pr-catalog-filters label { display:flex; flex-direction:column; gap:7px; font-size:14px; font-weight:600; min-width:0; }
+  .pr-catalog-filters input,.pr-catalog-filters select { box-sizing:border-box; width:100%; min-width:0; height:44px; font:inherit; font-size:16px; color:var(--text-primary); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; }
+  .pr-catalog-filters button { justify-self:start; }
+  .pr-catalog-count { font-size:15px; font-weight:600; margin:18px 0 12px; }
+  .pr-catalog-results { flex:1 1 auto; min-height:0; overflow:auto; border:1px solid var(--border); border-radius:12px; }
+  .pr-catalog-results table { width:100%; border-collapse:separate; border-spacing:0; font-size:15px; }
+  .pr-catalog-results th { position:sticky; top:0; background:var(--surface-2); z-index:1; text-align:left; font-size:13px; white-space:nowrap; }
+  .pr-catalog-results td,.pr-catalog-results th { padding:13px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .pr-catalog-results td:first-child { width:40%; }
+  .pr-catalog-results .meta { display:block; font-size:13px; color:var(--text-muted); margin-top:6px; }
+  .pr-catalog-results .num { white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums; }
+  .pr-catalog-results button { white-space:nowrap; font-size:14px; min-height:38px; padding:8px 12px; }
+  .pr-catalog-results button:disabled { background:var(--pr-good-bg); color:var(--text-secondary); border-color:transparent; cursor:default; }
+  .pr-catalog-hint { font-size:13px; line-height:1.4; color:var(--text-muted); margin:14px 0 0; }
+  @media(max-width:700px) { .pr-catalog{padding:18px;max-height:94vh;} .pr-catalog-heading h2{font-size:20px;} .pr-catalog-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;} .pr-catalog-filters .catalog-search{grid-column:1/-1;} .pr-catalog-results table{min-width:680px;} }
   .pr-btn { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
   .pr-btn.pri { background: var(--s1); border-color: var(--s1); color: #fff; }
   .pr-btn.soft { border-color: transparent; background: var(--pr-key-bg); color: var(--s1); }
@@ -3907,7 +3925,7 @@ window.__salesActSetData = function(newData){
     </div>
     <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
-      <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: вкладка «Новые наборы» → «+ Новый набор» → название, город, услуги поиском. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
+      <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: вкладка «Новые наборы» → «+ Новый набор» → название, услуги из каталога города. В каталоге доступны фильтры по цене, категории и партнёру. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
       <div><b>Что получаем</b><span>По каждому набору: ожидаемая выплата партнёру, маржа при заложенной активации и при 100 %, чистая прибыль, цена под целевую маржу.</span></div>
       <div><b>Зачем</b><span>Пересобрать наборы и цены так, чтобы каждый набор был маржинальным, даже если сертификат точно используют.</span></div>
       <div><b>Почему так</b><span>Покупатель платит цену набора, какую услугу ни выберут, — поэтому маржа услуги считается от цены набора. Какую выберут, заранее неизвестно — берём среднюю, худшую или по частоте активаций партнёров.</span></div>
@@ -3921,6 +3939,21 @@ window.__salesActSetData = function(newData){
     </details>
     <p class="pr-status" id="prStatus"></p>
     <div class="pr-scroll" id="prTableWrap"></div>
+    <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
+      <div class="pr-catalog-heading"><div><h2 id="prCatalogName">Добавить услуги</h2><p id="prCatalogCity"></p></div><button type="button" class="pr-btn" id="prCatalogClose" aria-label="Закрыть каталог услуг">Готово ×</button></div>
+      <div class="pr-catalog-filters">
+        <label class="catalog-search">Поиск<input type="search" id="prCatalogSearch" data-catalog-filter="q" placeholder="Название услуги или партнёр"></label>
+        <label>Категория<select id="prCatalogCategory" data-catalog-filter="category"></select></label>
+        <label>Партнёр<select id="prCatalogPartner" data-catalog-filter="partner"></select></label>
+        <label>Цена от, ₽<input type="number" data-catalog-filter="min" min="0" placeholder="Любая"></label>
+        <label>Цена до, ₽<input type="number" data-catalog-filter="max" min="0" placeholder="Любая"></label>
+        <label>Порядок<select data-catalog-filter="sort"><option value="name">По названию</option><option value="price-asc">Сначала дешевле</option><option value="price-desc">Сначала дороже</option></select></label>
+        <button type="button" class="pr-btn" id="prCatalogReset">Сбросить фильтры</button>
+      </div>
+      <p class="pr-catalog-count" id="prCatalogCount" role="status" aria-live="polite"></p>
+      <div class="pr-catalog-results"><table><thead><tr><th>Услуга / категория</th><th>Партнёр</th><th>Цена, ₽</th><th>Партнёру, ₽</th><th>Добавление</th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
+      <p class="pr-catalog-hint" id="prCatalogHint"></p>
+    </dialog>
     <div id="prTooltip" class="pr-tooltip" role="tooltip" hidden></div>
     <div class="pr-legend"><span><i style="background:var(--pr-good-bg)"></i>маржа не ниже целевой</span><span><i style="background:var(--pr-warn-bg)"></i>ниже целевой</span><span><i style="background:var(--pr-bad-bg)"></i>убыток</span><span><i style="background:var(--pr-key-bg)"></i>главное</span></div>
   </div>
@@ -7831,6 +7864,7 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js"></script>
+<script src="./scripts/service-catalog.js"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -8142,13 +8176,14 @@ window.__salesActSetData = function(newData){
   function renderSetItems(s,r){
     var w=r.w,key='set:'+s.id;
     var h='<div class="pr-subbox"><div class="hdr"><b>Состав</b><span class="muted">Расчёт от цены набора со скидкой: '+fmtR(r.price)+' · прогноз выплаты: '+fmtR(r.exp)+'</span>';
-    if(s.custom)h+='<input class="in txt" data-setname="'+esc(s.id)+'" value="'+esc(s.name)+'" aria-label="Название нового набора"><span class="seg"><button type="button" data-setcity="'+esc(s.id)+'" data-c="Мск" class="'+(s.city==='Мск'?'active':'')+'">Москва</button><button type="button" data-setcity="'+esc(s.id)+'" data-c="СПб" class="'+(s.city==='СПб'?'active':'')+'">Петербург</button></span>';
+    if(s.custom)h+='<input class="in txt" data-setname="'+esc(s.id)+'" value="'+esc(s.name)+'" aria-label="Название нового набора">';
+    h+='<span class="muted">'+(s.city==='СПб'?'Петербург':'Москва')+'</span>';
     h+='<span class="pr-item-actions">'+(r.target!==null?'<button type="button" class="pr-btn soft" data-apply="'+esc(s.id)+'">Цена для цели: '+fmtR(r.target)+'</button>':'')+'<button type="button" class="pr-btn" data-dup="'+esc(s.id)+'">Дублировать</button><button type="button" class="pr-btn quiet" '+(s.custom?'data-del':'data-hide')+'="'+esc(s.id)+'">'+(s.custom?'Удалить':'Скрыть')+'</button></span></div>';
     h+='<table class="pr-table pr-items pr-financial">'+pricingHead('item',!!w)+'<tbody>';
     s.items.slice().sort(function(a,b){return (b.cost||0)-(a.cost||0);}).forEach(function(it){var c=calcItem(s,it,r);
       h+='<tr><td><span class="nm">'+esc(it.name)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+'<td class="key">'+fmtR(c.target)+'</td><td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
-    return h+'</tbody></table><div class="pr-add"><input type="text" data-addq="'+esc(s.id)+'" placeholder="Добавить услугу: название или партнёр…" autocomplete="off"><div class="res" hidden></div><span class="muted">Прайс услуг города «'+s.city+'»</span></div></div>';
+    return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
   function renderServices(){
     var u=usage(),list=filtered(allServices()).filter(function(s){return s.custom||s.price>0||s.cost>0;}),calc={};list.forEach(function(s){calc[s.sid]=calcService(s);});
@@ -8198,7 +8233,7 @@ window.__salesActSetData = function(newData){
     var t = e.target; var k = t.getAttribute("data-k");
     if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
     if (t.id === "prQ"){ state.q = t.value; save(); if (state.view !== "services") renderSets(); else renderServices(); renderKpis(visibleSets()); return; }
-    var aq = t.getAttribute("data-addq"); if (aq){ showAddResults(t, aq); return; }
+
   });
   root.addEventListener("change", function(e){
     var t = e.target, id;
@@ -8240,20 +8275,49 @@ window.__salesActSetData = function(newData){
     if ((b = t.closest("[data-del]"))){ id = b.getAttribute("data-del"); state.customSets = state.customSets.filter(function(x){ return x.id !== id; }); delete state.open[id]; save(); render(); return; }
     if ((b = t.closest("[data-hide]"))){ id = b.getAttribute("data-hide"); ov(id).hidden = true; delete state.open[id]; save(); render(); return; }
     if ((b = t.closest("[data-sdel]"))){ id = b.getAttribute("data-sdel"); delete state.customServices[id]; delete state.sov[id]; state.customSets.forEach(function(s){ s.items = (s.items || []).filter(function(x){ return x !== id; }); }); save(); render(); return; }
-    if ((b = t.closest("[data-setcity]"))){ id = b.getAttribute("data-setcity"); var cs3 = findCustomSet(id); if (cs3) cs3.city = b.getAttribute("data-c"); save(); render(); return; }
     if ((b = t.closest("[data-rm]"))){ id = b.getAttribute("data-rm"); var sid2 = b.getAttribute("data-sid"); var cs4 = findCustomSet(id); if (cs4) cs4.items = cs4.items.filter(function(x){ return x !== sid2; }); else { var o = ov(id); if (o.added && o.added.indexOf(sid2) >= 0) o.added = o.added.filter(function(x){ return x !== sid2; }); else { o.removed = o.removed || {}; o.removed[sid2] = 1; } } save(); render(); return; }
-    if ((b = t.closest(".pr-add .res div[data-pick]"))){ var box = b.closest(".pr-add"); var setId = box.querySelector("[data-addq]").getAttribute("data-addq"); var pid = b.getAttribute("data-pick"); var cs5 = findCustomSet(setId); if (cs5){ if (cs5.items.indexOf(pid) < 0) cs5.items.push(pid); } else { var o2 = ov(setId); o2.added = o2.added || []; if (o2.added.indexOf(pid) < 0) o2.added.push(pid); if (o2.removed) delete o2.removed[pid]; } save(); render(); return; }
-    if (t.closest(".pr-add") || t.closest("input, button, select")) return;
+    if (t.closest("#prCatalog") || t.closest("input, button, select")) return;
     if ((b = t.closest("tr.row.set"))){ id = b.getAttribute("data-id"); if (state.open[id]) delete state.open[id]; else state.open[id] = true; render(); return; }
   });
-  function showAddResults(inp, setId){
-    var box = inp.closest(".pr-add"), res = box.querySelector(".res"); var q = inp.value.trim().toLowerCase();
-    if (q.length < 2){ res.hidden = true; return; }
-    var set = allSets().filter(function(x){ return x.id === setId; })[0]; var have = {}; if (set) set.items.forEach(function(i){ have[i.sid] = 1; });
-    var list = allServices().filter(function(s){ return (!set || s.city === set.city) && !have[s.sid] && (s.name + " " + s.partner).toLowerCase().indexOf(q) >= 0; }).slice(0, 25);
-    res.innerHTML = list.length ? list.map(function(s){ return '<div data-pick="' + esc(s.sid) + '"><span>' + esc(s.name) + '</span><span class="muted">' + esc(s.partner) + '</span><span>' + fmtR(s.cost) + '</span></div>'; }).join("") : '<div class="muted">ничего не найдено</div>';
-    res.hidden = false;
+  // Каталог услуг набора: город берётся из самого набора.
+  var catalogSelection={id:null,q:'',min:'',max:'',category:'',partner:'',sort:'name'},catalogClassify=null,catalogLoading=null;
+  function catalogSet(){return allSets().find(function(s){return s.id===catalogSelection.id;});}
+  function catalogServices(){return allServices().map(function(s){return Object.assign({},s,{category:catalogClassify?catalogClassify(s.name):'Без категории'});});}
+  async function loadCatalogCategories(){
+    if(catalogClassify)return;if(catalogLoading)return catalogLoading;
+    catalogLoading=fetch('./data/pricing-categories.json').then(function(r){if(!r.ok)throw new Error('Категории недоступны');return r.json();}).then(function(d){catalogClassify=window.WowlifeServiceCatalog.classifier(d.taxonomy);}).catch(function(){catalogClassify=window.WowlifeServiceCatalog.classifier([]);});return catalogLoading;
   }
+  function catalogOptions(services,field,selected,allLabel){
+    var values=Array.from(new Set(services.map(function(s){return s[field];}))).sort(function(a,b){return a.localeCompare(b,'ru');});
+    return '<option value="">'+allLabel+'</option>'+values.map(function(v){var value=v||'__missing__';return '<option value="'+esc(value)+'"'+(selected===value?' selected':'')+'>'+esc(v||'Партнёр не указан')+'</option>';}).join('');
+  }
+  function catalogFilters(){
+    var set=catalogSet();if(!set)return;var services=catalogServices().filter(function(s){return s.city===set.city;});
+    root.querySelector('#prCatalogCategory').innerHTML=catalogOptions(services,'category',catalogSelection.category,'Все категории');
+    root.querySelector('#prCatalogPartner').innerHTML=catalogOptions(services,'partner',catalogSelection.partner,'Все партнёры');
+    root.querySelector('#prCatalogName').textContent='Добавить услуги в «'+set.name+'»';
+    root.querySelector('#prCatalogCity').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · '+services.length+' услуг в каталоге';
+    root.querySelector('#prCatalogHint').textContent=catalogClassify?'Категории — по классификатору Адеска. Без совпадения: «Без категории». Цена — из прайса услуг с вашими правками.':'Загружаю категории…';
+  }
+  function catalogResults(){
+    var set=catalogSet();if(!set)return;var services=catalogServices(),selection=Object.assign({},catalogSelection);if(selection.partner==='__missing__'){services=services.filter(function(s){return !s.partner;});selection.partner='';}
+    var list=window.WowlifeServiceCatalog.filter(services,set.city,selection),have={};set.items.forEach(function(i){have[i.sid]=true;});
+    root.querySelector('#prCatalogCount').textContent='Найдено: '+list.length+' · в наборе: '+set.items.length;
+    root.querySelector('#prCatalogRows').innerHTML=list.length?list.map(function(s){return '<tr><td><b>'+esc(s.name)+'</b><span class="meta">'+esc(s.category)+'</span></td><td>'+esc(s.partner||'Партнёр не указан')+'</td><td class="num">'+fmtR(s.price)+'</td><td class="num">'+(knownCost(s)?fmtR(s.cost):'—')+'</td><td><button type="button" class="pr-btn '+(have[s.sid]?'':'pri')+'" data-catalog-pick="'+esc(s.sid)+'"'+(have[s.sid]?' disabled':'')+' aria-label="'+esc((have[s.sid]?'Уже в наборе: ':'Добавить: ')+s.name)+'">'+(have[s.sid]?'✓ В наборе':'+ Добавить')+'</button></td></tr>';}).join(''):'<tr><td colspan="5" class="pr-empty">По этим фильтрам услуг нет. Измените условия или сбросьте фильтры.</td></tr>';
+  }
+  async function openCatalog(id){
+    if(catalogSelection.id!==id)catalogSelection={id:id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};
+    var dialog=root.querySelector('#prCatalog');root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogFilters();catalogResults();dialog.showModal();root.querySelector('#prCatalogSearch').focus();
+    await loadCatalogCategories();if(dialog.open){catalogFilters();catalogResults();}
+  }
+  function addCatalogService(sid){
+    var set=catalogSet(),svc=serviceOf(sid);if(!set||!svc||svc.city!==set.city||set.items.some(function(i){return i.sid===sid;}))return;
+    var custom=findCustomSet(set.id);if(custom)custom.items.push(sid);else{var o=ov(set.id);o.added=o.added||[];if(o.added.indexOf(sid)<0)o.added.push(sid);if(o.removed)delete o.removed[sid];}
+    save();render();catalogResults();
+  }
+  root.addEventListener('input',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
+  root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
+  root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
     var rows=[['Наименование','Город','Текущая цена CRM, ₽','Новая цена, ₽','Скидка, ₽','Цена со скидкой, ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Маржа при 100%, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Цена для цели, ₽']];
     var services=state.view==='services',list=services?filtered(allServices()).filter(function(s){return s.custom||s.price>0||s.cost>0;}):visibleSets();
@@ -8278,7 +8342,7 @@ window.__salesActSetData = function(newData){
   root.addEventListener('scroll',hideTip,true);
   root.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();});
 
-  document.addEventListener("click", function(e){ if (!e.target.closest(".pr-add")) root.querySelectorAll(".pr-add .res").forEach(function(r){ r.hidden = true; }); });
+
 
   load();
   window.__pricingRerender = function(){ FACT = null; ensureParams(); if (!started){ started = true; loadCrm(false); if (state.mode === "act") loadAct(); } render(); };

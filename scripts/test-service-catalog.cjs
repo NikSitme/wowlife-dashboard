@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const C=require('./service-catalog');
+const classify=C.classifier([['Водные развлечения','Катера','Аренда катера'],['Водные развлечения','Катера','Аренда катера Regal'],['Наборы впечатлений','Для женщин','Набор'],['Полеты','Самолеты','Полёт на самолёте']]);
+assert.equal(classify('Аренда катера Regal: 2 часа, Москва'),'Водные развлечения');
+assert.equal(classify('Полет на самолете: 30 минут'),'Полеты');
+assert.equal(classify('Новый неизвестный товар'),'Без категории');
+assert.equal(classify('Набор'),'Без категории');
+assert.equal(classify(''),'Без категории');
+const services=[{sid:'1',city:'Мск',name:'Аренда катера',partner:'Вода',price:5000,category:'Водные развлечения'},{sid:'2',city:'СПб',name:'Аренда катера',partner:'Вода',price:5000,category:'Водные развлечения'},{sid:'3',city:'Мск',name:'Массаж',partner:'Спа',price:2500,category:'Красота и здоровье'},{sid:'4',city:'Мск',name:'Новая услуга',partner:'',price:0,category:'Без категории'}];
+assert.deepEqual(C.filter(services,'Мск',{}).map(s=>s.sid),['1','3','4']);
+assert.deepEqual(C.filter(services,'Мск',{min:2500,max:5000,category:'Водные развлечения',partner:'Вода',q:'КАТЕРА'}).map(s=>s.sid),['1']);
+assert.equal(C.filter(services,'СПб',{category:'Красота и здоровье'}).length,0);
+assert.deepEqual(C.filter(services,'Мск',{min:'',max:'',sort:'price-asc'}).map(s=>s.sid),['4','3','1']);
+assert.deepEqual(C.filter(services,'Мск',{q:'спа'}).map(s=>s.sid),['3']);
+assert.equal(C.filter(services,'Мск',{min:6000,max:100}).length,0);
+assert.deepEqual(C.filter(services,'Мск',{max:0}).map(s=>s.sid),['4']);
+assert.equal(C.filter(Array.from({length:1300},(_,i)=>({city:'Мск',name:'Услуга '+i,price:i,partner:'',category:'Без категории'})),'Мск',{}).length,1300,'No hidden 25/400-row cap');
+const fs=require('node:fs'),vm=require('node:vm'),html=fs.readFileSync('index.html','utf8');
+for(const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)){if(m[1].includes('application/json'))JSON.parse(m[2]);else if(m[2].trim())new vm.Script(m[2]);}
+assert(!html.includes('data-setcity='),'No second city selector inside set');
+assert(html.includes('data-catalog-filter="category"')&&html.includes('data-catalog-filter="partner"'));
+assert(!html.includes('function showAddResults'),'Old truncated autocomplete removed');
+const data=JSON.parse(fs.readFileSync('data/pricing-categories.json','utf8'));
+assert(data.taxonomy.length>300);assert.equal(C.classifier(data.taxonomy)('Аренда катера Regal 2660'),'Водные развлечения');
+console.log('PASS service catalog: city isolation, combined filters, price boundaries, categories, uncapped results, syntax and city selector removal');
