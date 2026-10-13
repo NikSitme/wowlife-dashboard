@@ -1,0 +1,56 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const model=require('./pricing-model.js');
+const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+const defaults={act:60,acq:2,tax:7,pack:50,logistics:100,disc:10,target:40,fixed:5,ret:90};
+const modes={pack:'rub',logistics:'rub'};
+let p=model.parameters(defaults,modes,{}),r=model.calculate(2000,1000,p);
+near(r.price,1800);near(r.V,312);near(r.mpAct,888);near(r.npAct,798);near(r.mp100,488);
+near(r.partnerShare,1000/1800);near(r.partnerForecast,600);
+near(model.calculate(r.target,1000,p).mAct,.4);
+// Row overrides use the correct base, preserve zero, and do not change global inputs.
+p=model.parameters(defaults,modes,{disc:{mode:'pct',value:0},logistics:{mode:'rub',value:0},acq:{mode:'rub',value:40}});
+r=model.calculate(2000,1000,p);near(r.price,2000);near(r.expenses.logistics,0);near(r.expenses.acq,40);near(r.mpAct,1170);
+assert.equal(defaults.logistics,100);assert.equal(defaults.disc,10);
+// A payout as a share of the discounted price also changes the target-price denominator.
+p=model.parameters(defaults,modes,{partner:{mode:'pct',value:70}});r=model.calculate(2000,1000,p);
+near(r.exp,1260);near(model.calculate(r.target,1000,p).mAct,.4);
+p=model.parameters(defaults,modes,{disc:{mode:'pct',value:100}});r=model.calculate(2000,1000,p);
+assert.equal(r.price,0);assert.equal(r.mAct,null);assert.equal(r.target,null);
+assert.equal(model.calculate(2000,null,model.parameters(defaults,modes,{})).mpAct,null);
+// Default logistics sums delivery articles, without adding marketplace expense totals.
+const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown:[{name:'Wowlife МСК выручка',value:1000}],direct_breakdown:[{name:'Эквайринговая комиссия',value:-20},{name:'Создание продукта',value:30},{name:'Доставка',value:10},{name:'Доставка Далли',value:40},{name:'Доставка СДЭК',value:5},{name:'Расходы ОЗОН',value:999}],personnel_total:100}]);
+near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+const stub={addEventListener(){},querySelector(){return stub;}};
+const context={window:{WowlifePricing:model,__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
+vm.runInNewContext(body,context);
+const t=context.window.pricingTest;
+t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
+assert.equal(t.state.params.ret,undefined);assert.equal(t.state.pmode.ret,undefined);
+assert.equal(t.state.params.logistics,100);t.state.params.logistics=undefined;t.ensureParams();assert.equal(t.state.params.logistics,0);
+t.state.params={...defaults};t.state.pmode={...modes};t.ensureParams();
+t.setData({catalog:{a:{sid:'a',name:'A',partner:'One',city:'Мск',price:2000,cost:1000},b:{sid:'b',name:'B',partner:'Two',city:'Мск',price:1500,cost:500}},sets:[{id:'x',name:'Set',city:'Мск',price:2000,items:[{sid:'a',price:2000,cost:1000},{sid:'b',price:1500,cost:500}]}]},{counts:{'Мск':{One:3,Two:1}}});
+let set=t.allSets()[0];near(t.calcSet(set).exp,750);
+t.state.mode='max';near(t.calcSet(set).exp,1000);
+t.state.mode='act';near(t.calcSet(set).exp,875);
+t.state.rowParams['set:x']={logistics:{mode:'rub',value:0},disc:{mode:'pct',value:0}};
+let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,0);
+near(t.calcItem(set,set.items[0],calc).price,2000);
+near(t.calcItem(set,set.items[0],calc).expenses.logistics,0);
+t.state.params.logistics=200;near(t.calcSet(set).expenses.logistics,0);near(t.calcService(t.serviceOf('a')).expenses.logistics,200);
+delete t.state.rowParams['set:x'];near(t.calcSet(set).expenses.logistics,200);
+t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,2000);assert.equal(t.serviceOf('a').price,2500);near(t.allSets()[0].items[0].cost,1200);
+// Group headers, body cells and composition use exactly the same column count.
+set=t.allSets()[0];calc=t.calcSet(set);
+const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
+assert.equal((cells.match(/<td /g)||[]).length+3,t.colCount());
+assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,29);
+t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+3,t.colCount());
+t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
+t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
+console.log('PASS pricing: discounts, expenses, target price, defaults, migration, row inheritance, CRM proposals, forecasts, composition and headers');

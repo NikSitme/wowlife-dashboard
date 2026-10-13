@@ -6,4 +6,6 @@
 
 Нижний P&L по умолчанию сохраняет строки, знаки и итоги Адеска; отдельный управленческий вид и карточки используют принятые корректировки. Источник, время получения и предупреждения отображаются рядом с таблицей. Формулы и источники описаны во встроенной документации.
 
-Проверка источника: `node scripts/test-opiu-source.cjs [path/to/current-source.csv]`. Регрессионные проверки: `node scripts/test-opiu-calendar.cjs`, `node scripts/test-marketplace-history.cjs`, `node scripts/test-sales-analytics.cjs`, `node scripts/test-revenue-dynamics.cjs`.
+Ценообразование разделено на «Услуги», «Наборы», «Новые наборы». Цена CRM сохранена отдельно от предложенной цены. Скидка, эквайринг, налог, упаковка и логистика наследуются из параметров; исключения строки сохраняются в браузере. Возвраты исключены из прайса. Логистика по умолчанию — расходы на доставку / выручка сайта за последние шесть месяцев ОПиУ. Группы финансовых столбцов сворачиваются, заголовки содержат подсказки. Расчёт маржи и целевой цены общий для услуг, наборов и их состава.
+
+Проверка ценообразования: `node scripts/test-pricing.cjs`. Проверка источника: `node scripts/test-opiu-source.cjs [path/to/current-source.csv]`. Регрессионные проверки: `node scripts/test-opiu-calendar.cjs`, `node scripts/test-marketplace-history.cjs`, `node scripts/test-sales-analytics.cjs`, `node scripts/test-revenue-dynamics.cjs`.
