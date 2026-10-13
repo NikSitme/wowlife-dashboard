@@ -46,6 +46,7 @@
     r.npAct=r.mpAct-price*p.fP-p.fR;r.nAct=r.npAct/price;
     return r;
   }
-  var api={expenseKeys:KEYS,defaults:defaults,parameters:parameters,netPrice:netPrice,targetPrice:targetPrice,calculate:calculate};
+  function worstCase(gross,maxCost,p){return calculate(gross,maxCost,Object.assign({},p,{a:1,partner:null}));}
+  var api={expenseKeys:KEYS,defaults:defaults,parameters:parameters,netPrice:netPrice,targetPrice:targetPrice,calculate:calculate,worstCase:worstCase};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePricing=api;
 })(typeof window==='object'?window:globalThis);

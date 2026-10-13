@@ -10,6 +10,15 @@ let p=model.parameters(defaults,modes,{}),r=model.calculate(2000,1000,p);
 near(r.price,1800);near(r.V,312);near(r.mpAct,888);near(r.npAct,798);near(r.mp100,488);
 near(r.partnerShare,1000/1800);near(r.partnerForecast,600);
 near(model.calculate(r.target,1000,p).mAct,.4);
+// Worst case always activates every certificate and pays the most expensive service.
+const originalP=p;
+const worst=model.worstCase(2000,1000,p);
+near(worst.partnerForecast,1000);near(worst.mpAct,488);near(worst.npAct,398);
+near(worst.p.a,1);near(p.a,.6);assert.equal(originalP,p);
+near(model.worstCase(worst.target,1000,p).mAct,.4);
+const lowerForecast=model.parameters(defaults,modes,{partner:{mode:'rub',value:100}});
+near(model.worstCase(2000,1000,lowerForecast).exp,1000);
+assert.equal(model.worstCase(2000,null,lowerForecast).mAct,null);
 // Row overrides use the correct base, preserve zero, and do not change global inputs.
 p=model.parameters(defaults,modes,{disc:{mode:'pct',value:0},logistics:{mode:'rub',value:0},acq:{mode:'rub',value:40}});
 r=model.calculate(2000,1000,p);near(r.price,2000);near(r.expenses.logistics,0);near(r.expenses.acq,40);near(r.mpAct,1170);
@@ -36,8 +45,15 @@ assert.equal(t.state.params.logistics,100);t.state.params.logistics=undefined;t.
 t.state.params={...defaults};t.state.pmode={...modes};t.ensureParams();
 t.setData({catalog:{a:{sid:'a',name:'A',partner:'One',city:'Мск',price:2000,cost:1000},b:{sid:'b',name:'B',partner:'Two',city:'Мск',price:1500,cost:500}},sets:[{id:'x',name:'Set',city:'Мск',price:2000,items:[{sid:'a',price:2000,cost:1000},{sid:'b',price:1500,cost:500}]}]},{counts:{'Мск':{One:3,Two:1}}});
 let set=t.allSets()[0];near(t.calcSet(set).exp,750);
+near(t.calcSet(set).mp100,488);near(t.calcSet(set).m100,488/1800);
 t.state.mode='max';near(t.calcSet(set).exp,1000);
+near(t.calcSet(set).partnerForecast,1000);near(t.calcSet(set).p.a,1);
+near(t.calcSet(set).mpAct,488);near(t.calcSet(set).npAct,398);
+near(t.calcSet(set).mAct,t.calcSet(set).m100);assert.equal(t.state.params.act,60);
+t.state.rowParams['set:x']={partner:{mode:'rub',value:100}};
+near(t.calcSet(set).exp,1000);delete t.state.rowParams['set:x'];
 t.state.mode='act';near(t.calcSet(set).exp,875);
+near(t.calcSet(set).mp100,488);
 t.state.rowParams['set:x']={logistics:{mode:'rub',value:0},disc:{mode:'pct',value:0}};
 let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,0);
 near(t.calcItem(set,set.items[0],calc).price,2000);
