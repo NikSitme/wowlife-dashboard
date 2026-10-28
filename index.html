@@ -7877,7 +7877,7 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=forecast-20261028"></script>
-<script src="./scripts/pricing-catalog.js?v=composition-20261028"></script>
+<script src="./scripts/pricing-catalog.js?v=zero-price-20261028"></script>
 <script src="./scripts/service-catalog.js?v=20261028-pagination"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
@@ -8016,13 +8016,14 @@ window.__salesActSetData = function(newData){
     var base = state.customServices[sid] || source || fallback || null;
     if (!CATALOG.available(base)||fallback&&!CATALOG.available(fallback)) return null;
     var o = state.sov[sid] || {};
-    return { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.cost > 0, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+    var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.cost > 0, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+    return CATALOG.visiblePrice(result)?result:null;
   }
   function allSets(){
     var out = [];
     (CRM ? CRM.sets : []).forEach(function(s){
       var o = state.ov[s.id] || {};
-      if (o.hidden||!CATALOG.available(s)) return;
+      if (o.hidden||!CATALOG.available(s)||!CATALOG.visiblePrice({price:o.price!==undefined?o.price:s.price})) return;
       var removed = o.removed || {};
       var items = s.items.filter(function(it){ return !removed[it.sid]&&CATALOG.available(it); }).map(function(it){
         var sv = serviceOf(it.sid, { name: it.name, partner: "", city: s.city, price: it.price, cost: it.cost });
@@ -8249,7 +8250,7 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prTitle").textContent = state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборы" : "Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "newsets" ? "создавайте и сравнивайте новые наборы" : state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
     renderKpis(visibleSets());
-    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг в источнике · скрыты явные архивные/неактивные позиции · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
+    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг в источнике · скрыты явные архивные/неактивные позиции и позиции с нулевой ценой · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
     root.querySelectorAll('[data-service-pagination]').forEach(function(nav){nav.hidden=state.view!=="services";});
     if (state.view !== "services") renderSets(); else renderServices();
     root.querySelector("#prTableWrap").setAttribute("role", "tabpanel");

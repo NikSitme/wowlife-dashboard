@@ -5,6 +5,10 @@ for(const label of ['Квадрорейд (не работаем)','Royal Thai (
 for(const name of ['Закрытый показ','Невесомость','Архив впечатлений','ROYAL THAI'])assert.equal(available({name,price:0,cost:0}),true,name);
 for(const active of [false,0,'N','false','нет','Неактивен'])assert.equal(available({name:'Без пометки',active}),false,String(active));
 assert.equal(available({name:'Бесплатная услуга',price:0,active:'Y'}),true);
+assert.equal(catalog.visiblePrice({price:0}),false);
+assert.equal(catalog.visiblePrice({price:'0'}),false);
+assert.equal(catalog.visiblePrice({price:1}),true);
+assert.equal(catalog.visiblePrice({price:0,custom:true}),true,'New drafts must remain editable before their first price');
 assert.equal(available({name:'Без цены',partnerActive:false}),false);
 const price={a:{sid:'a',name:'Из справочника',price:2000,cost:1000,partner:'Текущий'}};
 const completed=catalog.completeCatalog([{city:'Мск',items:[{sid:'a',name:'Другой контекст',price:3000,cost:1500},{sid:'b',name:'Только в составе',price:1500,cost:700},{sid:'c',name:'Нулевая',price:0,cost:0}]}],price);
@@ -22,17 +26,27 @@ t.parseCatalog([['id','Название','Партнёр','Цена','Выпла
 // Service rows can be appended far below their own set; their parent comes from the explicit ID.
 crm.sets=t.parseSets([['id','Название','Услуга','Цена','Выплата','Маржа','Активность'],['nabor_10','Нулевой набор (0) - Изменен: 2026-10-28','','','','','Y'],['service_10_1','','1) Бесплатная',0,0],['nabor_11','Другой набор (2000) - Изменен: 2026-10-28','','','','','Y'],['service_11_2','','1) Оплачиваемая',3000,1500],['nabor_12','Без текстовой пометки (2000) - Изменен: 2026-10-28','','','','','N'],['service_10_4','','2) Обычная',2500,1000],['service_99_4','','Нет родителя',2500,1000]],'Мск');
 t.setData(crm);
+assert.deepEqual(Array.from(t.allServices(),x=>x.sid),['4']);
+assert.equal(t.allSets().length,1);assert.equal(t.allSets()[0].id,'11');assert.equal(t.allSets()[0].items.length,0);
+assert.equal(crm.sets[0].price,0,'The source data remains intact');
+assert.equal(t.serviceOf('1'),null,'Zero-price CRM service is excluded consistently');
+// Effective proposals take precedence: a saved positive price makes a zero-price CRM product visible.
+t.state.sov['1']={price:500};t.state.ov['10']={price:1000};
 assert.deepEqual(Array.from(t.allServices(),x=>x.sid),['1','4']);
-assert.equal(t.allSets().length,2);assert.deepEqual(Array.from(t.allSets()[0].items,x=>x.sid),['1','4']);assert.equal(t.allSets()[1].items.length,0);
-assert.equal(t.allSets()[0].price,0,'Zero is not inactivity');
+assert.deepEqual(Array.from(t.allSets().find(x=>x.id==='10').items,x=>x.sid),['1','4']);
+delete t.state.sov['1'];delete t.state.ov['10'];
 assert.equal(t.serviceOf('2'),null);assert.equal(t.serviceOf('3'),null);
 t.state.sov['2']={name:'Переименованная',partner:'Действующий',price:5000};
 t.state.ov['10']={added:['2','3']};
 t.state.customSets=[{id:'u1',name:'Проект',city:'Мск',price:0,items:['1','2','3','4']}];
-assert.deepEqual(Array.from(t.allSets().find(x=>x.id==='u1').items,x=>x.sid),['1','4']);
-assert.equal(t.allServices().length,2,'Overrides must not resurrect inactive CRM records');
+assert.deepEqual(Array.from(t.allSets().find(x=>x.id==='u1').items,x=>x.sid),['4']);
+assert.equal(t.allServices().length,1,'Overrides must not resurrect inactive CRM records');
+assert.equal(t.allSets().find(x=>x.id==='u1').price,0,'A new set remains visible before pricing');
+t.state.customServices.u2={sid:'u2',name:'Новая услуга',city:'Мск',price:0,cost:0};
+assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible before pricing');
+assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
 assert(html.includes('wowlife-pricing-crm-v3'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
-console.log('PASS pricing catalog: explicit inactivity, zero-price preservation, composed and custom sets, no resurrection, parent IDs, complete CSV and cache migration');
+console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');

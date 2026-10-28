@@ -7,9 +7,10 @@
   function inactiveFlag(value){return value===false||value===0||['n','no','false','0','нет','inactive','disabled','archived','deleted'].indexOf(norm(value))>=0||inactiveLabel(value);}
   function available(row){
     if(!row)return false;
-    // A missing/zero price is not an activity flag: active free and draft products remain visible.
+    // Activity and price visibility are separate: a zero price does not mark a product inactive.
     return !inactiveFlag(row.active)&&!inactiveFlag(row.partnerActive)&&!inactiveLabel(row.name)&&!inactiveLabel(row.partner);
   }
+  function visiblePrice(row){return !!row&&(!!row.custom||Number(row.price)!==0);}
   function statusColumns(header){
     var h=(header||[]).map(norm);
     return {active:h.findIndex(function(x){return ['active','активность','активен','активна','статус активности','статус услуги','статус набора'].indexOf(x)>=0;}),partnerActive:h.findIndex(function(x){return ['partner active','активность партнера','статус партнера'].indexOf(x)>=0;})};
@@ -25,5 +26,5 @@
     });
     return out;
   }
-  return {available:available,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
+  return {available:available,visiblePrice:visiblePrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
 });
