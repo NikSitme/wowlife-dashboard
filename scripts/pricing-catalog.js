@@ -15,5 +15,15 @@
     return {active:h.findIndex(function(x){return ['active','активность','активен','активна','статус активности','статус услуги','статус набора'].indexOf(x)>=0;}),partnerActive:h.findIndex(function(x){return ['partner active','активность партнера','статус партнера'].indexOf(x)>=0;})};
   }
   function readStatus(row,columns){var out={};Object.keys(columns).forEach(function(k){if(columns[k]>=0)out[k]=row[columns[k]];});return out;}
-  return {available:available,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus};
+  function completeCatalog(sets,catalog){
+    var out=Object.assign({},catalog);
+    (sets||[]).forEach(function(set){
+      if(!available(set))return;
+      (set.items||[]).forEach(function(item){
+        if(!out[item.sid]&&available(item))out[item.sid]=Object.assign({partner:'',city:set.city,fromComposition:true},item);
+      });
+    });
+    return out;
+  }
+  return {available:available,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
 });

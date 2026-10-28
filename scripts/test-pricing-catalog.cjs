@@ -6,6 +6,11 @@ for(const name of ['Закрытый показ','Невесомость','Ар�
 for(const active of [false,0,'N','false','нет','Неактивен'])assert.equal(available({name:'Без пометки',active}),false,String(active));
 assert.equal(available({name:'Бесплатная услуга',price:0,active:'Y'}),true);
 assert.equal(available({name:'Без цены',partnerActive:false}),false);
+const price={a:{sid:'a',name:'Из справочника',price:2000,cost:1000,partner:'Текущий'}};
+const completed=catalog.completeCatalog([{city:'Мск',items:[{sid:'a',name:'Другой контекст',price:3000,cost:1500},{sid:'b',name:'Только в составе',price:1500,cost:700},{sid:'c',name:'Нулевая',price:0,cost:0}]}],price);
+assert.equal(completed.a,price.a,'The complete price list retains precedence for standalone pricing');
+assert.equal(completed.b.city,'Мск');assert.equal(completed.b.partner,'');assert.equal(completed.b.cost,700);assert.equal(completed.b.fromComposition,true);
+assert.equal(completed.c.price,0);assert.equal(price.b,undefined,'Do not mutate the input catalog');
 const html=fs.readFileSync('index.html','utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
 body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,parseCatalog,parseSets,allServices,allSets,serviceOf,usage,calcSet,setData:function(c){CRM=c;}};return;\n  load();\n');
@@ -28,6 +33,6 @@ assert.deepEqual(Array.from(t.allSets().find(x=>x.id==='u1').items,x=>x.sid),['1
 assert.equal(t.allServices().length,2,'Overrides must not resurrect inactive CRM records');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v2'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v3'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 console.log('PASS pricing catalog: explicit inactivity, zero-price preservation, composed and custom sets, no resurrection, parent IDs, complete CSV and cache migration');
