@@ -570,7 +570,7 @@
         <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Актуальные наборы и их состав определяются этими двумя листами (уточнение Никиты 28.10). Прайс услуг — листы «Услуги Мск/СПб» (id, название, партнёр, цена, себестоимость); услуги, отсутствующие в общем прайсе, дополняются из состава наборов и отмечаются «из состава набора». Партнёр у таких строк не угадывается. Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить из CRM» скачивает заново.</li>
         <li><b>Столбцы.</b> Группы «Цена», «Партнёру», «Маржинальная прибыль», «Комиссии и налоги», «Упаковка», «Логистика», «Чистая прибыль». Группы можно свернуть. «Новая» цена начинается с текущей цены CRM; «Текущая» сохраняет исходник. Расходы и скидка наследуются из параметров, пока их не изменили в строке. Правка процента задаёт долю цены со скидкой, правка суммы фиксирует расход в рублях. ↺ возвращает строку к параметрам. Подсказки в заголовках объясняют показатели.</li>
         <li><b>Параметры.</b> Эквайринг, логистика и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; логистика — сумма статей доставки / выручка сайта за тот же период; возвраты исключены из ценообразования; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); целевая маржа 40 %; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
-        <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (максимальная выплата партнёру за услугу; активация всегда 100%) или взвешенная по частоте активаций партнёров. МП = P − C × активация; маржа = МП / P. Худший сценарий набора — 100 % активаций и максимальная выплата за услугу из состава; отдельная правка прогноза выплаты набора здесь не применяется. В режиме «Худшая» также по этому сценарию считаются МП, ЧП и целевая цена. Для отдельной услуги «При 100 %» — выплата за эту услугу с активацией 100 %. ЧП = МП − V − постоянные (P × % или ₽). Цена для целевой маржи M: P = (C × активация) / (1 − M), затем возвращаем скидку. Услуга «убыточна при активации», если P − её себестоимость &lt; 0.</li>
+        <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (максимальная выплата партнёру за услугу; активация всегда 100%) или взвешенная по частоте активаций партнёров. МП = P − C × активация; маржа = МП / P. В прогнозе «Худшая» набор использует 100 % активаций и максимальную выплату из состава; отдельная правка прогноза выплаты набора здесь не применяется. Для услуги этот прогноз использует 100 % активаций и полную выплату за услугу. МП, маржа, ЧП и целевая цена показывают только выбранный прогноз, отдельного худшего показателя нет. ЧП = МП − V − постоянные (P × % или ₽). Цена для целевой маржи M: P = (C × активация) / (1 − M), затем возвращаем скидку. Услуга «убыточна при активации», если P − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
         <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «Добавить услуги» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории сопоставляются по наименованию с классификатором Адеск «Выручка New» (снимок 13.10.2026), нераспознанные остаются в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
         <li><b>Актуальность.</b> Скрываются позиции с явными пометками «не работаем», «не сотрудничаем», «закрылись», «архив», «неактивен», а также со статусом отключения, если он передан в выгрузке. Правило действует в прайсе, составе, подборе, показателях и CSV. Нулевая цена не является признаком отключения. Текущая выгрузка не содержит отдельного поля активности, поэтому позиции без явного признака остаются видимыми. Сохранённые проекты и история не удаляются.</li>
@@ -3819,6 +3819,9 @@ window.__salesActSetData = function(newData){
   .pr-search-field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; fill: none; stroke: var(--text-muted); stroke-width: 1.8; }
   .pr-search input { width: 100%; min-height: 50px; padding: 12px 16px 12px 46px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); color: var(--text-primary); font: inherit; font-size: 16px; }
   .pr-calculation { display: flex; align-items: center; gap: 16px 24px; flex-wrap: wrap; padding: 18px 0 24px; margin-bottom: 22px; border-bottom: 1px solid var(--border); }
+  .pr-activation-field { display:flex; align-items:center; gap:10px; min-height:52px; }
+  .pr-activation-field input { width:100px; min-height:50px; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font:inherit; font-size:17px; background:var(--surface-1); color:var(--text-primary); text-align:right; }
+  .pr-activation-field input:disabled { opacity:.7; cursor:not-allowed; }
   .pr-utilities { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 20px; }
   .pr-utilities .reset { margin-left: auto; }
   .pr-btn { font-size: 16px; min-height: 46px; padding: 11px 18px; border-radius: 11px; }
@@ -3918,7 +3921,7 @@ window.__salesActSetData = function(newData){
       <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
       <label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название или партнёр" aria-label="Поиск по названию или партнёру"></span></label>
     </div>
-    <div class="pr-calculation" id="prModeGroup"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату за выбранную услугу набора"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div><span id="prWorstHint" class="muted" hidden>100% активаций · максимальная выплата партнёру за услугу</span></div>
+    <div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div>
     <div class="pr-utilities">
       <button type="button" class="pr-btn" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
       <button type="button" class="pr-btn" id="prCsv">Экспорт CSV</button>
@@ -3927,7 +3930,7 @@ window.__salesActSetData = function(newData){
     <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
       <div><b>Что сделать</b><span>Открыть набор кликом. Убрать услуги с красной маржой, поставить цену для целевой маржи (кнопка) или свою. Собрать новый набор: вкладка «Новые наборы» → «+ Новый набор» → название, услуги из каталога города. В каталоге доступны фильтры по цене, категории и партнёру. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
-      <div><b>Что получаем</b><span>По каждому набору: ожидаемая выплата партнёру, маржа при заложенной активации и при 100 %, чистая прибыль, цена под целевую маржу.</span></div>
+      <div><b>Что получаем</b><span>По каждому набору: выплата партнёру, МП, маржа, чистая прибыль и цена под целевую маржу — только по выбранному прогнозу.</span></div>
       <div><b>Зачем</b><span>Пересобрать наборы и цены так, чтобы каждый набор был маржинальным, даже если сертификат точно используют.</span></div>
       <div><b>Почему так</b><span>Покупатель платит цену набора, какую услугу ни выберут, — поэтому маржа услуги считается от цены набора. Какую выберут, заранее неизвестно — берём среднюю, худшую или по частоте активаций партнёров.</span></div>
     </div>
@@ -7864,7 +7867,7 @@ window.__salesActSetData = function(newData){
 
 </script>
 
-<script src="./scripts/pricing-model.js?v=margin-20261028"></script>
+<script src="./scripts/pricing-model.js?v=forecast-20261028"></script>
 <script src="./scripts/pricing-catalog.js?v=composition-20261028"></script>
 <script src="./scripts/service-catalog.js"></script>
 <script>
@@ -7912,6 +7915,7 @@ window.__salesActSetData = function(newData){
     if (!state.params) state.params = {};
     PARAM_DEFS.forEach(function(d){ if (state.params[d.k] === undefined) state.params[d.k] = FACT[d.k]; });
     delete state.params.ret; delete state.pmode.ret;
+    if(state.sort.k==="m100")state.sort.k="m";
   }
 
   // ---------- CRM: наборы и услуги ----------
@@ -8059,12 +8063,10 @@ window.__salesActSetData = function(newData){
     var w = weights(s), wavg = null;
     if (w){ wavg = 0; s.items.forEach(function(it){ if (w[it.sid]) wavg += w[it.sid] * it.cost; }); }
     var exp = state.mode === "max" ? max : (state.mode === "act" && wavg !== null ? wavg : avg);
-    var worst = MODEL.worstCase(s.price,max,p);
-    var r = state.mode === "max" ? worst : MODEL.calculate(s.price,exp,p);
-    r.mp100=worst.mpAct;r.m100=worst.mAct;
+    var r = state.mode === "max" ? MODEL.worstCase(s.price,max,p) : MODEL.calculate(s.price,exp,p);
     r.avg=avg;r.max=max;r.wavg=wavg;r.w=w;r.noCost=s.items.length-costs.length;r.n=s.items.length;r.loss=0;r.below=0;
     if (!(r.price > 0)) return r;
-    r.loss = s.items.filter(function(it){ return knownCost(it) && r.price - it.cost < 0; }).length;
+    r.loss = s.items.filter(function(it){ return knownCost(it) && r.price - it.cost * r.p.a < 0; }).length;
     r.below = s.items.filter(function(it){ return knownCost(it) && (r.price - it.cost * r.p.a) / r.price < r.p.t; }).length;
     return r;
   }
@@ -8073,14 +8075,15 @@ window.__salesActSetData = function(newData){
     var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;return c;
   }
   function calcService(sv){
-    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,P("service:"+sv.sid));c.share=c.partnerShare;return c;
+    var p=P("service:"+sv.sid);if(state.mode==="max")p=Object.assign({},p,{a:1});
+    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,p);c.share=c.partnerShare;return c;
   }
 
   // ---------- рендер ----------
   function refPrice(){ var ps = allSets().filter(function(s){ return s.price > 0; }).map(function(s){ return s.price; }); return ps.length ? mean(ps) : 5000; }
   function renderParams(){
     var box = root.querySelector("#prParams"); var ref = refPrice(); var groups = [];
-    PARAM_DEFS.forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
+    PARAM_DEFS.filter(function(d){return d.k!=="act";}).forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
     box.innerHTML = groups.map(function(g){
       return '<div class="pr-group"><h4>' + g.name + '</h4>' + g.items.map(function(d){
         var v = state.params[d.k], f = FACT[d.k], rub = isRub(d.k), ch = !rub && Math.abs(v - f) > 1e-9;
@@ -8094,12 +8097,12 @@ window.__salesActSetData = function(newData){
     var p = P(), services=state.view==="services"; if(services)sets=filtered(allServices());
     var rs = sets.map(services?calcService:calcSet); var withM = rs.filter(function(r){ return r.mAct !== null; });
     var below = withM.filter(function(r){ return r.mAct < p.t; }).length, loss = withM.filter(function(r){ return r.mAct < 0; }).length;
-    var lossItems = rs.reduce(function(a, r){ return a + (services?(r.m100!==null&&r.m100<0?1:0):r.loss); }, 0);
-    var mAct = mean(withM.map(function(r){ return r.mAct; })), m100 = mean(withM.map(function(r){ return r.m100; })), nAct = mean(withM.map(function(r){ return r.nAct; }));
+    var lossItems = rs.reduce(function(a, r){ return a + (services?(r.mAct!==null&&r.mAct<0?1:0):r.loss); }, 0);
+    var mpAct = mean(withM.map(function(r){ return r.mpAct; })), mAct = mean(withM.map(function(r){ return r.mAct; })), nAct = mean(withM.map(function(r){ return r.nAct; }));
     function kpi(lbl, val, sub, c){ return '<div class="kpi' + (c ? " " + c : "") + '"><div class="lbl">' + lbl + '</div><div class="val">' + val + '</div><div class="sub">' + sub + '</div></div>'; }
     root.querySelector("#prKpis").innerHTML =
-      kpi(services?"Средняя маржа услуг":"Средняя маржа наборов", fmtP(mAct), "при активации " + (!services && state.mode === "max" ? 100 : state.params.act) + " % · " + fmtN(sets.length) + (services?" услуг":" наборов") + ", с расчётом " + fmtN(withM.length), mAct === null ? "" : cls(mAct, p.t)) +
-      kpi(services?"Если используют все (100 %)":"Худший сценарий", fmtP(m100), services?"100 % активаций":"100 % активаций · максимальная выплата за услугу", m100 === null ? "" : cls(m100, p.t)) +
+      kpi(services?"Средняя МП услуг":"Средняя МП наборов", fmtR(mpAct), "по выбранному прогнозу · с расчётом " + fmtN(withM.length), mAct === null ? "" : cls(mAct, p.t)) +
+      kpi(services?"Средняя маржа услуг":"Средняя маржа наборов", fmtP(mAct), "при использовании " + (state.mode === "max" ? 100 : state.params.act) + " % · " + fmtN(sets.length) + (services?" услуг":" наборов"), mAct === null ? "" : cls(mAct, p.t)) +
       kpi(services?"Чистая прибыль с услуги":"Чистая прибыль с набора", fmtP(nAct), "после комиссий, налогов, упаковки, логистики и постоянных расходов", nAct === null ? "" : (nAct < 0 ? "bad" : "good")) +
       kpi("Ниже целевой маржи", fmtN(below) + (services?" услуг":" наборов"), "цель " + state.params.target + " % · убыточных услуг: " + fmtN(lossItems), below || lossItems ? "warn" : "good");
   }
@@ -8115,7 +8118,7 @@ window.__salesActSetData = function(newData){
   var GROUPS = [
     {id:'price',label:'Цена',tip:'Сравните цену CRM с предложенной ценой и посмотрите результат скидки.',cols:[['proposal','Новая','Предложенная цена. Изначально равна текущей; CRM не меняется.','price'],['current','Текущая','Исходная цена из CRM. Не меняется при моделировании.'],['discount','Скидка, %','Скидка от новой цены. Наследуется из параметров; рублёвая скидка показана в пересчёте на проценты.'],['net','Со скидкой, ₽','Новая цена после скидки. От неё считаются расходы и прибыль.','net']]},
     {id:'partner',label:'Партнёру',tip:'«В расчёте» — выплата с учётом прогноза активации, именно она вычитается из цены в МП. «За активацию» — полная выплата при использовании сертификата.',cols:[['partnerForecast','В расчёте, ₽','Выплата за активацию × прогноз активации. Именно эта сумма вычитается из цены при расчёте МП.'],['partnerPct','Доля цены, %','Выплата партнёру / цена со скидкой. Это доля партнёра, а не наша комиссия.'],['partnerRub','За активацию, ₽','Выплата партнёру за использованный сертификат. Для набора — выбранный прогноз; для услуги — себестоимость CRM.','exp']]},
-    {id:'mp',label:'Маржинальная прибыль',tip:'Цена со скидкой минус прогноз выплаты партнёру с учётом активации. Остальные расходы вычитаются в чистой прибыли.',cols:[['mpRub','МП, ₽','Цена со скидкой минус выплата партнёру в расчёте. Комиссии, налоги, упаковка и логистика вычитаются дальше в ЧП.','mp'],['margin','Маржа, %','Маржинальная прибыль / цена со скидкой.','m'],['m100','При 100%, %','Маржа, если каждый сертификат будет использован.','m100']]},
+    {id:'mp',label:'Маржинальная прибыль',tip:'Цена со скидкой минус прогноз выплаты партнёру с учётом активации. Остальные расходы вычитаются в чистой прибыли.',cols:[['mpRub','МП, ₽','Цена со скидкой минус выплата партнёру в расчёте. Комиссии, налоги, упаковка и логистика вычитаются дальше в ЧП.','mp'],['margin','Маржа, %','Маржинальная прибыль / цена со скидкой.','m']]},
     {id:'fees',label:'Комиссии и налоги',tip:'Эквайринг и налоги с продажи. Значения наследуются из параметров; правка в строке создаёт исключение.',cols:[['acqPct','Эквайринг, %','Комиссия банка в процентах от цены со скидкой.'],['acqRub','Эквайринг, ₽','Комиссия банка в рублях за продажу.'],['taxPct','Налоги, %','Ставка налога от цены со скидкой, из параметров прайса.'],['taxRub','Налоги, ₽','Налоги на одну продажу в рублях.']]},
     {id:'pack',label:'Упаковка',tip:'Расход на упаковку каждой продажи, из параметров прайса.',cols:[['packPct','Доля цены, %','Упаковка / цена со скидкой.'],['packRub','На продажу, ₽','Упаковка на одну продажу. Правка суммы фиксирует расход в рублях.']]},
     {id:'logistics',label:'Логистика',tip:'Доставка каждой продажи. По умолчанию — значение из параметров прайса.',cols:[['logisticsPct','Доля цены, %','Логистика / цена со скидкой.'],['logisticsRub','На продажу, ₽','Доставка на одну продажу. Правка суммы фиксирует расход в рублях.']]},
@@ -8130,7 +8133,7 @@ window.__salesActSetData = function(newData){
     GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'" data-tip="'+esc(g.tip)+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
     h+=headCell('Цена для цели, ₽','Новая цена, при которой (цена со скидкой − прогноз выплаты партнёру) / цена со скидкой равна целевой марже. Остальные расходы влияют на ЧП.',kind==='item'?null:'target','rowspan="2" class="key"');
     h+=headCell(kind==='service'?'В наборах':'Проверка',kind==='service'?'Количество наборов, содержащих услугу.':'Число убыточных услуг и услуг без выплаты партнёру.',kind==='item'?null:kind==='service'?'use':'loss','rowspan="2"')+'</tr><tr class="pr-column-head">';
-    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(kind==='set'&&c[0]==='m100'?'Худший, %':c[1],kind==='set'&&c[0]==='m100'?'Маржа при 100% активаций и максимальной выплате партнёру за услугу в составе набора. Считается независимо от выбранного прогноза.':c[2],kind==='item'?null:c[3],i===0?'class="pr-group-start"':'');});});return h+'</tr></thead>';
+    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],kind==='item'?null:c[3],i===0?'class="pr-group-start"':'');});});return h+'</tr></thead>';
   }
   function decimal(n){return Number.isFinite(n)?String(Math.round(n*100)/100):'';}
   function rowInput(ctx,field,mode,value,tip,changed){
@@ -8159,7 +8162,6 @@ window.__salesActSetData = function(newData){
       }else if(k==='partnerForecast'){text=fmtR(r.partnerForecast);}
       else if(k==='mpRub'){text=fmtR(r.mpAct);}
       else if(k==='margin'){text=fmtP(r.mAct);css=cls(r.mAct,p.t);}
-      else if(k==='m100'){text=fmtP(r.m100);css=cls(r.m100,p.t);}
       else if(k==='npRub'){text=fmtR(r.npAct);css=r.npAct<0?'bad':'';}
       else if(k==='npPct'){text=fmtP(r.nAct);css=r.nAct<0?'bad':'';}
       else {var mode=/Pct$/.test(k)?'pct':'rub';text=expense(k.replace(/Pct$|Rub$/,''),mode);}
@@ -8170,7 +8172,7 @@ window.__salesActSetData = function(newData){
   function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
-    var g={name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.id].price;},exp:function(s){return calc[s.id].exp;},mp:function(s){return calc[s.id].mpAct;},m:function(s){return calc[s.id].mAct;},m100:function(s){return calc[s.id].m100;},np:function(s){return calc[s.id].nAct;},npRub:function(s){return calc[s.id].npAct;},target:function(s){return calc[s.id].target;},loss:function(s){return calc[s.id].loss;}};
+    var g={name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.id].price;},exp:function(s){return calc[s.id].exp;},mp:function(s){return calc[s.id].mpAct;},m:function(s){return calc[s.id].mAct;},np:function(s){return calc[s.id].nAct;},npRub:function(s){return calc[s.id].npAct;},target:function(s){return calc[s.id].target;},loss:function(s){return calc[s.id].loss;}};
     sets=sortBy(sets,g);
     var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>';
     if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите «+ Новый набор» и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
@@ -8193,7 +8195,7 @@ window.__salesActSetData = function(newData){
   }
   function renderServices(){
     var u=usage(),list=filtered(allServices()),calc={};list.forEach(function(s){calc[s.sid]=calcService(s);});
-    list=sortBy(list,{name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.sid].price;},exp:function(s){return calc[s.sid].exp;},mp:function(s){return calc[s.sid].mpAct;},m:function(s){return calc[s.sid].mAct;},m100:function(s){return calc[s.sid].m100;},np:function(s){return calc[s.sid].nAct;},npRub:function(s){return calc[s.sid].npAct;},target:function(s){return calc[s.sid].target;},use:function(s){return u[s.sid]||0;}});
+    list=sortBy(list,{name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.sid].price;},exp:function(s){return calc[s.sid].exp;},mp:function(s){return calc[s.sid].mpAct;},m:function(s){return calc[s.sid].mAct;},np:function(s){return calc[s.sid].nAct;},npRub:function(s){return calc[s.sid].npAct;},target:function(s){return calc[s.sid].target;},use:function(s){return u[s.sid]||0;}});
     var total=list.length;list=list.slice(0,400);
     var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
@@ -8209,9 +8211,10 @@ window.__salesActSetData = function(newData){
     renderParams();
     root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-v") === state.view; b.classList.toggle("active", selected); b.setAttribute("aria-selected", String(selected)); b.setAttribute("aria-controls", "prTableWrap"); b.tabIndex = selected ? 0 : -1; });
     root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-c") === state.city; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
-    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-m") === state.mode; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
-    root.querySelector("#prModeGroup").hidden = state.view === "services";
-    root.querySelector("#prWorstHint").hidden = state.mode !== "max";
+    var services=state.view==="services",effectiveMode=services&&state.mode==="act"?"avg":state.mode;
+    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var mode=b.getAttribute("data-m"),selected=mode===effectiveMode;b.hidden=services&&mode==="act";b.textContent=mode==="avg"?(services?"По параметрам":"Средняя"):mode==="act"?"По активациям":"Худшая";b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
+    var activation=root.querySelector("#prActivation");activation.disabled=state.mode==="max";activation.value=state.mode==="max"?100:state.params.act;
+    root.querySelector("#prForecastHint").textContent=state.mode==="max"?(services?"100% использования · полная выплата партнёру":"100% использования · максимальная выплата из состава"):(services?"Указанный процент использования · выплата за услугу":"Указанный процент использования · выбранный прогноз выплаты");
     root.querySelector("#prNewSet").hidden = state.view === "services";
     root.querySelector("#prNewService").hidden = state.view !== "services";
     root.querySelector("#prHowSets").hidden = state.view === "services"; root.querySelector("#prHowServices").hidden = state.view !== "services";
@@ -8238,7 +8241,7 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
-    if (k && t.closest("#prParams")){ var v = parseFloat(t.value); if (isNaN(v)) return; state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
+    if (k && (t.closest("#prParams")||t.closest("#prModeGroup"))){ var v = parseFloat(t.value); if (isNaN(v)) return; if(k==="act"){v=Math.max(0,Math.min(100,v));t.value=v;} state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); if(t.closest(".pr-param"))t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
     if (t.id === "prQ"){ state.q = t.value; save(); if (state.view !== "services") renderSets(); else renderServices(); renderKpis(visibleSets()); return; }
 
   });
@@ -8326,9 +8329,9 @@ window.__salesActSetData = function(newData){
   root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
   root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
-    var rows=[['Наименование','Город','Текущая цена CRM, ₽','Новая цена, ₽','Скидка, ₽','Цена со скидкой, ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Маржа при 100% (набор — максимальная выплата), %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Цена для цели, ₽']];
+    var rows=[['Наименование','Город','Текущая цена CRM, ₽','Новая цена, ₽','Скидка, ₽','Цена со скидкой, ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Цена для цели, ₽']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
-    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.m100===null?null:r.m100*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target]);});
+    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target]);});
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
   }

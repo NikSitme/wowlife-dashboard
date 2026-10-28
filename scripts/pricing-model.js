@@ -40,9 +40,9 @@
     var price=netPrice(gross,p),parts={},V=0;
     KEYS.forEach(function(k){parts[k]=price*p.costs[k].pct+p.costs[k].rub;V+=parts[k];});
     if(p.partner)cost=p.partner.mode==='pct'?price*Math.max(0,Number(p.partner.value)||0)/100:Math.max(0,Number(p.partner.value)||0);
-    var r={price:price,V:V,expenses:parts,exp:cost,partnerShare:price>0&&cost!==null?cost/price:null,partnerForecast:cost===null?null:cost*p.a,target:targetPrice(cost,p),mpAct:null,mAct:null,mp100:null,m100:null,npAct:null,nAct:null,discount:Math.max(0,gross-price),p:p};
+    var r={price:price,V:V,expenses:parts,exp:cost,partnerShare:price>0&&cost!==null?cost/price:null,partnerForecast:cost===null?null:cost*p.a,target:targetPrice(cost,p),mpAct:null,mAct:null,npAct:null,nAct:null,discount:Math.max(0,gross-price),p:p};
     if(!(price>0)||cost===null||cost===undefined)return r;
-    r.mpAct=price-cost*p.a;r.mAct=r.mpAct/price;r.mp100=price-cost;r.m100=r.mp100/price;
+    r.mpAct=price-cost*p.a;r.mAct=r.mpAct/price;
     r.npAct=r.mpAct-V-price*p.fP-p.fR;r.nAct=r.npAct/price;
     return r;
   }
