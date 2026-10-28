@@ -7,13 +7,21 @@ const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 const defaults={act:60,acq:2,tax:7,pack:50,logistics:100,disc:10,target:40,fixed:5,ret:90};
 const modes={pack:'rub',logistics:'rub'};
 let p=model.parameters(defaults,modes,{}),r=model.calculate(2000,1000,p);
-near(r.price,1800);near(r.V,312);near(r.mpAct,888);near(r.npAct,798);near(r.mp100,488);
+near(r.price,1800);near(r.V,312);near(r.mpAct,1200);near(r.npAct,798);near(r.mp100,800);
 near(r.partnerShare,1000/1800);near(r.partnerForecast,600);
+near(r.mpAct,r.price-r.partnerForecast);
+near(r.npAct,r.mpAct-r.V-r.price*p.fP-p.fR);
+// The reported screenshot: margin excludes only partner; all other costs are deducted once in net profit.
+const screenshotParams=model.parameters({act:100,acq:516,tax:0,pack:69,logistics:143,disc:0,target:40,fixed:0},{acq:'rub',pack:'rub',logistics:'rub'},{});
+const screenshot=model.calculate(5736,4675,screenshotParams);
+near(screenshot.mpAct,1061);near(screenshot.npAct,333);near(screenshot.mp100,1061);
+const costChanged=model.calculate(5736,4675,model.parameters({act:100,acq:999,tax:0,pack:999,logistics:999,disc:0,target:40,fixed:0},{acq:'rub',pack:'rub',logistics:'rub'},{}));
+near(costChanged.mpAct,1061);near(costChanged.target,screenshot.target);assert.notEqual(costChanged.npAct,screenshot.npAct);
 near(model.calculate(r.target,1000,p).mAct,.4);
 // Worst case always activates every certificate and pays the most expensive service.
 const originalP=p;
 const worst=model.worstCase(2000,1000,p);
-near(worst.partnerForecast,1000);near(worst.mpAct,488);near(worst.npAct,398);
+near(worst.partnerForecast,1000);near(worst.mpAct,800);near(worst.npAct,398);
 near(worst.p.a,1);near(p.a,.6);assert.equal(originalP,p);
 near(model.worstCase(worst.target,1000,p).mAct,.4);
 const lowerForecast=model.parameters(defaults,modes,{partner:{mode:'rub',value:100}});
@@ -21,11 +29,11 @@ near(model.worstCase(2000,1000,lowerForecast).exp,1000);
 assert.equal(model.worstCase(2000,null,lowerForecast).mAct,null);
 // Row overrides use the correct base, preserve zero, and do not change global inputs.
 p=model.parameters(defaults,modes,{disc:{mode:'pct',value:0},logistics:{mode:'rub',value:0},acq:{mode:'rub',value:40}});
-r=model.calculate(2000,1000,p);near(r.price,2000);near(r.expenses.logistics,0);near(r.expenses.acq,40);near(r.mpAct,1170);
+r=model.calculate(2000,1000,p);near(r.price,2000);near(r.expenses.logistics,0);near(r.expenses.acq,40);near(r.mpAct,1400);
 assert.equal(defaults.logistics,100);assert.equal(defaults.disc,10);
-// A payout as a share of the discounted price also changes the target-price denominator.
+// With a percentage payout and no other cost in margin, changing price cannot change the margin.
 p=model.parameters(defaults,modes,{partner:{mode:'pct',value:70}});r=model.calculate(2000,1000,p);
-near(r.exp,1260);near(model.calculate(r.target,1000,p).mAct,.4);
+near(r.exp,1260);assert.equal(r.target,null);near(r.mAct,.58);
 p=model.parameters(defaults,modes,{disc:{mode:'pct',value:100}});r=model.calculate(2000,1000,p);
 assert.equal(r.price,0);assert.equal(r.mAct,null);assert.equal(r.target,null);
 assert.equal(model.calculate(2000,null,model.parameters(defaults,modes,{})).mpAct,null);
@@ -36,7 +44,7 @@ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
 body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
-const context={window:{WowlifePricing:model,__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
+const context={window:{WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
@@ -45,15 +53,15 @@ assert.equal(t.state.params.logistics,100);t.state.params.logistics=undefined;t.
 t.state.params={...defaults};t.state.pmode={...modes};t.ensureParams();
 t.setData({catalog:{a:{sid:'a',name:'A',partner:'One',city:'Мск',price:2000,cost:1000},b:{sid:'b',name:'B',partner:'Two',city:'Мск',price:1500,cost:500}},sets:[{id:'x',name:'Set',city:'Мск',price:2000,items:[{sid:'a',price:2000,cost:1000},{sid:'b',price:1500,cost:500}]}]},{counts:{'Мск':{One:3,Two:1}}});
 let set=t.allSets()[0];near(t.calcSet(set).exp,750);
-near(t.calcSet(set).mp100,488);near(t.calcSet(set).m100,488/1800);
+near(t.calcSet(set).mp100,800);near(t.calcSet(set).m100,800/1800);
 t.state.mode='max';near(t.calcSet(set).exp,1000);
 near(t.calcSet(set).partnerForecast,1000);near(t.calcSet(set).p.a,1);
-near(t.calcSet(set).mpAct,488);near(t.calcSet(set).npAct,398);
+near(t.calcSet(set).mpAct,800);near(t.calcSet(set).npAct,398);
 near(t.calcSet(set).mAct,t.calcSet(set).m100);assert.equal(t.state.params.act,60);
 t.state.rowParams['set:x']={partner:{mode:'rub',value:100}};
 near(t.calcSet(set).exp,1000);delete t.state.rowParams['set:x'];
 t.state.mode='act';near(t.calcSet(set).exp,875);
-near(t.calcSet(set).mp100,488);
+near(t.calcSet(set).mp100,800);
 t.state.rowParams['set:x']={logistics:{mode:'rub',value:0},disc:{mode:'pct',value:0}};
 let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,0);
 near(t.calcItem(set,set.items[0],calc).price,2000);
@@ -65,7 +73,7 @@ t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,200
 set=t.allSets()[0];calc=t.calcSet(set);
 const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
 assert.equal((cells.match(/<td /g)||[]).length+3,t.colCount());
-assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,29);
+assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,30);
 t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+3,t.colCount());
 t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
 t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);

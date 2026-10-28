@@ -30,9 +30,9 @@
   function targetPrice(cost,p){
     var share=p.partner&&p.partner.mode==='pct'?Math.max(0,Number(p.partner.value)||0)/100:null;
     var amount=p.partner&&p.partner.mode!=='pct'?Math.max(0,Number(p.partner.value)||0):cost;
-    var den=1-p.v-p.t-(share===null?0:share*p.a);
+    var den=1-p.t-(share===null?0:share*p.a);
     if(!(den>0)||!(p.discP<1)||(share===null&&(amount===null||amount===undefined)))return null;
-    var net=(p.vr+(share===null?amount*p.a:0))/den;
+    var net=(share===null?amount*p.a:0)/den;
     if(!(net>0))return null;
     return (net+p.discR)/(1-p.discP);
   }
@@ -42,8 +42,8 @@
     if(p.partner)cost=p.partner.mode==='pct'?price*Math.max(0,Number(p.partner.value)||0)/100:Math.max(0,Number(p.partner.value)||0);
     var r={price:price,V:V,expenses:parts,exp:cost,partnerShare:price>0&&cost!==null?cost/price:null,partnerForecast:cost===null?null:cost*p.a,target:targetPrice(cost,p),mpAct:null,mAct:null,mp100:null,m100:null,npAct:null,nAct:null,discount:Math.max(0,gross-price),p:p};
     if(!(price>0)||cost===null||cost===undefined)return r;
-    r.mpAct=price-V-cost*p.a;r.mAct=r.mpAct/price;r.mp100=price-V-cost;r.m100=r.mp100/price;
-    r.npAct=r.mpAct-price*p.fP-p.fR;r.nAct=r.npAct/price;
+    r.mpAct=price-cost*p.a;r.mAct=r.mpAct/price;r.mp100=price-cost;r.m100=r.mp100/price;
+    r.npAct=r.mpAct-V-price*p.fP-p.fR;r.nAct=r.npAct/price;
     return r;
   }
   function worstCase(gross,maxCost,p){return calculate(gross,maxCost,Object.assign({},p,{a:1,partner:null}));}
