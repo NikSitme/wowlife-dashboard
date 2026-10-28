@@ -15,11 +15,26 @@ assert.deepEqual(C.filter(services,'Мск',{q:'спа'}).map(s=>s.sid),['3']);
 assert.equal(C.filter(services,'Мск',{min:6000,max:100}).length,0);
 assert.deepEqual(C.filter(services,'Мск',{max:0}).map(s=>s.sid),['4']);
 assert.equal(C.filter(Array.from({length:1300},(_,i)=>({city:'Мск',name:'Услуга '+i,price:i,partner:'',category:'Без категории'})),'Мск',{}).length,1300,'No hidden 25/400-row cap');
+// Pagination covers the entire filtered/sorted catalog, including positions beyond the old cap.
+const many=Array.from({length:1251},(_,i)=>({sid:String(i),city:i%2?'СПб':'Мск',name:'Service '+i,price:i,partner:'',category:'Без категории'}));
+const sorted=C.filter(many,'Мск',{min:20,sort:'price-desc'});
+const pages=Array.from({length:Math.ceil(sorted.length/100)},(_,i)=>C.paginate(sorted,i+1));
+assert.equal(pages[0].items.length,100);assert.equal(pages[0].from,1);assert.equal(pages[0].to,100);
+assert.equal(pages[1].from,101);assert.equal(pages[1].to,200);
+assert.deepEqual(pages.flatMap(p=>p.items.map(s=>s.sid)),sorted.map(s=>s.sid),'Every matching service appears once, in the selected order');
+assert.equal(pages.at(-1).items.length,sorted.length%100);
+assert.equal(C.paginate(sorted,999).page,pages.length,'Clamp after deletion or a smaller filter result');
+assert.equal(C.paginate(sorted,0).page,1);
+assert.equal(C.paginate(many.slice(0,100),2).page,1,'Exactly 100 items need one page');
+assert.equal(C.paginate(many.slice(0,101),2).items.length,1);
+assert.deepEqual(C.paginate([],9),{items:[],page:1,pages:1,total:0,from:0,to:0});
 const fs=require('node:fs'),vm=require('node:vm'),html=fs.readFileSync('index.html','utf8');
 for(const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)){if(m[1].includes('application/json'))JSON.parse(m[2]);else if(m[2].trim())new vm.Script(m[2]);}
 assert(!html.includes('data-setcity='),'No second city selector inside set');
 assert(html.includes('data-catalog-filter="category"')&&html.includes('data-catalog-filter="partner"'));
 assert(!html.includes('function showAddResults'),'Old truncated autocomplete removed');
+assert(!html.includes('list.slice(0,400)'),'Main services table has no hard cutoff');
+assert.equal((html.match(/<nav class="pr-pagination"/g)||[]).length,2,'Pagination is outside the scroller, above and below');
 const data=JSON.parse(fs.readFileSync('data/pricing-categories.json','utf8'));
 assert(data.taxonomy.length>300);assert.equal(C.classifier(data.taxonomy)('Аренда катера Regal 2660'),'Водные развлечения');
 console.log('PASS service catalog: city isolation, combined filters, price boundaries, categories, uncapped results, syntax and city selector removal');

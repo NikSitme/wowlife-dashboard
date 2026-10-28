@@ -9,5 +9,12 @@
     var f=selection||{},q=norm(f.q),min=f.min===''||f.min==null?null:Number(f.min),max=f.max===''||f.max==null?null:Number(f.max);
     return services.filter(function(s){return s.city===city&&(!q||norm(s.name+' '+s.partner).indexOf(q)>=0)&&(!f.category||s.category===f.category)&&(!f.partner||s.partner===f.partner)&&(min===null||!Number.isFinite(min)||s.price>=min)&&(max===null||!Number.isFinite(max)||s.price<=max);}).sort(function(a,b){if(f.sort==='price-asc')return a.price-b.price||a.name.localeCompare(b.name,'ru');if(f.sort==='price-desc')return b.price-a.price||a.name.localeCompare(b.name,'ru');return a.name.localeCompare(b.name,'ru');});
   }
-  return {classifier:classifier,filter:filter};
+  function paginate(items,page,size){
+    size=Math.max(1,Math.floor(Number(size)||100));
+    var total=items.length,pages=Math.max(1,Math.ceil(total/size));
+    page=Math.min(pages,Math.max(1,Math.floor(Number(page)||1)));
+    var start=(page-1)*size;
+    return {items:items.slice(start,start+size),page:page,pages:pages,total:total,from:total?start+1:0,to:Math.min(start+size,total)};
+  }
+  return {classifier:classifier,filter:filter,paginate:paginate};
 });
