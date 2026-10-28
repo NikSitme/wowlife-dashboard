@@ -1,0 +1,34 @@
+.profit-calculator { padding: 16px 0 32px; }
+.pc-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.pc-heading h2 { font-size: 28px; margin: 0 0 8px; }
+.pc-heading p { font-size: 18px; color: var(--s1); margin: 0; }
+.pc-storage, .pc-hint, .pc-percent-note { font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+.profit-calculator .pc-card { padding: 30px; border-radius: 20px; }
+.pc-card-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--border); padding-bottom: 22px; margin-bottom: 30px; }
+.pc-card-heading h3 { font-size: 25px; line-height: 1.35; margin: 0; font-weight: 650; }
+.pc-reset { font: inherit; font-size: 15px; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; min-height: 44px; padding: 10px 16px; cursor: pointer; }
+.pc-layout { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 40px; }
+.pc-inputs { min-width: 0; }
+.pc-field { display: grid; grid-template-columns: minmax(0,1fr) 185px; align-items: center; gap: 20px; margin-bottom: 20px; font-size: 18px; line-height: 1.4; }
+.pc-control { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); }
+.pc-control input { box-sizing: border-box; width: 155px; min-height: 54px; font: inherit; font-size: 20px; font-variant-numeric: tabular-nums; text-align: right; padding: 12px; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 11px; }
+.pc-control input[aria-invalid=true] { border-color: var(--bad); }
+.pc-control input:focus-visible, .pc-reset:focus-visible { outline: 2px solid var(--s1); outline-offset: 3px; }
+.pc-hint { margin: -8px 0 24px; }
+.pc-error { min-height: 22px; font-size: 14px; line-height: 1.5; color: var(--bad); margin: 0; }
+.pc-summary { min-width: 0; padding: 24px; background: color-mix(in srgb, var(--s1) 5%, var(--surface-1)); border: 1px solid var(--border); border-radius: 20px; }
+.pc-summary table { width: 100%; border-collapse: collapse; font-size: 18px; font-variant-numeric: tabular-nums; }
+.pc-summary th, .pc-summary td { padding: 12px 0; border: 0; background: transparent; white-space: normal; }
+.pc-summary th { text-align: left; font-weight: 400; color: var(--text-secondary); width: 49%; }
+.pc-summary td { text-align: right; padding-left: 14px; white-space: nowrap; }
+.pc-summary thead th { font-size: 12px; padding-top: 0; color: var(--text-muted); }
+.pc-summary thead th:not(:first-child) { width: auto; text-align: right; }
+.pc-summary [data-profit-result=revenue], .pc-summary [data-profit-result=margin], .pc-summary [data-profit-result=fixed] { color: var(--s1); }
+.pc-summary .pc-total th, .pc-summary .pc-total td { border-top: 1px solid var(--border); padding-top: 24px; font-weight: 650; font-size: 22px; color: var(--text-primary); }
+.pc-summary .pc-total.pc-loss td { color: var(--bad); }
+.pc-percent-note { margin: 16px 0 0; }
+.pc-percent-note[hidden] { display: none; }
+.pc-formula { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); margin-top: 26px; padding-top: 20px; font-size: 14px; color: var(--text-muted); }
+.pc-formula output { color: var(--text-primary); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media(max-width: 1100px) { .pc-layout { grid-template-columns: 1fr; gap: 12px; } .pc-field { grid-template-columns: minmax(0,1fr) 230px; } .pc-control input { width: 200px; } }
+@media(max-width: 600px) { .profit-calculator .pc-card { padding: 20px 16px; } .pc-card-heading { align-items: start; } .pc-card-heading h3 { font-size: 21px; } .pc-field { grid-template-columns: 1fr; gap: 8px; } .pc-control input { width: calc(100% - 30px); } .pc-summary { padding: 16px 12px; } .pc-summary table { font-size: 14px; } .pc-summary .pc-total th, .pc-summary .pc-total td { font-size: 17px; } .pc-summary td { padding-left: 8px; white-space: normal; } .pc-summary th { width: 42%; } }

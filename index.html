@@ -481,6 +481,7 @@
     <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
     <button class="tabbtn" data-tab="finmodel" type="button">Финмодель</button>
     <button class="tabbtn" data-tab="pricing" type="button">Ценообразование</button>
+    <button class="tabbtn" data-tab="calculators" type="button">Калькуляторы</button>
   </div>
   <div class="docs-bar"><button type="button" class="chip docs-btn" id="docsBtn">💡 Документация</button></div>
 
@@ -3677,6 +3678,36 @@ window.__salesActSetData = function(newData){
     <table class="mk-table"><tbody id="mkContent"></tbody></table>
   </div>
 
+  </div>
+
+  <div class="tabpanel" data-panel="calculators" hidden>
+    <link rel="stylesheet" href="./styles/calculators.css?v=20261028">
+    <section class="profit-calculator" aria-labelledby="calculatorTitle">
+      <div class="pc-heading"><div><h2 id="calculatorTitle">Калькуляторы</h2><p>Чистая прибыль</p></div><span class="pc-storage">Расчёт сохраняется в этом браузере</span></div>
+      <article class="card pc-card" aria-labelledby="profitFormulaTitle">
+        <div class="pc-card-heading"><h3 id="profitFormulaTitle">«Золотая» формула чистой прибыли</h3><button type="button" class="pc-reset" id="profitReset">Сбросить</button></div>
+        <div class="pc-layout">
+          <form class="pc-inputs" id="profitForm" novalidate>
+            <label class="pc-field" for="profitRevenue"><span>Выручка</span><span class="pc-control"><input type="text" inputmode="decimal" id="profitRevenue" data-profit-input="revenue" value="0" autocomplete="off" aria-describedby="profitError"><span>₽</span></span></label>
+            <label class="pc-field" for="profitMargin"><span>Маржинальность</span><span class="pc-control"><input type="text" inputmode="decimal" id="profitMargin" data-profit-input="margin" value="0" autocomplete="off" aria-describedby="profitMarginHint profitError"><span>%</span></span></label>
+            <p class="pc-hint" id="profitMarginHint">Доля выручки после всех переменных расходов: выплат партнёрам, комиссий, налогов с продаж, упаковки и логистики.</p>
+            <label class="pc-field" for="profitFixed"><span>Постоянные расходы и расходы на развитие</span><span class="pc-control"><input type="text" inputmode="decimal" id="profitFixed" data-profit-input="fixed" value="0" autocomplete="off" aria-describedby="profitError"><span>₽</span></span></label>
+            <p class="pc-hint">Введите все показатели за один период. Каждая сумма расходов учитывается один раз.</p>
+            <p class="pc-error" id="profitError" role="status" aria-live="polite"></p>
+          </form>
+          <div class="pc-summary" aria-label="Результат расчёта">
+            <table><thead><tr><th scope="col">Показатель</th><th scope="col">Сумма, ₽</th><th scope="col">% выручки</th></tr></thead><tbody>
+              <tr><th scope="row">Выручка</th><td data-profit-result="revenue">0 ₽</td><td data-profit-result="revenuePercent">—</td></tr>
+              <tr><th scope="row">Маржинальная прибыль</th><td data-profit-result="contribution">0 ₽</td><td data-profit-result="margin">0 %</td></tr>
+              <tr><th scope="row">Постоянные расходы и расходы на развитие</th><td data-profit-result="fixed">0 ₽</td><td data-profit-result="fixedPercent">—</td></tr>
+              <tr class="pc-total"><th scope="row">Чистая прибыль</th><td data-profit-result="profit">0 ₽</td><td data-profit-result="profitPercent">—</td></tr>
+            </tbody></table>
+            <p class="pc-percent-note" id="profitPercentNote">При нулевой выручке доли расходов и прибыли не определены.</p>
+          </div>
+        </div>
+        <div class="pc-formula"><span>Выручка × маржинальность − постоянные расходы и расходы на развитие</span><output id="profitEquation" aria-live="polite">0 ₽ × 0 % − 0 ₽ = 0 ₽</output></div>
+      </article>
+    </section>
   </div>
 
   <div class="tabpanel" data-panel="pricing" hidden>
@@ -8392,4 +8423,6 @@ window.__salesActSetData = function(newData){
 })();
 </script>
 
+<script src="./scripts/profit-calculator-model.js?v=20261028"></script>
+<script src="./scripts/profit-calculator.js?v=20261028"></script>
 </html>
