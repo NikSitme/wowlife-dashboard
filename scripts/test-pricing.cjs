@@ -45,7 +45,7 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='';
 const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
@@ -126,3 +126,21 @@ const policyHeaders=t.pricingHead('service');assert(policyHeaders.indexOf('data-
 t.state.collapsed.commission=true;const policyCells=t.financialCells(refSvc,policy,{key:'service:10884',kind:'service'});
 assert(policyCells.includes('data-price-component="commissionPct"'));assert(policyCells.includes('data-price-component="commissionRub"'));
 console.log('PASS commission-first policy: full activation, exact model target, preserved CRM, every pricing view, fixed minimum and commission priority');
+// Sort actual numbers, not formatted strings; percentages and rubles are separate fields.
+t.setCommissions([{id:'10',name:'Ten',type:'Партнер',terms:'10%'},{id:'20',name:'Twenty',type:'Партнер',terms:'20%'}]);
+t.state.params.act=60;t.state.params.disc=0;t.state.rowParams={};
+const sortRows=[{sid:'a',name:'A',basePrice:6000,price:6000,cost:4500,partner:'Ten'},{sid:'b',name:'B',basePrice:1400,price:1400,cost:800,partner:'Twenty'},{sid:'c',name:'C',basePrice:1800,price:1800,cost:900,partner:'Unknown'}];
+const sortCalc=Object.fromEntries(sortRows.map(s=>[s.sid,t.calcService(s)])),getters=t.financialGetters(sortCalc,'sid');
+const order=(key,d=1)=>Array.from(t.sortBy(sortRows,getters,{k:key,d}),s=>s.sid);
+assert.deepEqual(order('commissionPct'),['a','b','c']);assert.deepEqual(order('commissionPct',-1),['b','a','c']);
+assert.deepEqual(order('commissionRub'),['b','a','c']);assert.deepEqual(order('commissionRub',-1),['a','b','c']);
+assert.deepEqual(order('markupRub'),['b','a','c']);assert.deepEqual(order('markupPct'),['a','b','c']);
+assert.deepEqual(order('openRub'),['b','a','c']);assert.deepEqual(order('openRub',-1),['a','b','c']);
+assert.deepEqual(order('partnerFull'),['b','c','a']);assert.deepEqual(order('acqRub'),['b','c','a']);
+const sortableKeys=['commissionPct','commissionRub','markupRub','markupPct','openRub','current','discount','partnerPct','partnerForecast','acqPct','acqRub','taxPct','taxRub','packPct','packRub','logisticsPct','logisticsRub','npRub'];
+t.state.collapsed={};const expandedHeaders=t.pricingHead('service');
+for(const key of sortableKeys)assert(expandedHeaders.includes('data-s="'+key+'"'),key+' must have a sortable header');
+const nestedHeaders=t.pricingHead('item',true);assert(nestedHeaders.includes('data-item-s="commissionPct"'));assert(nestedHeaders.includes('data-item-s="weight"'));assert(!/\sdata-s=/.test(nestedHeaders));
+t.state.collapsed={commission:true,markup:true,open:true,fees:true,pack:true,logistics:true};const foldedHeaders=t.pricingHead('service');
+for(const key of ['commissionPct','commissionRub','markupRub','openRub','feesSum','packRub','logisticsRub'])assert(foldedHeaders.includes('data-s="'+key+'"'),key+' remains sortable while folded');
+console.log('PASS numeric sorting: commission percent/rubles, markup, cost, expenses, both directions, unknowns last and separate composition headers');

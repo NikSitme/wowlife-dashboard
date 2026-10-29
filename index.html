@@ -569,7 +569,7 @@
       <p>Конструктор наборов и прайс услуг по логике standfin (созвон 04.10.2026): в цену закладываются только <b>переменные расходы</b>, постоянные (ФОТ, аренда, маркетинг) покрываются маржой и в прайс не входят; чистая прибыль показывается справочно. Инструкция «что сделать / что получаем / зачем / почему так» — в каждом блоке вкладки.</p>
       <ul>
         <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Актуальные наборы и их состав определяются этими двумя листами (уточнение Никиты 28.10). Прайс услуг — листы «Услуги Мск/СПб»: цена сайта берётся из столбца H «стоимость со скидкой», себестоимость — из исходной таблицы. Цена самих наборов пока остаётся прежней по указанию Никиты 29.10. Услуги, отсутствующие в общем прайсе, дополняются из состава наборов и отмечаются «из состава набора»; их цена сайта неизвестна, показывается прочерк. Пустая/ошибочная цена не заменяется старым столбцом «стоимость» или нулём. Партнёр у таких строк не угадывается. Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить из CRM» скачивает заново.</li>
-        <li><b>Столбцы.</b> Группы «Цена», «Партнёру», «Маржинальная прибыль», «Комиссии и налоги», «Упаковка», «Логистика», «Чистая прибыль». Группы можно свернуть. «Новая» цена начинается с текущей цены CRM; «Текущая» сохраняет исходник. Расходы и дополнительная скидка наследуются из параметров, пока их не изменили в строке. Скидка исходного прайса уже включена в цену услуги. Правка процента задаёт долю цены со скидкой, правка суммы фиксирует расход в рублях. ↺ возвращает строку к параметрам. Подсказки в заголовках объясняют показатели.</li>
+        <li><b>Столбцы.</b> Группы «Цена», «Партнёру», «Маржинальная прибыль», «Комиссии и налоги», «Упаковка», «Логистика», «Чистая прибыль». Группы можно свернуть. «Новая» цена начинается с текущей цены CRM; «Текущая» сохраняет исходник. Расходы и дополнительная скидка наследуются из параметров, пока их не изменили в строке. Скидка исходного прайса уже включена в цену услуги. Правка процента задаёт долю цены со скидкой, правка суммы фиксирует расход в рублях. ↺ возвращает строку к параметрам. Подсказки в заголовках объясняют показатели. По числовым заголовкам доступна сортировка в обе стороны, включая свёрнутые итоги; неизвестные значения внизу. Состав набора сортируется отдельно. Услуги сортируются до разбиения на страницы.</li>
         <li><b>Параметры.</b> Эквайринг, логистика и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; логистика — сумма статей доставки / выручка сайта за тот же период; возвраты исключены из ценообразования; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); минимальная маржа 20 % за полную активацию; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
         <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (максимальная выплата партнёру за услугу; активация всегда 100%) или взвешенная по частоте активаций партнёров. МП = P − C × активация; маржа = МП / P. В прогнозе «Худшая» набор использует 100 % активаций и максимальную выплату из состава; отдельная правка прогноза выплаты набора здесь не применяется. Для услуги этот прогноз использует 100 % активаций и полную выплату за услугу. МП, маржа, ЧП и целевая цена показывают только выбранный прогноз, отдельного худшего показателя нет. ЧП = МП − V − постоянные (P × % или ₽). Цена по правилу: при комиссии от 20% используем открытую цену без наценки, при меньшей комиссии — полную выплату / 0,8; затем учитываем дополнительную скидку модели. Прогноз использования не уменьшает этот порог. Услуга «убыточна при активации», если P − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
@@ -7923,7 +7923,7 @@ window.__salesActSetData = function(newData){
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v4-discounted", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
-  var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
@@ -7953,8 +7953,8 @@ window.__salesActSetData = function(newData){
   function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
 
   // ---------- хранение ----------
-  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","rowParams","collapsed","view","city","mode","sort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
@@ -8173,9 +8173,25 @@ window.__salesActSetData = function(newData){
     return list.filter(function(x){ return (state.city === "all" || x.city === state.city) && (!q || (x.name + " " + (x.partner || "") + " " + (x.items ? x.items.map(function(i){ return i.name + " " + i.partner; }).join(" ") : "")).toLowerCase().indexOf(q) >= 0); });
   }
   function visibleSets(){ return filtered(allSets().filter(function(s){ return state.view === "newsets" ? s.custom : !s.custom; })); }
-  function sortBy(list, getters){
-    var k = state.sort.k, g = getters[k] || getters.name, d = state.sort.d;
-    return list.slice().sort(function(a, b){ var x = g(a), y = g(b); if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1; if (typeof x === "string") return x.localeCompare(y, "ru") * d; return (x - y) * d; });
+  function sortBy(list, getters, selected){
+    var selected=selected||state.sort,k=selected.k,g=getters[k]||getters.name,d=selected.d;
+    function missing(v){return v===null||v===undefined||typeof v==='number'&&!Number.isFinite(v);}
+    return list.slice().sort(function(a,b){var x=g(a),y=g(b);if(missing(x)||missing(y))return missing(x)===missing(y)?0:missing(x)?1:-1;if(typeof x==='string')return x.localeCompare(y,'ru')*d;return (x-y)*d;});
+  }
+  function financialValue(s,r,key){
+    var v=r.structure||{},values={current:s.basePrice,proposal:s.price,price:s.price,net:r.price,discount:r.p.discR>0?(s.price>0?r.discount/s.price:null):r.p.discP,markupRub:v.markup,markupPct:v.markupShare,openRub:v.open,commissionPct:v.rate,commissionRub:v.commission,partnerRub:r.exp,partnerFull:r.exp,partnerPct:r.partnerShare,partnerForecast:r.partnerForecast,mpRub:r.mpAct,margin:r.mAct,npRub:r.npAct,npPct:r.nAct,target:r.target,exp:r.exp,mp:r.mpAct,m:r.mAct,np:r.nAct,loss:r.loss,feesSum:r.price===null?null:r.expenses.acq+r.expenses.tax};
+    if(Object.prototype.hasOwnProperty.call(values,key))return values[key];
+    var match=key.match(/^(acq|tax|pack|logistics)(Rub|Pct)$/);
+    if(!match)return null;
+    var cost=r.p.costs[match[1]];
+    return match[2]==='Rub'?r.expenses[match[1]]:cost.rub>0?(r.price>0?r.expenses[match[1]]/r.price:null):cost.pct;
+  }
+  function financialGetters(calc,idKey,parent){
+    var getters={name:function(s){return s.name;}};
+    var keys=['price','net','target','exp','mp','m','np','npRub','loss','partnerFull','feesSum'];
+    GROUPS.forEach(function(g){g.cols.forEach(function(c){if(c[0]!=='commissionTerms')keys.push(c[0]);});});
+    keys.forEach(function(key){getters[key]=function(s){return financialValue(parent||s,calc[s[idKey]],key);};});
+    return getters;
   }
   var GROUPS = [
     {id:'price',label:'Цена',tip:'Цена услуги из столбца «стоимость со скидкой»; для набора текущая цена из его листа. Новая цена и дополнительная скидка относятся к модели.',cols:[['current','Цена на сайте, ₽','Услуга: столбец «стоимость со скидкой» исходного прайса. Набор: текущая цена из листа набора. Не меняется при моделировании.'],['proposal','Новая цена, ₽','Предложенная цена. Изначально равна цене сайта; CRM не меняется.','price'],['discount','Доп. скидка, %','Дополнительная скидка от новой цены; скидка исходного прайса уже учтена в цене услуги. Наследуется из параметров; рублёвая скидка показана в пересчёте на проценты.'],['net','Со скидкой, ₽','Новая цена после скидки. От неё считаются наценка, расходы и прибыль.','net']]},
@@ -8189,23 +8205,25 @@ window.__salesActSetData = function(newData){
     {id:'logistics',label:'Логистика',tip:'Доставка каждой продажи. По умолчанию — значение из параметров прайса.',cols:[['logisticsPct','Доля цены, %','Логистика / цена со скидкой.'],['logisticsRub','На продажу, ₽','Доставка на одну продажу. Правка суммы фиксирует расход в рублях.']]},
     {id:'np',label:'Чистая прибыль',tip:'Маржинальная прибыль минус эквайринг, налоги, упаковка, логистика и постоянные расходы из параметров прайса.',cols:[['npRub','ЧП, ₽','Прибыль после всех расходов строки и доли постоянных расходов.','npRub'],['npPct','ЧП, %','Чистая прибыль / цена со скидкой.','np']]}
   ];
+  GROUPS.forEach(function(g){g.cols.forEach(function(c){if(c[0]!=='commissionTerms'&&!c[3])c[3]=c[0];});});
   function visibleCols(g){
     if(!state.collapsed[g.id])return g.cols;
     if(g.id==='open')return g.cols;
     if(g.id==='commission')return g.cols.slice(0,2);
     if(g.id==='price')return [['net','Цена, ₽','Цена для расчётов. Изначально — стоимость со скидкой из таблицы для услуги или текущая цена набора. Исходник и настройки модели доступны при раскрытии.','net']];
-    if(g.id==='partner')return [['partnerFull','За активацию, ₽','Полная выплата. Открытая цена − комиссия WOWlife.'],['partnerForecast','В расчёте, ₽','Полная выплата × прогноз использования. Именно она вычитается в МП.']];
-    return [['summary','Итого, ₽',g.tip]];
+    if(g.id==='partner')return [['partnerFull','За активацию, ₽','Полная выплата. Открытая цена − комиссия WOWlife.','partnerFull'],['partnerForecast','В расчёте, ₽','Полная выплата × прогноз использования. Именно она вычитается в МП.','partnerForecast']];
+    var key={markup:'markupRub',mp:'mpRub',fees:'feesSum',pack:'packRub',logistics:'logisticsRub',np:'npRub'}[g.id];
+    return [['summary','Итого, ₽',g.tip,key]];
   }
   function colCount(weight){return 3+(weight?1:0)+GROUPS.reduce(function(n,g){return n+visibleCols(g).length;},0);}
-  function headCell(label,tip,sort,extra){return '<th '+(extra||'')+(sort?' data-s="'+sort+'"':'')+' data-tip="'+esc(tip)+'" tabindex="0">'+esc(label)+(sort&&state.sort.k===sort?(state.sort.d>0?' ↑':' ↓'):'')+'</th>';}
+  function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort;return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' data-tip="'+esc(tip+(sort?' Нажмите для сортировки; повторный клик меняет направление.':''))+'" tabindex="0">'+esc(label)+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
   function pricingHead(kind,weight){
-    var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.',kind==='item'?null:'name','rowspan="2"');
-    if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.',null,'rowspan="2"');
+    var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.','name','rowspan="2"',kind==='item');
+    if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.','weight','rowspan="2"',true);
     GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'" data-tip="'+esc(g.tip)+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
-    h+=headCell('Цена по правилу, ₽','Сначала комиссия: от 20% — открытая цена без наценки; ниже — полная выплата / 0,8. Рекомендуемая новая цена учитывает скидку. Для набора — по выбранному прогнозу выплаты, без уменьшения на процент использования. Метка сравнивает модель с правилом; цена сайта не меняется.',kind==='item'?null:'target','rowspan="2" class="key"');
+    h+=headCell('Цена по правилу, ₽','Сначала комиссия: от 20% — открытая цена без наценки; ниже — полная выплата / 0,8. Рекомендуемая новая цена учитывает скидку. Для набора — по выбранному прогнозу выплаты, без уменьшения на процент использования. Метка сравнивает модель с правилом; цена сайта не меняется.','target','rowspan="2" class="key"',kind==='item');
     h+=headCell(kind==='service'?'В наборах':'Проверка',kind==='service'?'Количество наборов, содержащих услугу.':'Число убыточных услуг и услуг без выплаты партнёру.',kind==='item'?null:kind==='service'?'use':'loss','rowspan="2"')+'</tr><tr class="pr-column-head">';
-    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],kind==='item'?null:c[3],i===0?'class="pr-group-start"':'');});});return h+'</tr></thead>';
+    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],c[3],i===0?'class="pr-group-start"':'',kind==='item');});});return h+'</tr></thead>';
   }
   function decimal(n){return Number.isFinite(n)?String(Math.round(n*100)/100):'';}
   function rowInput(ctx,field,mode,value,tip,changed){
@@ -8252,8 +8270,7 @@ window.__salesActSetData = function(newData){
   function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
-    var g={name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.id].price;},exp:function(s){return calc[s.id].exp;},mp:function(s){return calc[s.id].mpAct;},m:function(s){return calc[s.id].mAct;},np:function(s){return calc[s.id].nAct;},npRub:function(s){return calc[s.id].npAct;},target:function(s){return calc[s.id].target;},loss:function(s){return calc[s.id].loss;}};
-    sets=sortBy(sets,g);
+    sets=sortBy(sets,financialGetters(calc,"id"));
     var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>';
     if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите «+ Новый набор» и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
     sets.forEach(function(s){var r=calc[s.id],key='set:'+s.id,open=!!state.open[s.id];
@@ -8268,14 +8285,16 @@ window.__salesActSetData = function(newData){
     h+='<span class="muted">'+(s.city==='СПб'?'Петербург':'Москва')+'</span>';
     h+='<span class="pr-item-actions">'+(r.target!==null?'<button type="button" class="pr-btn soft" data-apply="'+esc(s.id)+'">Применить цену по правилу: '+fmtR(r.target)+'</button>':'')+'<button type="button" class="pr-btn" data-dup="'+esc(s.id)+'">Дублировать</button><button type="button" class="pr-btn quiet" '+(s.custom?'data-del':'data-hide')+'="'+esc(s.id)+'">'+(s.custom?'Удалить':'Скрыть')+'</button></span></div>';
     h+='<table class="pr-table pr-items pr-financial">'+pricingHead('item',!!w)+'<tbody>';
-    s.items.slice().sort(function(a,b){return (b.cost||0)-(a.cost||0);}).forEach(function(it){var c=calcItem(s,it,r);
+    var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
+    var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
+    sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
       h+='<tr><td><span class="nm">'+esc(it.name)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+ruleCell(c,'item',it.sid)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
   function renderServices(){
     var u=usage(),list=filtered(allServices()),calc={};list.forEach(function(s){calc[s.sid]=calcService(s);});
-    list=sortBy(list,{name:function(s){return s.name;},price:function(s){return s.price;},net:function(s){return calc[s.sid].price;},exp:function(s){return calc[s.sid].exp;},mp:function(s){return calc[s.sid].mpAct;},m:function(s){return calc[s.sid].mAct;},np:function(s){return calc[s.sid].nAct;},npRub:function(s){return calc[s.sid].npAct;},target:function(s){return calc[s.sid].target;},use:function(s){return u[s.sid]||0;}});
+    var getters=financialGetters(calc,'sid');getters.use=function(s){return u[s.sid]||0;};list=sortBy(list,getters);
     if(serviceRevealId){var revealIndex=list.findIndex(function(s){return s.sid===serviceRevealId;});if(revealIndex>=0)servicePage=Math.floor(revealIndex/100)+1;serviceRevealId=null;}
     var page=window.WowlifeServiceCatalog.paginate(list,servicePage,100);servicePage=page.page;list=page.items;
     renderServicePagination(page);
@@ -8381,6 +8400,7 @@ window.__salesActSetData = function(newData){
     if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.view = "newsets"; state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ root.querySelector("#prTableWrap").scrollTop = 0; inp.focus(); inp.select(); } return; }
     if (t.closest("#prNewService")){ var sid = newId(); state.customServices[sid] = { sid: sid, name: "Новая услуга", partner: "", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, cost: 0 }; state.q = ""; serviceRevealId = sid; save(); render(); var i2 = root.querySelector('[data-sname="' + sid + '"]'); if (i2){ i2.scrollIntoView({ block: "center" }); i2.focus(); i2.select(); } return; }
     if (t.closest("#prCsv")){ exportCsv(); return; }
+    if ((b=t.closest('th[data-item-s]'))){var itemKey=b.getAttribute('data-item-s');if(state.itemSort.k===itemKey)state.itemSort.d=-state.itemSort.d;else state.itemSort={k:itemKey,d:itemKey==='name'?1:-1};save();renderSets();return;}
     if ((b = t.closest("th[data-s]"))){ resetServicePage(); var k = b.getAttribute("data-s"); if (state.sort.k === k) state.sort.d = -state.sort.d; else state.sort = { k: k, d: (k === "name" || k === "partner" || k === "city") ? 1 : -1 }; save(); render(); return; }
     if ((b=t.closest('[data-rule-service]'))){id=b.getAttribute('data-rule-service');var ruleSvc=serviceOf(id);if(!ruleSvc)return;var ruleResult=calcService(ruleSvc);if(ruleResult.target===null)return;sov(id).price=ruleResult.target;save();render();return;}
     if ((b = t.closest("[data-apply]"))){ id = b.getAttribute("data-apply"); var s = allSets().filter(function(x){ return x.id === id; })[0]; if (!s) return; var r = calcSet(s); if (r.target === null) return; var np = r.target; var cs = findCustomSet(id); if (cs) cs.price = np; else ov(id).price = np; save(); render(); return; }
@@ -8453,7 +8473,7 @@ window.__salesActSetData = function(newData){
   root.addEventListener('focusin',function(e){if(e.target.closest('th[data-tip]'))showTip(e.target);});
   root.addEventListener('focusout',hideTip);
   root.addEventListener('scroll',hideTip,true);
-  root.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();});
+  root.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();var th=e.target.closest('th[data-s],th[data-item-s]');if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();th.click();}});
 
 
 
