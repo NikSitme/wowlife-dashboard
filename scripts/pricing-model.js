@@ -30,12 +30,13 @@
   function targetPrice(cost,p){
     var share=p.partner&&p.partner.mode==='pct'?Math.max(0,Number(p.partner.value)||0)/100:null;
     var amount=p.partner&&p.partner.mode!=='pct'?Math.max(0,Number(p.partner.value)||0):cost;
-    var den=1-p.t-(share===null?0:share*p.a);
-    if(!(den>0)||!(p.discP<1)||(share===null&&(amount===null||amount===undefined)))return null;
-    var net=(share===null?amount*p.a:0)/den;
-    if(!(net>0))return null;
+    var den=1-p.v-p.fP-(share===null?0:share*p.a);
+    if(!(den>0)||!(p.discP<1)||(share===null&&(amount===null||amount===undefined||!Number.isFinite(amount))))return null;
+    var net=((share===null?amount*p.a:0)+p.vr+p.fR)/den;
+    if(!Number.isFinite(net)||net<0)return null;
     return (net+p.discR)/(1-p.discP);
   }
+
   function calculate(gross,cost,p){
     var price=Number.isFinite(gross)?netPrice(gross,p):null,parts={},V=price===null?null:0;
     KEYS.forEach(function(k){parts[k]=price===null?null:price*p.costs[k].pct+p.costs[k].rub;if(price!==null)V+=parts[k];});

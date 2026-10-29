@@ -16,14 +16,14 @@ const screenshotParams=model.parameters({act:100,acq:516,tax:0,pack:69,logistics
 const screenshot=model.calculate(5736,4675,screenshotParams);
 near(screenshot.mpAct,1061);near(screenshot.npAct,333);
 const costChanged=model.calculate(5736,4675,model.parameters({act:100,acq:999,tax:0,pack:999,logistics:999,disc:0,target:40,fixed:0},{acq:'rub',pack:'rub',logistics:'rub'},{}));
-near(costChanged.mpAct,1061);near(costChanged.target,screenshot.target);assert.notEqual(costChanged.npAct,screenshot.npAct);
-near(model.calculate(r.target,1000,p).mAct,.4);
+near(costChanged.mpAct,1061);assert(costChanged.target>screenshot.target);near(model.calculate(screenshot.target,4675,screenshotParams).npAct,0);assert.notEqual(costChanged.npAct,screenshot.npAct);
+near(model.calculate(r.target,1000,p).npAct,0);
 // Worst case always activates every certificate and pays the most expensive service.
 const originalP=p;
 const worst=model.worstCase(2000,1000,p);
 near(worst.partnerForecast,1000);near(worst.mpAct,800);near(worst.npAct,398);
 near(worst.p.a,1);near(p.a,.6);assert.equal(originalP,p);
-near(model.worstCase(worst.target,1000,p).mAct,.4);
+near(model.worstCase(worst.target,1000,p).npAct,0);
 const lowerForecast=model.parameters(defaults,modes,{partner:{mode:'rub',value:100}});
 near(model.worstCase(2000,1000,lowerForecast).exp,1000);
 assert.equal(model.worstCase(2000,null,lowerForecast).mAct,null);
@@ -33,7 +33,7 @@ r=model.calculate(2000,1000,p);near(r.price,2000);near(r.expenses.logistics,0);n
 assert.equal(defaults.logistics,100);assert.equal(defaults.disc,10);
 // With a percentage payout and no other cost in margin, changing price cannot change the margin.
 p=model.parameters(defaults,modes,{partner:{mode:'pct',value:70}});r=model.calculate(2000,1000,p);
-near(r.exp,1260);assert.equal(r.target,null);near(r.mAct,.58);
+near(r.exp,1260);near(model.calculate(r.target,1000,p).npAct,0);near(r.mAct,.58);
 p=model.parameters(defaults,modes,{disc:{mode:'pct',value:100}});r=model.calculate(2000,1000,p);
 assert.equal(r.price,0);assert.equal(r.mAct,null);assert.equal(r.target,null);
 assert.equal(model.calculate(2000,null,model.parameters(defaults,modes,{})).mpAct,null);
@@ -102,30 +102,32 @@ near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);
 near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
-t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,26);assert.equal(exportLines[1].split(';').length,26);console.log('PASS pricing CSV: full filtered selection and 26 aligned columns');
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,24);assert.equal(exportLines[1].split(';').length,24);console.log('PASS pricing CSV: full filtered selection and 24 aligned columns');
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
 t.setData({catalog:{'10884':{sid:'10884',name:'Snowboard',partner:trainer,city:'Msk',price:9000,cost:4400}},sets:[{id:'refset',name:'Set',city:'Msk',price:9000,items:[{sid:'10884',name:'Snowboard',price:9000,cost:4300}]}]});
-let refSvc=t.serviceOf('10884');near(refSvc.cost,4400);near(t.calcService(refSvc).structure.open,4400/.9);near(t.calcSet(t.allSets()[0]).exp,4300);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,4300/.9);assert(!t.calcService(refSvc).structure.mismatch);near(t.calcService(refSvc).target,5500);near(t.calcService(refSvc).mpAct,9000-4400*t.state.params.act/100);
+let refSvc=t.serviceOf('10884');near(refSvc.cost,4400);near(t.calcService(refSvc).structure.open,4400/.9);near(t.calcSet(t.allSets()[0]).exp,4300);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,4300/.9);assert(!t.calcService(refSvc).structure.mismatch);near(model.calculate(t.calcService(refSvc).target,4400,t.calcService(refSvc).p).npAct,0);near(t.calcService(refSvc).mpAct,9000-4400*t.state.params.act/100);
 t.state.sov['10884']={cost:4444};refSvc=t.serviceOf('10884');near(refSvc.cost,4444);near(t.calcService(refSvc).structure.open,4444/.9);assert.equal(t.calcService(refSvc).structure.derived,true);
 console.log('PASS source costs: standalone and composition use their own table costs, confirmed open price does not override costs, conflicts and manual edits preserved');
 
-// The commission-first policy uses a full activation, independent of the profitability forecast.
+// The displayed target covers all costs at the selected forecast, without a commission rule.
 t.state.sov['10884']={cost:4860};t.state.params.disc=0;t.state.params.act=60;
 refSvc=t.serviceOf('10884');let policy=t.calcService(refSvc);
-near(policy.target,6075);near(policy.priceRule.margin,.46);assert.equal(policy.priceRule.status,'extra');
-t.state.params.act=10;near(t.calcService(refSvc).target,6075);
-t.state.mode='max';near(t.calcService(refSvc).target,6075);
-t.state.mode='avg';t.state.sov['10884']={price:6075,cost:4860};policy=t.calcService(t.serviceOf('10884'));
-near(policy.priceRule.margin,.2);assert.equal(policy.priceRule.status,'ok');assert.equal(t.serviceOf('10884').basePrice,9000);
-near(t.calcSet(t.allSets()[0]).target,6075);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).target,6075);
-t.state.sov['10884'].cost=4444;near(t.calcService(t.serviceOf('10884')).target,5555);
-t.state.params.target=40;t.ensureParams();assert.equal(t.state.params.target,20);
+near(model.calculate(policy.target,4860,policy.p).npAct,0);
+const target60=policy.target;t.state.params.act=10;assert(t.calcService(refSvc).target<target60);
+t.state.mode='max';assert(t.calcService(refSvc).target>target60);
+near(model.calculate(t.calcService(refSvc).target,4860,t.calcService(refSvc).p).npAct,0);
+t.state.mode='avg';
+for(const c of [t.calcSet(t.allSets()[0]),t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0]))])near(model.calculate(c.target,c.exp,c.p).npAct,0);
+t.state.params.target=40;t.ensureParams();assert.equal(t.state.params.target,undefined);
 const policyHeaders=t.pricingHead('service');assert(policyHeaders.indexOf('data-prgroup="commission"')<policyHeaders.indexOf('data-prgroup="markup"'));
+assert(policyHeaders.includes('Целевая цена'));assert(!policyHeaders.includes('Наша комиссия'));
+assert(!html.includes('data-rule-service'));assert(!html.includes('data-apply='));
+assert(!html.includes('Цена по правилу'));assert(!html.includes('Правило цены'));
 t.state.collapsed.commission=true;const policyCells=t.financialCells(refSvc,policy,{key:'service:10884',kind:'service'});
 assert(policyCells.includes('data-price-component="commissionPct"'));assert(policyCells.includes('data-price-component="commissionRub"'));
-console.log('PASS commission-first policy: full activation, exact model target, preserved CRM, every pricing view, fixed minimum and commission priority');
+console.log('PASS target integration: all costs, forecast, service/set/composition, no automatic price application or obsolete rule');
 // Sort actual numbers, not formatted strings; percentages and rubles are separate fields.
 t.setCommissions([{id:'10',name:'Ten',type:'Партнер',terms:'10%'},{id:'20',name:'Twenty',type:'Партнер',terms:'20%'}]);
 t.state.params.act=60;t.state.params.disc=0;t.state.rowParams={};
@@ -144,3 +146,29 @@ const nestedHeaders=t.pricingHead('item',true);assert(nestedHeaders.includes('da
 t.state.collapsed={commission:true,markup:true,open:true,fees:true,pack:true,logistics:true};const foldedHeaders=t.pricingHead('service');
 for(const key of ['commissionPct','commissionRub','markupRub','openRub','feesSum','packRub','logisticsRub'])assert(foldedHeaders.includes('data-s="'+key+'"'),key+' remains sortable while folded');
 console.log('PASS numeric sorting: commission percent/rubles, markup, cost, expenses, both directions, unknowns last and separate composition headers');
+
+// Coverage target handles mixed percentage/ruble costs, both discount modes, payout overrides and impossible economics.
+for(const discMode of ['pct','rub']){
+  const x=model.parameters({act:60,acq:2,tax:7,pack:50,logistics:100,disc:discMode==='pct'?10:200,fixed:300,target:99},{pack:'rub',logistics:'rub',fixed:'rub',disc:discMode},{});
+  const target=model.targetPrice(1000,x);
+  const expectedNet=(600+50+100+300)/.91;
+  near(target,(expectedNet+x.discR)/(1-x.discP));
+  near(model.calculate(target,1000,x).npAct,0);
+}
+const plain={act:100,acq:0,tax:0,pack:0,logistics:0,disc:0,fixed:0};
+near(model.targetPrice(1000,model.parameters(plain,{},{})),1000);
+assert.equal(model.targetPrice(null,model.parameters(plain,{},{})),null);
+near(model.targetPrice(0,model.parameters(plain,{},{})),0);
+const tooMuch=model.parameters({...plain,tax:60,fixed:40},{},{});
+assert.equal(model.targetPrice(1000,tooMuch),null);
+assert.equal(model.targetPrice(1000,model.parameters({...plain,disc:100},{},{})),null);
+assert.equal(model.targetPrice(1000,model.parameters({...plain,tax:20},{},{partner:{mode:'pct',value:80}})),null);
+const pctP=model.parameters({...plain,act:60,pack:200,fixed:10},{pack:'rub'},{partner:{mode:'pct',value:50}});
+near(model.targetPrice(null,pctP),200/(1-.3-.1));
+near(model.calculate(model.targetPrice(null,pctP),null,pctP).npAct,0);
+t.state.sov={};t.state.ov={};t.state.rowParams={};t.state.customServices={};t.state.customSets=[];
+t.setData({catalog:{known:{sid:'known',name:'Known',city:'Мск',price:5000,cost:1000},unknown:{sid:'unknown',name:'Unknown',city:'Мск',price:5000,cost:0,costKnown:false}},sets:[{id:'mixed',city:'Мск',name:'Mixed',price:5000,items:[{sid:'known',cost:1000},{sid:'unknown',cost:0}]}]});
+assert.equal(t.calcSet(t.allSets()[0]).target,null,'partial set costs cannot produce a misleading coverage target');
+assert.equal(t.calcService(t.serviceOf('unknown')).target,null);
+assert.notEqual(t.calcService(t.serviceOf('known')).target,null,'known payout does not require a known commission to calculate coverage');
+console.log('PASS coverage edge cases: mixed costs, discounts, percent payout, unknown and partial costs, impossible economics');

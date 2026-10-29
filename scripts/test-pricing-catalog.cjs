@@ -139,3 +139,30 @@ t.state.sov['42']={cost:0};assert.equal(t.calcService(t.serviceOf('42')).exp,0,'
 const confirmed=catalog.manualOverlay(auto,[pendingHeader,['42','','','',0,'','0%','',0,'2026-10-30','','Прайс партнёра']],'Мск').catalog;
 t.state.sov={};t.setData({catalog:confirmed,sets:[]});assert.equal(t.calcService(t.serviceOf('42')).exp,0,'confirmed free services are distinct from pending data');
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');
+
+// Non-service products stay hidden across raw data, manual overlays, local edits and composition.
+const excludedIds=['21415','8976','36330','35972','17691','17697','17698','35061','17693','17699','34328','17694','34325','34329','17695','34326','34330','17696','34327','32185','34322','34323','34324','16681','16679','31726','34313','31815','34314','16680','16676','34990','16678','17686','34315','16682','31727','35346','31725','34310','34317','34316','16677','33958','32184','31723','34311','34312'];
+for(const sid of excludedIds)assert.equal(available({sid,name:'Renamed',price:1000}),false);
+for(const name of ['Номинальный сертификат','Номинальный сертификат, Москва: 1000 рублей','Номинальный подарочный сертификат: 17000 рублей'])assert.equal(available({sid:'future',name,price:1000}),false);
+for(const name of ['Мастер-класс по фитнесу','Оздоровительный фитнес: I категория','Подарочный набор'])assert.equal(available({sid:'other',name,price:1000}),true);
+t.state.sov={'21415':{price:1000}};t.state.ov={};t.state.customServices={};t.state.customSets=[{id:'saved',city:'Мск',name:'Saved',price:1000,items:['21415','8976','17691','keep']}];
+t.setData({catalog:Object.fromEntries([...excludedIds,'keep'].map(sid=>[sid,{sid,name:'Cached',city:'Мск',price:1000,cost:700}])),sets:[{id:'current',name:'Current',city:'Мск',price:1000,items:[...excludedIds,'keep'].map(sid=>({sid,name:'Cached',cost:700}))}]});
+assert.deepEqual(Array.from(t.allServices(),s=>s.sid),['keep']);
+for(const set of t.allSets())assert.deepEqual(Array.from(set.items,s=>s.sid),['keep']);
+assert.equal(t.usage()['21415'],undefined);assert.equal(t.state.customSets[0].items.length,4);
+console.log('PASS explicit service cleanup: 48 IDs, both cities, future nominal variants, stale cache and saved drafts');
+
+// Gift sets are a separate product type; do not hide the actual set tab.
+const setProduct={sid:'gift',name:'Подарочный набор «Женское счастье», Москва',price:5000,cost:0,city:'Мск'};
+assert.equal(catalog.available(setProduct),true,'set remains an available product');
+assert.equal(catalog.serviceAvailable(setProduct),false);
+assert.equal(catalog.serviceAvailable({name:'Набор впечатлений',price:5000}),false);
+assert.equal(catalog.serviceAvailable({name:'Мастер-класс: набор свечей',price:5000}),true);
+assert.equal(catalog.completeCatalog([{city:'Мск',items:[setProduct]}],{}).gift,undefined);
+t.state.sov={gift:{name:'Renamed'}};t.state.ov={};t.state.customServices={};t.state.customSets=[];
+t.setData({catalog:{gift:setProduct,'known-set':{...setProduct,sid:'known-set',name:'Старое название'},keep:{sid:'keep',name:'Массаж',price:5000,cost:1000,city:'Мск'}},sets:[{id:'known-set',name:'Женское счастье',price:5000,city:'Мск',items:[setProduct,{sid:'keep',name:'Массаж',cost:1000}]}]});
+assert.deepEqual(Array.from(t.allServices(),s=>s.sid),['keep']);
+assert.equal(t.allSets().length,1,'actual set remains visible in the Sets tab');
+assert.deepEqual(Array.from(t.allSets()[0].items,s=>s.sid),['keep']);
+assert.equal(t.state.sov.gift.name,'Renamed','do not erase saved edits while hiding the wrong product type');
+console.log('PASS service types: sets excluded from services/picker/composition, preserved in the Sets tab');

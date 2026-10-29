@@ -1,6 +1,6 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePricingCatalog=api;})(typeof window==='undefined'?globalThis:window,function(){
   // Explicit catalog removals apply to cached data, composition and saved drafts alike.
-  var excludedServiceIds=new Set(['42968','42969','42971','42972','42974','42975']);
+  var excludedServiceIds=new Set(['42968','42969','42971','42972','42974','42975','21415','8976','36330','35972','17691','17697','17698','35061','17693','17699','34328','17694','34325','34329','17695','34326','34330','17696','34327','32185','34322','34323','34324','16681','16679','31726','34313','31815','34314','16680','16676','34990','16678','17686','34315','16682','31727','35346','31725','34310','34317','34316','16677','33958','32184','31723','34311','34312']);
   function norm(s){return String(s==null?'':s).toLowerCase().replace(/ё/g,'е').replace(/[_\s]+/g,' ').trim();}
   function inactiveLabel(value){
     var s=norm(value);
@@ -8,10 +8,11 @@
   }
   function inactiveFlag(value){return value===false||value===0||['n','no','false','0','нет','inactive','disabled','archived','deleted'].indexOf(norm(value))>=0||inactiveLabel(value);}
   function available(row){
-    if(!row||excludedServiceIds.has(String(row.sid)))return false;
+    if(!row||excludedServiceIds.has(String(row.sid))||/^номинальный (?:подарочный )?сертификат(?:$|[\s,:])/i.test(norm(row.name)))return false;
     // Activity and price visibility are separate: a zero price does not mark a product inactive.
     return !inactiveFlag(row.active)&&!inactiveFlag(row.partnerActive)&&!inactiveLabel(row.name)&&!inactiveLabel(row.partner);
   }
+  function serviceAvailable(row){return available(row)&&!/^(?:подарочный )?набор(?:$|[\s,:«"])/i.test(norm(row.name));}
   function visiblePrice(row){return !!row&&(!!row.custom||row.price===null||Number(row.price)!==0);}
   function discountedPriceColumn(header){return (header||[]).map(norm).indexOf('стоимость со скидкой');}
   function discountedPrice(row,column){
@@ -30,7 +31,7 @@
     (sets||[]).forEach(function(set){
       if(!available(set))return;
       (set.items||[]).forEach(function(item){
-        if(!out[item.sid]&&available(item))out[item.sid]=Object.assign({partner:'',city:set.city,fromComposition:true},item,{price:null});
+        if(!out[item.sid]&&serviceAvailable(item))out[item.sid]=Object.assign({partner:'',city:set.city,fromComposition:true},item,{price:null});
       });
     });
     return out;
@@ -62,5 +63,5 @@
     });
     return {catalog:out,count:count};
   }
-  return {available:available,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,manualOverlay:manualOverlay};
+  return {available:available,serviceAvailable:serviceAvailable,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,manualOverlay:manualOverlay};
 });
