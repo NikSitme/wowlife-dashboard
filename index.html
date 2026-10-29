@@ -8193,7 +8193,7 @@ window.__salesActSetData = function(newData){
     if(!state.collapsed[g.id])return g.cols;
     if(g.id==='open')return g.cols;
     if(g.id==='commission')return g.cols.slice(0,2);
-    if(g.id==='price')return [['current','Цена на сайте, ₽','Услуга — стоимость со скидкой из таблицы; набор — текущая цена его листа.'],['net','По модели, ₽','Новая цена после скидки. От неё считается наценка.']];
+    if(g.id==='price')return [['net','Цена, ₽','Цена для расчётов. Изначально — стоимость со скидкой из таблицы для услуги или текущая цена набора. Исходник и настройки модели доступны при раскрытии.','net']];
     if(g.id==='partner')return [['partnerFull','За активацию, ₽','Полная выплата. Открытая цена − комиссия WOWlife.'],['partnerForecast','В расчёте, ₽','Полная выплата × прогноз использования. Именно она вычитается в МП.']];
     return [['summary','Итого, ₽',g.tip]];
   }
@@ -8228,7 +8228,7 @@ window.__salesActSetData = function(newData){
         text=editable?'<input class="in'+(s.basePrice!==null&&s.price!==s.basePrice?' changed':'')+'" type="number" min="0" step="10" '+(ctx.kind==='service'?'data-sprice="'+esc(s.sid)+'"':'data-setprice="'+esc(s.id)+'"')+' value="'+decimal(s.price)+'" aria-label="Новая цена · '+esc(s.name)+'">':fmtR(s.price);
       }else if(k==='current'){text=fmtR(s.basePrice)+(ctx.kind==='service'&&s.basePrice===null?'<span class="meta">Нет стоимости со скидкой</span>':'');css='muted';}
       else if(k==='discount'){var d=overrides.disc||{value:state.params.disc,mode:state.pmode.disc||'pct'};var v=d.mode==='pct'?d.value:s.price>0?r.discount/s.price*100:null;text=editable?rowInput(ctx,'disc','pct',v,'Скидка, % · '+s.name,!!overrides.disc):fmtP(v===null?null:v/100);}
-      else if(k==='net'){text=fmtR(r.price);css='key';}
+      else if(k==='net'){text=fmtR(r.price);css='key';if(state.collapsed.price&&s.basePrice!==null&&r.price!==null&&Math.abs(r.price-s.basePrice)>.01)text+='<span class="meta" title="Табличная цена: '+esc(fmtR(s.basePrice))+'">Изменена в модели</span>';}
       else if(k==='markupRub'){text=fmtR(structure.markup);css=structure.markup<0?'warn':'';}
       else if(k==='markupPct'){text=fmtP(structure.markupShare);}
       else if(k==='openRub'){text=fmtR(structure.open)+(structure.open!==null?'<span class="meta">'+(structure.derived?'расчёт':'прайс '+esc(structure.confirmedAsOf))+'</span>':'');}
