@@ -103,18 +103,18 @@ t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
-t.setData({catalog:{'10884':{sid:'10884',name:'Snowboard',partner:trainer,city:'Msk',price:9000,cost:4400}},sets:[{id:'refset',name:'Set',city:'Msk',price:9000,items:[{sid:'10884',name:'Snowboard',price:9000,cost:4400}]}]});
-let refSvc=t.serviceOf('10884');near(refSvc.cost,4860);near(t.calcService(refSvc).structure.open,5400);near(t.calcSet(t.allSets()[0]).exp,4860);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,5400);
+t.setData({catalog:{'10884':{sid:'10884',name:'Snowboard',partner:trainer,city:'Msk',price:9000,cost:4400}},sets:[{id:'refset',name:'Set',city:'Msk',price:9000,items:[{sid:'10884',name:'Snowboard',price:9000,cost:4300}]}]});
+let refSvc=t.serviceOf('10884');near(refSvc.cost,4400);near(t.calcService(refSvc).structure.open,5400);near(t.calcSet(t.allSets()[0]).exp,4300);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,5400);assert.equal(t.calcService(refSvc).structure.mismatch,true);assert.equal(t.calcService(refSvc).target,null);near(t.calcService(refSvc).mpAct,9000-4400*t.state.params.act/100);
 t.state.sov['10884']={cost:4444};refSvc=t.serviceOf('10884');near(refSvc.cost,4444);assert.equal(t.calcService(refSvc).structure.mismatch,true);
-console.log('PASS confirmed prices: services and bundle items prefer confirmed payout, manual edits preserved and flagged');
+console.log('PASS source costs: standalone and composition use their own table costs, confirmed open price does not override costs, conflicts and manual edits preserved');
 
 // The commission-first policy uses a full activation, independent of the profitability forecast.
-delete t.state.sov['10884'];t.state.params.disc=0;t.state.params.act=60;
+t.state.sov['10884']={cost:4860};t.state.params.disc=0;t.state.params.act=60;
 refSvc=t.serviceOf('10884');let policy=t.calcService(refSvc);
 near(policy.target,6075);near(policy.priceRule.margin,.46);assert.equal(policy.priceRule.status,'extra');
 t.state.params.act=10;near(t.calcService(refSvc).target,6075);
 t.state.mode='max';near(t.calcService(refSvc).target,6075);
-t.state.mode='avg';t.state.sov['10884']={price:6075};policy=t.calcService(t.serviceOf('10884'));
+t.state.mode='avg';t.state.sov['10884']={price:6075,cost:4860};policy=t.calcService(t.serviceOf('10884'));
 near(policy.priceRule.margin,.2);assert.equal(policy.priceRule.status,'ok');assert.equal(t.serviceOf('10884').basePrice,9000);
 near(t.calcSet(t.allSets()[0]).target,6075);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).target,6075);
 t.state.sov['10884'].cost=4444;assert.equal(t.calcService(t.serviceOf('10884')).target,null);

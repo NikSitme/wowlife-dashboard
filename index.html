@@ -7912,7 +7912,7 @@ window.__salesActSetData = function(newData){
 <script src="./scripts/pricing-model.js?v=20261029-rule20"></script>
 <script src="./scripts/pricing-catalog.js?v=zero-price-20261028"></script>
 <script src="./scripts/service-catalog.js?v=20261028-pagination"></script>
-<script src="./scripts/price-structure.js?v=20261029-rule20"></script>
+<script src="./scripts/price-structure.js?v=20261029-source-cost"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7928,7 +7928,7 @@ window.__salesActSetData = function(newData){
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
     if(commissionStarted)return;commissionStarted=true;
-    try{var responses=await Promise.all([fetch('./data/partner-commissions.json?v=20261029'),fetch('./data/partner-open-prices.json?v=20261029')]);if(responses.some(function(r){return !r.ok;}))throw new Error('Источник недоступен');var loaded=await Promise.all(responses.map(function(r){return r.json();}));commissionIndex=STRUCTURE.index(loaded[0].companies,loaded[1].prices);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Подтверждённая открытая цена имеет приоритет; остальные цены восстановлены из полной выплаты и помечены «расчёт». Наценка считается от цены модели после скидки, её процент — от открытой цены. Комиссия в приоритете: от 20% — без наценки, ниже — добираем наценкой до маржи 20%. Проверка — за полную активацию; прогноз использования влияет на МП и ЧП.';render();}
+    try{var responses=await Promise.all([fetch('./data/partner-commissions.json?v=20261029'),fetch('./data/partner-open-prices.json?v=20261029')]);if(responses.some(function(r){return !r.ok;}))throw new Error('Источник недоступен');var loaded=await Promise.all(responses.map(function(r){return r.json();}));commissionIndex=STRUCTURE.index(loaded[0].companies,loaded[1].prices);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Себестоимость — из исходной таблицы; ручные правки модели сохраняются. Открытая цена — по подтверждённому прайсу; остальные цены восстановлены из полной выплаты и помечены «расчёт». Наценка считается от цены модели после скидки, её процент — от открытой цены. Комиссия в приоритете: от 20% — без наценки, ниже — добираем наценкой до маржи 20%. Проверка — за полную активацию; прогноз использования влияет на МП и ЧП.';render();}
     catch(e){commissionStarted=false;root.querySelector('#prCommissionStatus').textContent='Не удалось загрузить комиссии. Открытая цена и наценка пока не определены. Переключитесь на раздел повторно для загрузки.';}
   }
   var servicePage = 1, serviceRevealId = null;
@@ -8059,8 +8059,6 @@ window.__salesActSetData = function(newData){
     var o = state.sov[sid] || {};
     var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.cost > 0, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
     result.reference=STRUCTURE.reference(sid,result.partner,commissionIndex);
-    var confirmedPayout=STRUCTURE.defaultPayout(result.reference,result.partner,commissionIndex);
-    if(o.cost===undefined&&confirmedPayout!==null){result.cost=confirmedPayout;result.costKnown=true;}
     return CATALOG.visiblePrice(result)?result:null;
   }
   function allSets(){
@@ -8073,7 +8071,7 @@ window.__salesActSetData = function(newData){
         var sv = serviceOf(it.sid, { name: it.name, partner: "", city: s.city, price: it.price, cost: it.cost });
         if(!sv)return null;
         // себестоимость берём из состава набора (так в CRM), если пользователь не правил услугу
-        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : sv.reference?sv.cost:it.cost;
+        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : it.cost;
         return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || cost > 0, price: it.price, reference:sv.reference };
       }).filter(Boolean);
       (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, added: true }); });

@@ -18,7 +18,7 @@
       r.terms+=' · Прайс партнёра подтверждён '+ref.as_of;
       if(c.rate===null||payout===null||!Number.isFinite(payout))return r;
       var expected=ref.open*(1-c.rate);
-      if(Math.abs(expected-payout)>0.01){r.mismatch=true;r.terms+=' · Выплата модели '+payout+' ₽ отличается от выплаты по прайсу '+expected+' ₽; проверьте ручную правку';return r;}
+      if(Math.abs(expected-payout)>0.01){r.mismatch=true;r.terms+=' · Выплата модели '+payout+' ₽ отличается от выплаты по прайсу '+expected+' ₽; проверьте себестоимость в таблице или правку модели';return r;}
       r.commission=r.open-payout;return r;
     }
     if(c.rate===null||payout===null||!Number.isFinite(payout)||payout<0)return r;
