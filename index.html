@@ -7912,7 +7912,7 @@ window.__salesActSetData = function(newData){
 <script src="./scripts/pricing-model.js?v=forecast-20261028"></script>
 <script src="./scripts/pricing-catalog.js?v=zero-price-20261028"></script>
 <script src="./scripts/service-catalog.js?v=20261028-pagination"></script>
-<script src="./scripts/price-structure.js?v=20261029"></script>
+<script src="./scripts/price-structure.js?v=20261029-confirmed"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7928,7 +7928,7 @@ window.__salesActSetData = function(newData){
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
     if(commissionStarted)return;commissionStarted=true;
-    try{var response=await fetch('./data/partner-commissions.json?v=20261029');if(!response.ok)throw new Error('HTTP '+response.status);var data=await response.json();commissionIndex=STRUCTURE.index(data.companies);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Открытая цена восстановлена расчётом из полной выплаты, наценка — от цены со скидкой. Структура — за одну активацию; прогноз использования влияет на МП и ЧП. Неоднозначные условия показаны текстом.';render();}
+    try{var responses=await Promise.all([fetch('./data/partner-commissions.json?v=20261029'),fetch('./data/partner-open-prices.json?v=20261029')]);if(responses.some(function(r){return !r.ok;}))throw new Error('Источник недоступен');var loaded=await Promise.all(responses.map(function(r){return r.json();}));commissionIndex=STRUCTURE.index(loaded[0].companies,loaded[1].prices);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Подтверждённая открытая цена имеет приоритет; остальные цены восстановлены из полной выплаты и помечены «расчёт». Наценка считается от цены модели после скидки, её процент — от открытой цены. Структура — за одну активацию; прогноз использования влияет на МП и ЧП.';render();}
     catch(e){commissionStarted=false;root.querySelector('#prCommissionStatus').textContent='Не удалось загрузить комиссии. Открытая цена и наценка пока не определены. Переключитесь на раздел повторно для загрузки.';}
   }
   var servicePage = 1, serviceRevealId = null;
@@ -8057,6 +8057,9 @@ window.__salesActSetData = function(newData){
     if (!CATALOG.available(base)||fallback&&!CATALOG.available(fallback)) return null;
     var o = state.sov[sid] || {};
     var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.cost > 0, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+    result.reference=STRUCTURE.reference(sid,result.partner,commissionIndex);
+    var confirmedPayout=STRUCTURE.defaultPayout(result.reference,result.partner,commissionIndex);
+    if(o.cost===undefined&&confirmedPayout!==null){result.cost=confirmedPayout;result.costKnown=true;}
     return CATALOG.visiblePrice(result)?result:null;
   }
   function allSets(){
@@ -8069,14 +8072,14 @@ window.__salesActSetData = function(newData){
         var sv = serviceOf(it.sid, { name: it.name, partner: "", city: s.city, price: it.price, cost: it.cost });
         if(!sv)return null;
         // себестоимость берём из состава набора (так в CRM), если пользователь не правил услугу
-        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : it.cost;
-        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || cost > 0, price: it.price };
+        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : sv.reference?sv.cost:it.cost;
+        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || cost > 0, price: it.price, reference:sv.reference };
       }).filter(Boolean);
-      (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, added: true }); });
+      (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, added: true }); });
       out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
     });
     state.customSets.forEach(function(s){
-      var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price } : null; }).filter(Boolean);
+      var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference } : null; }).filter(Boolean);
       if(CATALOG.available(s))out.push({ id: s.id, name: s.name, city: s.city, price: s.price, basePrice: null, items: items, custom: true });
     });
     return out;
@@ -8116,7 +8119,7 @@ window.__salesActSetData = function(newData){
     var exp = state.mode === "max" ? max : (state.mode === "act" && wavg !== null ? wavg : avg);
     var r = state.mode === "max" ? MODEL.worstCase(s.price,max,p) : MODEL.calculate(s.price,exp,p);
     r.avg=avg;r.max=max;r.wavg=wavg;r.w=w;r.noCost=s.items.length-costs.length;r.n=s.items.length;r.loss=0;r.below=0;
-    var parts=s.items.filter(function(it){return knownCost(it)&&(state.mode==='max'?it.cost===max:w?!!w[it.sid]:true);}).map(function(it){return {partner:it.partner,cost:it.cost,weight:w&&state.mode!=='max'?w[it.sid]:1};});
+    var parts=s.items.filter(function(it){return knownCost(it)&&(state.mode==='max'?it.cost===max:w?!!w[it.sid]:true);}).map(function(it){return {partner:it.partner,cost:it.cost,reference:it.reference,weight:w&&state.mode!=='max'?w[it.sid]:1};});
     r.structure=r.noCost?STRUCTURE.unknown(r.price,'Не у всех услуг набора известна выплата партнёру'):STRUCTURE.aggregate(r.price,r.exp,parts,commissionIndex,state.mode);
     if (!(r.price > 0)) return r;
     r.loss = s.items.filter(function(it){ return knownCost(it) && r.price - it.cost * r.p.a < 0; }).length;
@@ -8125,11 +8128,11 @@ window.__salesActSetData = function(newData){
   }
   function calcItem(set, it, r){
     var p = Object.assign({},r.p,{partner:null});
-    var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,it.partner,commissionIndex);return c;
+    var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,it.partner,commissionIndex,it.reference);return c;
   }
   function calcService(sv){
     var p=P("service:"+sv.sid);if(state.mode==="max")p=Object.assign({},p,{a:1});
-    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,sv.partner,commissionIndex);return c;
+    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,sv.partner,commissionIndex,sv.reference);return c;
   }
 
   // ---------- рендер ----------
@@ -8170,9 +8173,9 @@ window.__salesActSetData = function(newData){
   }
   var GROUPS = [
     {id:'price',label:'Цена',tip:'Цена сайта из CRM, предложение новой цены и результат скидки.',cols:[['current','Цена на сайте, ₽','Исходная стоимость из CRM. Не меняется при моделировании.'],['proposal','Новая цена, ₽','Предложенная цена. Изначально равна цене сайта; CRM не меняется.','price'],['discount','Скидка, %','Скидка от новой цены. Наследуется из параметров; рублёвая скидка показана в пересчёте на проценты.'],['net','Со скидкой, ₽','Новая цена после скидки. От неё считаются наценка, расходы и прибыль.','net']]},
-    {id:'markup',label:'Наценка',tip:'Цена со скидкой минус открытая цена партнёра. Процент — относительно открытой цены, а не цены продажи.',cols:[['markupRub','Наценка, ₽','Цена со скидкой − открытая цена. Может быть отрицательной.'],['markupPct','Наценка, %','Наценка / открытая цена партнёра.']]},
-    {id:'open',label:'Открытая цена',tip:'Расчётная исходная цена партнёра: полная выплата / (1 − комиссия WOWlife). Не получена напрямую из прайса партнёра. Условные и неизвестные ставки не подменяются догадкой.',cols:[['openRub','Расчётная, ₽','За одну активацию, до удержания комиссии WOWlife. Для набора — по услугам выбранного прогноза.']]},
-    {id:'commission',label:'Комиссия партнёра',tip:'Вознаграждение WOWlife по условиям партнёра, удерживаемое из открытой цены. Сумма перечисления показана отдельно в группе «Выплата партнёру». Источник: COMPANY на 29.10.2026.',cols:[['commissionPct','WOWlife, %','Комиссия WOWlife от открытой цены. Для набора — сумма комиссий / сумма открытых цен по выбранному прогнозу.'],['commissionRub','WOWlife, ₽','Открытая цена − полная выплата партнёру за активацию.'],['commissionTerms','Условия CRM','Дословное условие комиссии; совпадение по ID или однозначному точному названию. Неоднозначные ставки не вычисляются.']]},
+    {id:'markup',label:'Наценка',tip:'Цена со скидкой минус открытая цена партнёра. Процент — относительно открытой цены, а не цены продажи.',cols:[['markupRub','Наценка, ₽','Цена со скидкой − открытая цена. Может быть отрицательной.'],['markupPct','% к открытой цене','Наценка / открытая цена партнёра.']]},
+    {id:'open',label:'Открытая цена',tip:'Подтверждённый прайс партнёра имеет приоритет. Если его нет, цена восстановлена из полной выплаты / (1 − комиссия) и помечена «расчёт». Условные ставки не подменяются догадкой.',cols:[['openRub','Цена, ₽','За одну активацию, до удержания комиссии. Под ценой указан источник: прайс партнёра или обратный расчёт.']]},
+    {id:'commission',label:'Комиссия',tip:'Вознаграждение WOWlife по условиям партнёра, удерживаемое из открытой цены. Сумма перечисления показана отдельно в группе «Выплата партнёру». Источник: COMPANY на 29.10.2026.',cols:[['commissionPct','Комиссия, %','Комиссия WOWlife от открытой цены. Для набора — сумма комиссий / сумма открытых цен по выбранному прогнозу.'],['commissionRub','Комиссия, ₽','Открытая цена − полная выплата партнёру за активацию.'],['commissionTerms','Условия CRM','Дословное условие комиссии; совпадение по ID или однозначному точному названию. Неоднозначные ставки не вычисляются.']]},
     {id:'partner',label:'Выплата партнёру',tip:'«В расчёте» — выплата с учётом прогноза активации, именно она вычитается из цены в МП. «За активацию» — полная выплата при использовании сертификата.',cols:[['partnerRub','За активацию, ₽','Выплата партнёру за использованный сертификат. Для набора — выбранный прогноз; для услуги — себестоимость CRM.','exp'],['partnerPct','Доля цены, %','Выплата партнёру / цена со скидкой. Это доля партнёра, а не наша комиссия.'],['partnerForecast','В расчёте, ₽','Выплата за активацию × прогноз активации. Именно эта сумма вычитается из цены при расчёте МП.']]},
     {id:'mp',label:'Маржинальная прибыль',tip:'Цена со скидкой минус прогноз выплаты партнёру с учётом активации. Остальные расходы вычитаются в чистой прибыли.',cols:[['mpRub','МП, ₽','Цена со скидкой минус выплата партнёру в расчёте. Комиссии, налоги, упаковка и логистика вычитаются дальше в ЧП.','mp'],['margin','Маржа, %','Маржинальная прибыль / цена со скидкой.','m']]},
     {id:'fees',label:'Комиссии и налоги',tip:'Эквайринг и налоги с продажи. Значения наследуются из параметров; правка в строке создаёт исключение.',cols:[['acqPct','Эквайринг, %','Комиссия банка в процентах от цены со скидкой.'],['acqRub','Эквайринг, ₽','Комиссия банка в рублях за продажу.'],['taxPct','Налоги, %','Ставка налога от цены со скидкой, из параметров прайса.'],['taxRub','Налоги, ₽','Налоги на одну продажу в рублях.']]},
@@ -8182,6 +8185,7 @@ window.__salesActSetData = function(newData){
   ];
   function visibleCols(g){
     if(!state.collapsed[g.id])return g.cols;
+    if(g.id==='open')return g.cols;
     if(g.id==='price')return [['current','Цена на сайте, ₽','Исходная цена CRM.'],['net','По модели, ₽','Новая цена после скидки. От неё считается наценка.']];
     if(g.id==='partner')return [['partnerFull','За активацию, ₽','Полная выплата. Открытая цена − комиссия WOWlife.'],['partnerForecast','В расчёте, ₽','Полная выплата × прогноз использования. Именно она вычитается в МП.']];
     return [['summary','Итого, ₽',g.tip]];
@@ -8220,7 +8224,7 @@ window.__salesActSetData = function(newData){
       else if(k==='net'){text=fmtR(r.price);css='key';}
       else if(k==='markupRub'){text=fmtR(structure.markup);css=structure.markup<0?'warn':'';}
       else if(k==='markupPct'){text=fmtP(structure.markupShare);}
-      else if(k==='openRub'){text=fmtR(structure.open);}
+      else if(k==='openRub'){text=fmtR(structure.open)+(structure.open!==null?'<span class="meta">'+(structure.derived?'расчёт':'прайс '+esc(structure.confirmedAsOf))+'</span>':'');}
       else if(k==='commissionPct'){text=fmtP(structure.rate);}
       else if(k==='commissionRub'){text=fmtR(structure.commission);}
       else if(k==='commissionTerms'){text='<span class="pr-commission-terms" title="'+esc(structure.terms)+'">'+esc(structure.terms)+'</span>';}
@@ -8419,7 +8423,7 @@ window.__salesActSetData = function(newData){
   root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
   root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
-    var rows=[['Наименование','Город','Цена на сайте (CRM), ₽','Новая цена, ₽','Скидка, ₽','Цена со скидкой, ₽','Наценка, ₽','Наценка, %','Открытая цена (расчёт), ₽','Комиссия WOWlife, %','Комиссия WOWlife, ₽','Условия комиссии CRM 29.10.2026','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Цена для цели, ₽']];
+    var rows=[['Наименование','Город','Цена на сайте (CRM), ₽','Новая цена, ₽','Скидка, ₽','Цена со скидкой, ₽','Наценка, ₽','Наценка, %','Открытая цена, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Цена для цели, ₽']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
     list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target]);});
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');

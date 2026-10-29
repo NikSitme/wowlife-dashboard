@@ -42,7 +42,7 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,setCommissions:function(rows){commissionIndex=STRUCTURE.index(rows);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='';
 const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
@@ -100,3 +100,10 @@ near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.str
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
 t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,24);assert.equal(exportLines[1].split(';').length,24);console.log('PASS pricing CSV: full filtered selection and 24 aligned columns');
+
+const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
+t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
+t.setData({catalog:{'10884':{sid:'10884',name:'Snowboard',partner:trainer,city:'Msk',price:9000,cost:4400}},sets:[{id:'refset',name:'Set',city:'Msk',price:9000,items:[{sid:'10884',name:'Snowboard',price:9000,cost:4400}]}]});
+let refSvc=t.serviceOf('10884');near(refSvc.cost,4860);near(t.calcService(refSvc).structure.open,5400);near(t.calcSet(t.allSets()[0]).exp,4860);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,5400);
+t.state.sov['10884']={cost:4444};refSvc=t.serviceOf('10884');near(refSvc.cost,4444);assert.equal(t.calcService(refSvc).structure.mismatch,true);
+console.log('PASS confirmed prices: services and bundle items prefer confirmed payout, manual edits preserved and flagged');

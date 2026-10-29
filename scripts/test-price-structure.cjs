@@ -22,4 +22,19 @@ assert(data.companies.every(r=>r.type==='Партнер'),'Only partners are nee
 assert(data.companies.every(r=>Object.keys(r).sort().join(',')==='id,name,terms,type'));
 assert(!/\+7[\d ()-]{9,}/.test(JSON.stringify(data)),'Do not publish the operational phone note');
 for(const c of data.companies){const result=S.resolve(c.name,S.index([c]));if(result.rate!==null)assert(result.rate>=0&&result.rate<1);}
+const confirmed=require('../data/partner-open-prices.json');
+const confirmedIndex=S.index(data.companies,confirmed.prices),partner='Тренер ИВАН (Сноуборд и Виндсерф Москва)';
+assert.equal(confirmed.prices.length,4);
+for(const [sid,open,payout]of [['8460',3500,3150],['8461',5700,5130],['10884',5400,4860],['10885',10400,9360]]){
+ const ref=S.reference(sid,partner,confirmedIndex);assert.equal(ref.open,open);near(S.defaultPayout(ref,partner,confirmedIndex),payout);
+ const value=S.service(9000,payout,partner,confirmedIndex,ref);near(value.open,open);near(value.commission,open*.1);assert.equal(value.derived,false);
+ near(value.markup+value.commission+payout,9000);
+}
+const ref=S.reference('10884',partner,confirmedIndex);r=S.service(9000,4860,partner,confirmedIndex,ref);
+near(r.markup,3600);near(r.markupShare,2/3);near(r.markup/9000,.4);assert.equal(r.confirmedAsOf,'2026-10-29');
+r=S.service(9000,4400,partner,confirmedIndex,ref);assert.equal(r.open,5400);assert.equal(r.commission,null);assert.equal(r.mismatch,true,'Preserved manual payouts must be flagged rather than silently reconciled');
+assert.equal(S.reference('33560',partner,confirmedIndex),null,'Do not apply snowboard prices to windsurfing');
+assert.equal(S.reference('10884','ROYAL THAI',confirmedIndex),null,'Reference belongs to an exact service and partner');
+const mixed=S.aggregate(9000,4860,[{partner,cost:4860,reference:ref,weight:1}],confirmedIndex);
+near(mixed.open,5400);near(mixed.commission,540);assert.equal(mixed.derived,false);
 console.log('PASS price structure: components reconcile, percentage bases, weighted sets, zero/unknown/conditional rates, duplicate names, snapshot and no contacts');
