@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v5-manual'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v6-payout-base'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -86,5 +86,12 @@ assert.equal(t.calcService(t.serviceOf('42')).structure.commission,500,'manual o
 t.state.sov['42']={cost:4600};assert.equal(t.allSets()[0].items[0].cost,4600,'preserve the user’s local model overrides');
 assert.equal(t.calcService(t.serviceOf('42')).structure.mismatch,true,'manual inputs must still be checked for contradictory payout');
 t.state.sov['42']={partner:'Другой партнёр'};assert.equal(t.serviceOf('42').reference,null,'do not carry the former partner’s confirmed price into a local partner change');
+const derivedRows=[[...manualHeader,'тип открытой цены'],['42','','','','','','10%','',1111.11,'2026-10-29','','Расчёт из выплаты и комиссии']];
+const derivedCatalog=catalog.manualOverlay(auto,derivedRows,'Мск').catalog;
+assert.equal(derivedCatalog[42].manualReference.derived,true);
+t.state.sov={};t.setData({catalog:derivedCatalog,sets:[]});
+assert.equal(t.calcService(t.serviceOf('42')).structure.derived,true,'formula results must be labelled calculated');
+assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1000/.9)<1e-8);
+t.state.sov['42']={cost:1200};assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1200/.9)<1e-8,'recalculate from the effective payout instead of freezing a rounded formula snapshot');
 assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manual tabs by exact stable gid');
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');

@@ -49,7 +49,7 @@
       if(!next.name)throw new Error('Ручная выгрузка '+city+': нет названия ID '+id);
       [['cost','себестоимость'],['price','стоимость со скидкой']].forEach(function(pair){var v=numeric(row,pair[1],id);if(v!==undefined){next[pair[0]]=v;fields[pair[0]]=true;if(pair[0]==='cost')next.costKnown=true;}});
       var open=numeric(row,'открытая цена партнера',id),terms=text(row,'размер комиссии');
-      if(open!==undefined||terms){next.manualReference={partner_name:next.partner,as_of:text(row,'дата подтверждения'),source:'Ручная выгрузка '+city};if(open!==undefined)next.manualReference.open=open;if(terms)next.manualReference.terms=terms;}
+      if(open!==undefined||terms){next.manualReference={partner_name:next.partner,as_of:text(row,'дата подтверждения'),source:'Ручная выгрузка '+city,derived:norm(text(row,'тип открытой цены'))==='расчет из выплаты и комиссии'};if(open!==undefined)next.manualReference.open=open;if(terms)next.manualReference.terms=terms;}
       if(base&&!available(base))next.active=false;
       next.manualFields=fields;next.manualSource='Ручная выгрузка '+city;out[id]=next;count++;
     });

@@ -19,7 +19,7 @@
       c={id:c.id,terms:ref.terms+' · Ручные данные',rate:rate!==null&&rate>=0&&rate<1?rate:null};
     }
     var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
-    if(matches&&Number.isFinite(ref.open)&&ref.open>=0){
+    if(matches&&!ref.derived&&Number.isFinite(ref.open)&&ref.open>=0){
       r.open=ref.open;r.derived=false;r.confirmedAsOf=ref.as_of;r.markup=price===null?null:price-r.open;r.markupShare=price===null?null:r.markup/r.open;
       r.terms+=ref.as_of?' · Прайс партнёра подтверждён '+ref.as_of:' · Открытая цена из ручной выгрузки';
       if(c.rate===null||payout===null||!Number.isFinite(payout))return r;

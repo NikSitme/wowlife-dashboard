@@ -23,8 +23,18 @@ assert(data.companies.every(r=>Object.keys(r).sort().join(',')==='id,name,terms,
 assert(!/\+7[\d ()-]{9,}/.test(JSON.stringify(data)),'Do not publish the operational phone note');
 for(const c of data.companies){const result=S.resolve(c.name,S.index([c]));if(result.rate!==null)assert(result.rate>=0&&result.rate<1);}
 const confirmed=require('../data/partner-open-prices.json');
-const confirmedIndex=S.index(data.companies,confirmed.prices),partner='Тренер ИВАН (Сноуборд и Виндсерф Москва)';
-assert.equal(confirmed.prices.length,4);
+assert.equal(confirmed.prices.length,0,'Withdrawn snowboard prices must not override source payouts and the confirmed 10% commission');
+const partner='Тренер ИВАН (Сноуборд и Виндсерф Москва)';
+const actualIndex=S.index(data.companies,confirmed.prices);
+for(const [sid,payout,price] of [['8460',2900,5605],['8461',5800,9025],['10884',4400,8550],['10885',11600,16055]]){
+ const value=S.service(price,payout,partner,actualIndex,S.reference(sid,partner,actualIndex));
+ near(value.open,payout/.9);near(value.commission,value.open*.1);near(value.markup,price-value.open);
+ near(value.markup+value.commission+payout,price);assert.equal(value.derived,true);assert(!value.mismatch);
+ const manual=S.service(price,payout,partner,actualIndex,{partner_name:partner,open:Math.round(payout/.9*100)/100,terms:'10%',derived:true});
+ near(manual.open,payout/.9);assert.equal(manual.derived,true,'rounded formula output must remain calculated, not an independent reference price');
+}
+// Independent confirmed-price support remains available for future partner price lists.
+const confirmedIndex=S.index(data.companies,[['8460',3500],['8461',5700],['10884',5400],['10885',10400]].map(([sid,open])=>({sid,open,partner_id:'372',as_of:'2026-10-29'})));
 for(const [sid,open,payout]of [['8460',3500,3150],['8461',5700,5130],['10884',5400,4860],['10885',10400,9360]]){
  const ref=S.reference(sid,partner,confirmedIndex);assert.equal(ref.open,open);near(S.defaultPayout(ref,partner,confirmedIndex),payout);
  const value=S.service(9000,payout,partner,confirmedIndex,ref);near(value.open,open);near(value.commission,open*.1);assert.equal(value.derived,false);
