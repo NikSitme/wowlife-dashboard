@@ -10,7 +10,14 @@
     // Activity and price visibility are separate: a zero price does not mark a product inactive.
     return !inactiveFlag(row.active)&&!inactiveFlag(row.partnerActive)&&!inactiveLabel(row.name)&&!inactiveLabel(row.partner);
   }
-  function visiblePrice(row){return !!row&&(!!row.custom||Number(row.price)!==0);}
+  function visiblePrice(row){return !!row&&(!!row.custom||row.price===null||Number(row.price)!==0);}
+  function discountedPriceColumn(header){return (header||[]).map(norm).indexOf('стоимость со скидкой');}
+  function discountedPrice(row,column){
+    var value=column>=0?row[column]:null;
+    if(value===null||value===undefined||String(value).trim()==='')return null;
+    var number=Number(String(value).replace(/[\s\u00a0\u202f]/g,'').replace(',','.'));
+    return Number.isFinite(number)&&number>=0?number:null;
+  }
   function statusColumns(header){
     var h=(header||[]).map(norm);
     return {active:h.findIndex(function(x){return ['active','активность','активен','активна','статус активности','статус услуги','статус набора'].indexOf(x)>=0;}),partnerActive:h.findIndex(function(x){return ['partner active','активность партнера','статус партнера'].indexOf(x)>=0;})};
@@ -21,10 +28,10 @@
     (sets||[]).forEach(function(set){
       if(!available(set))return;
       (set.items||[]).forEach(function(item){
-        if(!out[item.sid]&&available(item))out[item.sid]=Object.assign({partner:'',city:set.city,fromComposition:true},item);
+        if(!out[item.sid]&&available(item))out[item.sid]=Object.assign({partner:'',city:set.city,fromComposition:true},item,{price:null});
       });
     });
     return out;
   }
-  return {available:available,visiblePrice:visiblePrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
+  return {available:available,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
 });

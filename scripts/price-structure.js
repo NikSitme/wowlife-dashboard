@@ -14,7 +14,7 @@
   function service(price,payout,partner,lookup,ref){
     var c=resolve(partner,lookup),r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
     if(ref&&ref.partner_id===c.id){
-      r.open=ref.open;r.derived=false;r.confirmedAsOf=ref.as_of;r.markup=price-r.open;r.markupShare=r.markup/r.open;
+      r.open=ref.open;r.derived=false;r.confirmedAsOf=ref.as_of;r.markup=price===null?null:price-r.open;r.markupShare=price===null?null:r.markup/r.open;
       r.terms+=' · Прайс партнёра подтверждён '+ref.as_of;
       if(c.rate===null||payout===null||!Number.isFinite(payout))return r;
       var expected=ref.open*(1-c.rate);
@@ -22,7 +22,7 @@
       r.commission=r.open-payout;return r;
     }
     if(c.rate===null||payout===null||!Number.isFinite(payout)||payout<0)return r;
-    r.open=payout/(1-c.rate);r.commission=r.open-payout;r.rate=c.rate;r.markup=price-r.open;r.markupShare=r.open>0?r.markup/r.open:null;
+    r.open=payout/(1-c.rate);r.commission=r.open-payout;r.rate=c.rate;r.markup=price===null?null:price-r.open;r.markupShare=price!==null&&r.open>0?r.markup/r.open:null;
     return r;
   }
   function aggregate(price,payout,parts,lookup,mode){
@@ -48,8 +48,9 @@
     if(!(p.discP<1)){r.hint='При скидке 100% невозможно получить маржу 20%.';return r;}
     r.net=s.rate>=.2-1e-10?s.open:payout/.8;r.markup=Math.max(0,r.net-s.open);
     r.gross=Math.ceil(((r.net+p.discR)/(1-p.discP))*100-1e-8)/100;
-    r.status=s.price<r.net-.01?'below':s.price>r.net+.01?'extra':'ok';
+    r.status=s.price===null?'unknown':s.price<r.net-.01?'below':s.price>r.net+.01?'extra':'ok';
     r.label=r.status==='below'?(margin!==null&&margin<.2?'Маржа ниже 20%':'Цена ниже правила'):r.status==='extra'?'Лишняя наценка':'По правилу';
+    if(s.price===null)r.label='Нет цены модели';
     r.hint='Проверка за одну полную активацию. При комиссии от 20% цена равна открытой; при комиссии ниже 20% цена = выплата / 0,8. Скидка учтена в рекомендуемой новой цене.';
     return r;
   }

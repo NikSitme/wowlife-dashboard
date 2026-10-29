@@ -28,6 +28,9 @@ assert.equal(C.paginate(sorted,0).page,1);
 assert.equal(C.paginate(many.slice(0,100),2).page,1,'Exactly 100 items need one page');
 assert.equal(C.paginate(many.slice(0,101),2).items.length,1);
 assert.deepEqual(C.paginate([],9),{items:[],page:1,pages:1,total:0,from:0,to:0});
+const missingPrice=[{sid:'unknown',name:'Без цены',city:'Мск',price:null},{sid:'known',name:'С ценой',city:'Мск',price:100}];
+assert.deepEqual(C.filter(missingPrice,'Мск',{sort:'price-asc'}).map(s=>s.sid),['known','unknown']);
+assert.deepEqual(C.filter(missingPrice,'Мск',{max:200}).map(s=>s.sid),['known']);
 const fs=require('node:fs'),vm=require('node:vm'),html=fs.readFileSync('index.html','utf8');
 for(const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)){if(m[1].includes('application/json'))JSON.parse(m[2]);else if(m[2].trim())new vm.Script(m[2]);}
 assert(!html.includes('data-setcity='),'No second city selector inside set');

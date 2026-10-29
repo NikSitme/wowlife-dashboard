@@ -37,6 +37,9 @@ near(r.exp,1260);assert.equal(r.target,null);near(r.mAct,.58);
 p=model.parameters(defaults,modes,{disc:{mode:'pct',value:100}});r=model.calculate(2000,1000,p);
 assert.equal(r.price,0);assert.equal(r.mAct,null);assert.equal(r.target,null);
 assert.equal(model.calculate(2000,null,model.parameters(defaults,modes,{})).mpAct,null);
+const absentPrice=model.calculate(null,1000,model.parameters(defaults,modes,{}));
+assert.equal(absentPrice.price,null);assert.equal(absentPrice.discount,null);assert.equal(absentPrice.mpAct,null);assert.equal(absentPrice.npAct,null);assert.equal(absentPrice.expenses.acq,null);
+near(absentPrice.partnerForecast,600);
 // Default logistics sums delivery articles, without adding marketplace expense totals.
 const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown:[{name:'Wowlife МСК выручка',value:1000}],direct_breakdown:[{name:'Эквайринговая комиссия',value:-20},{name:'Создание продукта',value:30},{name:'Доставка',value:10},{name:'Доставка Далли',value:40},{name:'Доставка СДЭК',value:5},{name:'Расходы ОЗОН',value:999}],personnel_total:100}]);
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
