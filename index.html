@@ -7899,7 +7899,7 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261029-discount-source"></script>
-<script src="./scripts/pricing-catalog.js?v=20261029-concerts-excluded"></script>
+<script src="./scripts/pricing-catalog.js?v=20261030-pending-zero"></script>
 <script src="./scripts/service-catalog.js?v=20261029-discount-source"></script>
 <script src="./scripts/price-structure.js?v=20261029-payout-base"></script>
 <script>
@@ -7910,7 +7910,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v6-payout-base", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v7-pending-zero", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8068,7 +8068,7 @@ window.__salesActSetData = function(newData){
         // Локальная правка > подтверждённая ручная выплата > выплата из состава CRM.
         var manualCost=sv.manualFields&&sv.manualFields.cost;
         var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : manualCost ? sv.cost : it.cost;
-        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || !!manualCost || cost > 0, price: sv.price, reference:sv.reference };
+        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || (manualCost ? sv.costKnown : cost > 0), price: sv.price, reference:sv.reference };
       }).filter(Boolean);
       (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, added: true }); });
       out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });

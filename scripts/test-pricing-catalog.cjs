@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v6-payout-base'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v7-pending-zero'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -119,4 +119,23 @@ for(const sid of removedConcerts){
 t.setData({catalog:{},sets:[]});
 for(const sid of removedConcerts)assert.equal(t.serviceOf(sid,{name:'Состав без справочника',city:'СПб',price:5000,cost:100}),null,'saved overrides and fallback rows cannot resurrect an excluded ID');
 assert.equal(t.state.customSets[0].items.length,7,'preserve saved draft data while hiding excluded services');
+// Temporary zero placeholders must not fabricate a free payout or 100% margin.
+const pendingHeader=[...manualHeader,'тип открытой цены'];
+const pending=catalog.manualOverlay(auto,[pendingHeader,['42','','','',0,'','0%','',0,'2026-10-30','','Данные уточняются']],'Мск').catalog;
+assert.equal(pending[42].cost,0);assert.equal(pending[42].costKnown,false);
+t.state.sov={};t.state.ov={};t.state.customServices={};t.state.customSets=[{id:'pending-draft',name:'Черновик',city:'Мск',price:5000,items:['42']}];
+t.setData({catalog:pending,sets:[{id:'pending-set',name:'Набор',city:'Мск',price:5000,items:[{sid:'42',name:'Услуга',cost:1000}]}]});
+assert.equal(t.calcService(t.serviceOf('42')).mpAct,null);
+assert.equal(t.calcService(t.serviceOf('42')).npAct,null);
+assert.equal(t.calcService(t.serviceOf('42')).structure.markup,null);
+for(const set of t.allSets()){
+  assert.equal(set.items[0].cost,0,'placeholder replaces the stale composition payout');
+  assert.equal(set.items[0].costKnown,false);
+  assert.equal(t.calcSet(set).noCost,1);
+  assert.equal(t.calcSet(set).mpAct,null);
+}
+t.state.sov['42']={cost:1200};assert.equal(t.calcService(t.serviceOf('42')).exp,1200,'local model payouts keep precedence');
+t.state.sov['42']={cost:0};assert.equal(t.calcService(t.serviceOf('42')).exp,0,'a deliberately confirmed local zero remains supported');
+const confirmed=catalog.manualOverlay(auto,[pendingHeader,['42','','','',0,'','0%','',0,'2026-10-30','','Прайс партнёра']],'Мск').catalog;
+t.state.sov={};t.setData({catalog:confirmed,sets:[]});assert.equal(t.calcService(t.serviceOf('42')).exp,0,'confirmed free services are distinct from pending data');
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');

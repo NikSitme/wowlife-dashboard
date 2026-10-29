@@ -52,6 +52,11 @@
       [['cost','себестоимость'],['price','стоимость со скидкой']].forEach(function(pair){var v=numeric(row,pair[1],id);if(v!==undefined){next[pair[0]]=v;fields[pair[0]]=true;if(pair[0]==='cost')next.costKnown=true;}});
       var open=numeric(row,'открытая цена партнера',id),terms=text(row,'размер комиссии');
       if(open!==undefined||terms){next.manualReference={partner_name:next.partner,as_of:text(row,'дата подтверждения'),source:'Ручная выгрузка '+city,derived:norm(text(row,'тип открытой цены'))==='расчет из выплаты и комиссии'};if(open!==undefined)next.manualReference.open=open;if(terms)next.manualReference.terms=terms;}
+      // A temporary zero is not a confirmed free service.
+      if(fields.cost&&next.cost===0&&norm(text(row,'тип открытой цены'))==='данные уточняются'){
+        next.costKnown=false;
+        next.manualReference={partner_name:next.partner,terms:'Данные уточняются',derived:true};
+      }
       if(base&&!available(base))next.active=false;
       next.manualFields=fields;next.manualSource='Ручная выгрузка '+city;out[id]=next;count++;
     });
