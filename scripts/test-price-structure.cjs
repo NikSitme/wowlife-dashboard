@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),S=require('./price-structure');
+const near=(a,b)=>assert(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+const rows=[{id:'1',name:'Партнёр',type:'Партнер',terms:'20%'},{id:'2',name:'Без',type:'Партнер',terms:'Без комиссии'},{id:'3',name:'Условия',type:'Партнер',terms:'15% (в выходные дни 10%)'},{id:'4',name:'Число',type:'Партнер',terms:'25'},{id:'5',name:'Дубль',type:'Партнер',terms:'10%'},{id:'6',name:'Дубль',type:'Партнер',terms:'20%'},{id:'7',name:'Полная',type:'Партнер',terms:'100%'}];
+const index=S.index(rows);let r=S.service(6000,4000,' ПАРТНЕР ',index);
+near(r.open,5000);near(r.markup,1000);near(r.commission,1000);near(r.rate,.2);near(r.markupShare,.2);
+near(r.price,r.markup+r.commission+4000);
+assert.equal(S.resolve('ID 1',index).id,'1');assert.equal(S.resolve('Дубль',index).rate,null);
+for(const partner of ['Условия','Число','Полная','Неизвестный'])assert.equal(S.service(6000,4000,partner,index).open,null,partner);
+r=S.service(6000,4000,'Без',index);near(r.open,4000);near(r.markup,2000);near(r.commission,0);
+r=S.service(3000,4000,'Партнёр',index);near(r.markup,-2000);
+assert.equal(S.service(6000,null,'Партнёр',index).open,null);
+near(S.service(6000,null,'Партнёр',index).rate,.2);
+r=S.aggregate(6000,4000,[{partner:'Партнёр',cost:4000,weight:.25},{partner:'Без',cost:4000,weight:.75}],index);
+near(r.open,4250);near(r.commission,250);near(r.rate,250/4250);near(r.markup,1750);
+assert.equal(S.aggregate(6000,4000,[{partner:'Условия',cost:4000,weight:1}],index).open,null);
+assert.equal(S.aggregate(6000,5000,[{partner:'Партнёр',cost:4000,weight:1}],index).open,null,'Manual payout mismatch must not fabricate a decomposition');
+assert.equal(S.aggregate(6000,4000,[{partner:'Партнёр',cost:4000,weight:1},{partner:'Без',cost:4000,weight:1}],index,'max').open,null,'Worst payout ties do not imply a unique open price');
+const data=JSON.parse(fs.readFileSync('data/partner-commissions.json','utf8'));
+assert.equal(data.as_of,'2026-10-29');assert.equal(data.companies.length,458);
+assert.equal(new Set(data.companies.map(r=>r.id)).size,458);
+assert(data.companies.every(r=>r.type==='Партнер'),'Only partners are needed in the public price list');
+assert(data.companies.every(r=>Object.keys(r).sort().join(',')==='id,name,terms,type'));
+assert(!/\+7[\d ()-]{9,}/.test(JSON.stringify(data)),'Do not publish the operational phone note');
+for(const c of data.companies){const result=S.resolve(c.name,S.index([c]));if(result.rate!==null)assert(result.rate>=0&&result.rate<1);}
+console.log('PASS price structure: components reconcile, percentage bases, weighted sets, zero/unknown/conditional rates, duplicate names, snapshot and no contacts');

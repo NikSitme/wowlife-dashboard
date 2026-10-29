@@ -42,9 +42,10 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,setCommissions:function(rows){commissionIndex=STRUCTURE.index(rows);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
-const context={window:{WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
+let exportedCsv='';
+const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
@@ -73,7 +74,7 @@ t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,200
 set=t.allSets()[0];calc=t.calcSet(set);
 const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
 assert.equal((cells.match(/<td /g)||[]).length+3,t.colCount());
-assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,29);
+assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,38);
 t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+3,t.colCount());
 t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
 t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
@@ -91,3 +92,11 @@ const modeMarkup=html.slice(html.indexOf('id="prModeGroup"'),html.indexOf('<div 
 assert(modeMarkup.includes('id="prActivation"')&&modeMarkup.includes('id="prMode"'),'Activation and forecast must share one control group');
 assert(!html.includes('root.querySelector("#prModeGroup").hidden'),'Forecast is visible in every pricing view');
 console.log('PASS pricing: discounts, expenses, target price, defaults, migration, row inheritance, CRM proposals, forecasts, composition and headers');
+
+t.setCommissions([{id:'1',name:'One',type:'\u041f\u0430\u0440\u0442\u043d\u0435\u0440',terms:'20%'}]);
+t.state.mode='avg';t.state.params.act=60;t.state.sov.a.cost=1200;const structureSvc=t.calcService(t.serviceOf('a'));
+near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);near(structureSvc.structure.commission,300);near(structureSvc.partnerForecast,720);
+near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
+console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
+
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,24);assert.equal(exportLines[1].split(';').length,24);console.log('PASS pricing CSV: full filtered selection and 24 aligned columns');

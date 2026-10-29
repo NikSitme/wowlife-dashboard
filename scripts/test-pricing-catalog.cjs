@@ -19,7 +19,7 @@ const html=fs.readFileSync('index.html','utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
 body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,parseCatalog,parseSets,allServices,allSets,serviceOf,usage,calcSet,setData:function(c){CRM=c;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
-const context={window:{WowlifePricing:model,WowlifePricingCatalog:catalog,__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
+const context={window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:catalog,__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){}},console};
 vm.runInNewContext(body,context);const t=context.window.pricingTest;t.ensureParams();
 const crm={catalog:{},sets:[]};
 t.parseCatalog([['id','Название','Партнёр','Цена','Выплата','Маржа','Активность'],['1','Бесплатная','Действующий',0,0,'','Y'],['2','Оплачиваемая','Закрылись',3000,1500,'','Y'],['3','Отключена полем','Действующий',3000,1500,'','N'],['4','Обычная','Действующий',2500,1000,'','Y']],'Мск',crm.catalog);
