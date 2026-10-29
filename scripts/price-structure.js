@@ -12,10 +12,16 @@
   function reference(sid,partner,lookup){var p=lookup.openPrices&&lookup.openPrices[String(sid)];return p&&resolve(partner,lookup).id===p.partner_id?p:null;}
   function defaultPayout(ref,partner,lookup){var rate=resolve(partner,lookup).rate;return ref&&rate!==null?ref.open*(1-rate):null;}
   function service(price,payout,partner,lookup,ref){
-    var c=resolve(partner,lookup),r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
-    if(ref&&ref.partner_id===c.id){
+    var c=resolve(partner,lookup);
+    var matches=ref&&(ref.partner_name?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
+    if(matches&&ref.terms!==undefined){
+      var terms=norm(ref.terms),m=terms.match(/^(\d+(?:[.,]\d+)?)\s*%$/),rate=terms==='без комиссии'?0:m?Number(m[1].replace(',','.'))/100:null;
+      c={id:c.id,terms:ref.terms+' · Ручные данные',rate:rate!==null&&rate>=0&&rate<1?rate:null};
+    }
+    var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
+    if(matches&&Number.isFinite(ref.open)&&ref.open>=0){
       r.open=ref.open;r.derived=false;r.confirmedAsOf=ref.as_of;r.markup=price===null?null:price-r.open;r.markupShare=price===null?null:r.markup/r.open;
-      r.terms+=' · Прайс партнёра подтверждён '+ref.as_of;
+      r.terms+=ref.as_of?' · Прайс партнёра подтверждён '+ref.as_of:' · Открытая цена из ручной выгрузки';
       if(c.rate===null||payout===null||!Number.isFinite(payout))return r;
       var expected=ref.open*(1-c.rate);
       if(Math.abs(expected-payout)>0.01){r.mismatch=true;r.terms+=' · Выплата модели '+payout+' ₽ отличается от выплаты по прайсу '+expected+' ₽; проверьте себестоимость в таблице или правку модели';return r;}

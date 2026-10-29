@@ -33,5 +33,27 @@
     });
     return out;
   }
-  return {available:available,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog};
+  function manualOverlay(catalog,rows,city){
+    var out=Object.assign({},catalog),h=(rows[0]||[]).map(norm),count=0,seen=new Set();
+    var column=function(name){return h.indexOf(name);};
+    ['id услуги','наименование','партнер','себестоимость','стоимость со скидкой'].forEach(function(k){if(column(k)<0)throw new Error('Ручная выгрузка '+city+': нет столбца «'+k+'»');});
+    function text(row,key){var i=column(key);return i<0?'':String(row[i]==null?'':row[i]).trim();}
+    function numeric(row,key,id){var v=text(row,key);if(!v)return undefined;var n=Number(v.replace(/[\s\u00a0\u202f]/g,'').replace(',','.'));if(!Number.isFinite(n)||n<0)throw new Error('Ручная выгрузка '+city+', ID '+id+': некорректное значение «'+key+'»');return n;}
+    rows.slice(1).forEach(function(row){
+      if(!row||row.every(function(v){return !String(v==null?'':v).trim();}))return;
+      var id=text(row,'id услуги');if(!/^\d+$/.test(id))throw new Error('Ручная выгрузка '+city+': нужен ID услуги из CRM');
+      if(seen.has(id))throw new Error('Ручная выгрузка '+city+': повтор ID '+id);seen.add(id);
+      var base=out[id];if(base&&base.city!==city)throw new Error('Ручная выгрузка '+city+': ID '+id+' относится к другому городу');
+      var next=Object.assign({sid:id,name:'',partner:'',price:null,cost:0,city:city},base),fields={};
+      ['name','partner'].forEach(function(k){var v=text(row,k==='name'?'наименование':'партнер');if(v){next[k]=v;fields[k]=true;}});
+      if(!next.name)throw new Error('Ручная выгрузка '+city+': нет названия ID '+id);
+      [['cost','себестоимость'],['price','стоимость со скидкой']].forEach(function(pair){var v=numeric(row,pair[1],id);if(v!==undefined){next[pair[0]]=v;fields[pair[0]]=true;if(pair[0]==='cost')next.costKnown=true;}});
+      var open=numeric(row,'открытая цена партнера',id),terms=text(row,'размер комиссии');
+      if(open!==undefined||terms){next.manualReference={partner_name:next.partner,as_of:text(row,'дата подтверждения'),source:'Ручная выгрузка '+city};if(open!==undefined)next.manualReference.open=open;if(terms)next.manualReference.terms=terms;}
+      if(base&&!available(base))next.active=false;
+      next.manualFields=fields;next.manualSource='Ручная выгрузка '+city;out[id]=next;count++;
+    });
+    return {catalog:out,count:count};
+  }
+  return {available:available,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,manualOverlay:manualOverlay};
 });

@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v4-discounted'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v5-manual'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -67,4 +67,24 @@ assert.equal(t.calcService(t.serviceOf('5')).mpAct,null,'No price means unknown 
 t.state.sov['10884']={price:8700};assert.equal(t.serviceOf('10884').price,8700);assert.equal(t.serviceOf('10884').basePrice,8550);
 assert.equal(completed.b.price,null,'Composition-only services must not present the old composition price as discounted site price');
 assert.throws(()=>t.parseCatalog([['id','Название','Партнер','Цена']], 'Мск',{}),/стоимость со скидкой/);
+const manualHeader=['id услуги','наименование','партнер','стоимость','себестоимость','%маржи','размер комиссии','стоимость со скидкой','открытая цена партнера','дата подтверждения','комментарий'];
+const auto={42:{sid:'42',name:'Услуга',partner:'Партнер',city:'Мск',cost:1000,price:2375}};
+const merged=catalog.manualOverlay(auto,[manualHeader,['42','','','',4500,'','10%','',5000,'2026-10-29']],'Мск');
+assert.equal(merged.count,1);assert.equal(merged.catalog[42].price,2375,'blank manual site price preserves the live discounted auto price');
+assert.equal(merged.catalog[42].cost,4500);assert.equal(auto[42].cost,1000,'keep original auto source intact');
+assert.equal(merged.catalog[42].manualReference.open,5000);
+assert.equal(catalog.manualOverlay(auto,[manualHeader,['42','','','',0,'','','0']],'Мск').catalog[42].costKnown,true,'explicit zero is a known manual value');
+assert.throws(()=>catalog.manualOverlay(auto,[manualHeader,['42'],['42']],'Мск'),/повтор ID/);
+assert.throws(()=>catalog.manualOverlay(auto,[manualHeader,['42','','','',-10]],'Мск'),/некорректное/);
+assert.throws(()=>catalog.manualOverlay(auto,[manualHeader,['42','','','',10]],'СПб'),/другому городу/);
+assert.equal(catalog.manualOverlay({42:{...auto[42],partner:'Закрылись'}},[manualHeader,['42','','Партнер']],'Мск').catalog[42].active,false,'manual corrections cannot resurrect inactive source records');
+t.state.sov={};t.state.ov={};t.state.customSets=[];t.state.customServices={};
+t.setData({catalog:merged.catalog,sets:[{id:'manual-set',name:'Набор',price:6000,city:'Мск',items:[{sid:'42',name:'Услуга',cost:999}]}]});
+assert.equal(t.allSets()[0].items[0].cost,4500,'manual payout applies inside existing sets as well as standalone services');
+assert.equal(t.serviceOf('42').reference.open,5000);
+assert.equal(t.calcService(t.serviceOf('42')).structure.commission,500,'manual open price and commission work even when partner is absent from the frozen company lookup');
+t.state.sov['42']={cost:4600};assert.equal(t.allSets()[0].items[0].cost,4600,'preserve the user’s local model overrides');
+assert.equal(t.calcService(t.serviceOf('42')).structure.mismatch,true,'manual inputs must still be checked for contradictory payout');
+t.state.sov['42']={partner:'Другой партнёр'};assert.equal(t.serviceOf('42').reference,null,'do not carry the former partner’s confirmed price into a local partner change');
+assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manual tabs by exact stable gid');
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');

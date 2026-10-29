@@ -566,9 +566,10 @@
       </ul>
 
       <h3 id="doc-pricing">11. Вкладка «Ценообразование»</h3>
+      <p><b>Ручные дополнения.</b> Вкладки «Ручная выгрузка услуги мск» и «Ручная выгрузка услуги спб » дополняют автовыгрузку по ID услуги. Заполненное поле имеет приоритет, пустое сохраняет значение источника; явный 0 отличается от пропуска. H — цена сайта со скидкой, E — полная выплата партнёру, I — открытая цена партнёра до нашей комиссии, G — условия комиссии. Ручная выплата действует и в составе наборов; локальная правка модели остаётся выше неё. Повторы ID, другой город или некорректные числа останавливают обновление с пояснением. «Обновить данные» заново читает оба вида выгрузки.</p>
       <p>Конструктор наборов и прайс услуг по логике standfin (созвон 04.10.2026): в цену закладываются только <b>переменные расходы</b>, постоянные (ФОТ, аренда, маркетинг) покрываются маржой и в прайс не входят; чистая прибыль показывается справочно. Инструкция «что сделать / что получаем / зачем / почему так» — в каждом блоке вкладки.</p>
       <ul>
-        <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Актуальные наборы и их состав определяются этими двумя листами (уточнение Никиты 28.10). Прайс услуг — листы «Услуги Мск/СПб»: цена сайта берётся из столбца H «стоимость со скидкой», себестоимость — из исходной таблицы. Цена самих наборов пока остаётся прежней по указанию Никиты 29.10. Услуги, отсутствующие в общем прайсе, дополняются из состава наборов и отмечаются «из состава набора»; их цена сайта неизвестна, показывается прочерк. Пустая/ошибочная цена не заменяется старым столбцом «стоимость» или нулём. Партнёр у таких строк не угадывается. Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить из CRM» скачивает заново.</li>
+        <li><b>Источник.</b> Состав наборов — листы «Наборы Мск» и «Наборы СПб» таблицы «Никита» (CRM): для каждого набора цена в скобках в заголовке и список услуг с ценой и себестоимостью (выплатой партнёру). Актуальные наборы и их состав определяются этими двумя листами (уточнение Никиты 28.10). Прайс услуг — листы «Услуги Мск/СПб»: цена сайта берётся из столбца H «стоимость со скидкой», себестоимость — из исходной таблицы. Цена самих наборов пока остаётся прежней по указанию Никиты 29.10. Услуги, отсутствующие в общем прайсе, дополняются из состава наборов и отмечаются «из состава набора»; их цена сайта неизвестна, показывается прочерк. Пустая/ошибочная цена не заменяется старым столбцом «стоимость» или нулём. Партнёр у таких строк не угадывается. Веса по активациям — лист «Активация» за последние 24 месяца. Данные грузятся при открытии вкладки и хранятся в браузере сутки; кнопка «Обновить данные» скачивает заново.</li>
         <li><b>Столбцы.</b> Группы «Цена», «Партнёру», «Маржинальная прибыль», «Комиссии и налоги», «Упаковка», «Логистика», «Чистая прибыль». Группы можно свернуть. «Новая» цена начинается с текущей цены CRM; «Текущая» сохраняет исходник. Расходы и дополнительная скидка наследуются из параметров, пока их не изменили в строке. Скидка исходного прайса уже включена в цену услуги. Правка процента задаёт долю цены со скидкой, правка суммы фиксирует расход в рублях. ↺ возвращает строку к параметрам. Подсказки в заголовках объясняют показатели. По числовым заголовкам доступна сортировка в обе стороны, включая свёрнутые итоги; неизвестные значения внизу. Состав набора сортируется отдельно. Услуги сортируются до разбиения на страницы.</li>
         <li><b>Параметры.</b> Эквайринг, логистика и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; логистика — сумма статей доставки / выручка сайта за тот же период; возвраты исключены из ценообразования; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); минимальная маржа 20 % за полную активацию; постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
         <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, худшая (максимальная выплата партнёру за услугу; активация всегда 100%) или взвешенная по частоте активаций партнёров. МП = P − C × активация; маржа = МП / P. В прогнозе «Худшая» набор использует 100 % активаций и максимальную выплату из состава; отдельная правка прогноза выплаты набора здесь не применяется. Для услуги этот прогноз использует 100 % активаций и полную выплату за услугу. МП, маржа, ЧП и целевая цена показывают только выбранный прогноз, отдельного худшего показателя нет. ЧП = МП − V − постоянные (P × % или ₽). Цена по правилу: при комиссии от 20% используем открытую цену без наценки, при меньшей комиссии — полную выплату / 0,8; затем учитываем дополнительную скидку модели. Прогноз использования не уменьшает этот порог. Услуга «убыточна при активации», если P − её себестоимость &lt; 0.</li>
@@ -576,7 +577,7 @@
         <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «Добавить услуги» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории сопоставляются по наименованию с классификатором Адеск «Выручка New» (снимок 13.10.2026), нераспознанные остаются в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. «Поставить цену для цели» ставит цену, при которой маржа равна целевой.</li>
         <li><b>Актуальность.</b> Скрываются позиции с явными пометками «не работаем», «не сотрудничаем», «закрылись», «архив», «неактивен», а также со статусом отключения, если он передан в выгрузке. Правило действует в прайсе, составе, подборе, показателях и CSV. Нулевая цена не является признаком отключения. Текущая выгрузка не содержит отдельного поля активности, поэтому позиции без явного признака остаются видимыми. Сохранённые проекты и история не удаляются.</li>
         <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
-        <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава.</li>
+        <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава, если нет ручной выплаты или локальной правки.</li>
       </ul>
       <h3 id="doc-known">12. Известные особенности и принятые решения</h3>
       <ul>
@@ -3964,7 +3965,7 @@ window.__salesActSetData = function(newData){
     </div>
     <div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div>
     <div class="pr-utilities">
-      <button type="button" class="pr-btn" id="prCrm" title="Скачать состав наборов и прайс услуг из таблицы «Никита» заново">Обновить из CRM</button>
+      <button type="button" class="pr-btn" id="prCrm" title="Заново загрузить состав наборов, автовыгрузку и ручные дополнения из таблицы «Никита»">Обновить данные</button>
       <button type="button" class="pr-btn" id="prCsv">Экспорт CSV</button>
       <button type="button" class="pr-btn quiet reset" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
     </div>
@@ -7898,9 +7899,9 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261029-discount-source"></script>
-<script src="./scripts/pricing-catalog.js?v=20261029-discount-source"></script>
+<script src="./scripts/pricing-catalog.js?v=20261029-manual"></script>
 <script src="./scripts/service-catalog.js?v=20261029-discount-source"></script>
-<script src="./scripts/price-structure.js?v=20261029-discount-source"></script>
+<script src="./scripts/price-structure.js?v=20261029-manual"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7909,14 +7910,14 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v4-discounted", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v5-manual", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
     if(commissionStarted)return;commissionStarted=true;
-    try{var responses=await Promise.all([fetch('./data/partner-commissions.json?v=20261029'),fetch('./data/partner-open-prices.json?v=20261029')]);if(responses.some(function(r){return !r.ok;}))throw new Error('Источник недоступен');var loaded=await Promise.all(responses.map(function(r){return r.json();}));commissionIndex=STRUCTURE.index(loaded[0].companies,loaded[1].prices);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Цена услуги — столбец «стоимость со скидкой»; цена наборов пока прежняя. Выплата партнёру — из столбца «себестоимость» исходной таблицы; ручные правки модели сохраняются. Блок «Себестоимость» — открытая цена партнёра до комиссии по подтверждённому прайсу; остальные цены восстановлены из полной выплаты и помечены «расчёт». Наценка считается от цены модели после скидки, её процент — от открытой цены. Комиссия в приоритете: от 20% — без наценки, ниже — добираем наценкой до маржи 20%. Проверка — за полную активацию; прогноз использования влияет на МП и ЧП.';render();}
+    try{var responses=await Promise.all([fetch('./data/partner-commissions.json?v=20261029'),fetch('./data/partner-open-prices.json?v=20261029')]);if(responses.some(function(r){return !r.ok;}))throw new Error('Источник недоступен');var loaded=await Promise.all(responses.map(function(r){return r.json();}));commissionIndex=STRUCTURE.index(loaded[0].companies,loaded[1].prices);root.querySelector('#prCommissionStatus').textContent='Комиссии CRM на 29.10.2026. Цена услуги — столбец «стоимость со скидкой»; цена наборов пока прежняя. Выплата партнёру — столбец «себестоимость». Непустые поля ручных вкладок дополняют автовыгрузку по ID услуги; пустые поля её не обнуляют. Локальные правки модели сохраняются и имеют приоритет. Блок «Себестоимость» — открытая цена партнёра до комиссии по подтверждённому прайсу; остальные цены восстановлены из полной выплаты и помечены «расчёт». Наценка считается от цены модели после скидки, её процент — от открытой цены. Комиссия в приоритете: от 20% — без наценки, ниже — добираем наценкой до маржи 20%. Проверка — за полную активацию; прогноз использования влияет на МП и ЧП.';render();}
     catch(e){commissionStarted=false;root.querySelector('#prCommissionStatus').textContent='Не удалось загрузить комиссии. Открытая цена и наценка пока не определены. Переключитесь на раздел повторно для загрузки.';}
   }
   var servicePage = 1, serviceRevealId = null;
@@ -7959,7 +7960,7 @@ window.__salesActSetData = function(newData){
 
   // ---------- CRM: наборы и услуги ----------
   async function fetchSheet(sheetName){
-    var gids={"Наборы Мск":1101164770,"Наборы СПб":2052534914,"Услуги Мск":540536566,"Услуги СПб":1852118716};
+    var gids={"Наборы Мск":1101164770,"Наборы СПб":2052534914,"Услуги Мск":540536566,"Услуги СПб":1852118716,"Ручная выгрузка услуги мск":1264019519,"Ручная выгрузка услуги спб ":1440794799};
     var url = "https://docs.google.com/spreadsheets/d/" + NIKITA_ID + (gids[sheetName]!==undefined?"/export?format=csv&gid="+gids[sheetName]:"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(sheetName));
     var res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status + " для листа «" + sheetName + "»");
@@ -8005,10 +8006,13 @@ window.__salesActSetData = function(newData){
     if (!force){ try { var c = JSON.parse(localStorage.getItem(CRM_KEY) || "null"); if (c && c.sets && c.catalog && (Date.now() - new Date(c.savedAt).getTime()) < 36e5 * 24){ CRM = c; render(); return; } } catch (e) {} }
     crmLoading = true; setStatus("Загружаю наборы и услуги из CRM…"); render();
     try {
-      var r = await Promise.all([fetchSheet("Наборы Мск"), fetchSheet("Наборы СПб"), fetchSheet("Услуги Мск"), fetchSheet("Услуги СПб")]);
+      var r = await Promise.all([fetchSheet("Наборы Мск"), fetchSheet("Наборы СПб"), fetchSheet("Услуги Мск"), fetchSheet("Услуги СПб"), fetchSheet("Ручная выгрузка услуги мск"), fetchSheet("Ручная выгрузка услуги спб ")]);
       var cat = {}; parseCatalog(r[2], "Мск", cat); parseCatalog(r[3], "СПб", cat);
       var sets=parseSets(r[0], "Мск").concat(parseSets(r[1], "СПб"));
-      CRM = { sets:sets, catalog:CATALOG.completeCatalog(sets,cat), savedAt: new Date().toISOString() };
+      var completed=CATALOG.completeCatalog(sets,cat);
+      var manualMsk=CATALOG.manualOverlay(completed,r[4],"Мск");
+      var manualSpb=CATALOG.manualOverlay(manualMsk.catalog,r[5],"СПб");
+      CRM = { sets:sets, catalog:manualSpb.catalog, manualCount:manualMsk.count+manualSpb.count, savedAt: new Date().toISOString() };
       try { localStorage.setItem(CRM_KEY, JSON.stringify(CRM)); } catch (e) {}
       setStatus("");
     } catch (e) { setStatus("Не удалось загрузить CRM: " + e.message + ". Проверьте доступ к таблице «Никита»."); }
@@ -8046,8 +8050,9 @@ window.__salesActSetData = function(newData){
     var base = state.customServices[sid] || source || fallback || null;
     if (!CATALOG.available(base)||fallback&&!CATALOG.available(fallback)) return null;
     var o = state.sov[sid] || {};
-    var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.cost > 0, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+    var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.costKnown === true || base.cost > 0, manualFields:base.manualFields, manualSource:base.manualSource, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
     result.reference=STRUCTURE.reference(sid,result.partner,commissionIndex);
+    if(base.manualReference && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},base.manualReference);
     return CATALOG.visiblePrice(result)?result:null;
   }
   function allSets(){
@@ -8059,9 +8064,10 @@ window.__salesActSetData = function(newData){
       var items = s.items.filter(function(it){ return !removed[it.sid]&&CATALOG.available(it); }).map(function(it){
         var sv = serviceOf(it.sid, { name: it.name, partner: "", city: s.city, price: it.price, cost: it.cost });
         if(!sv)return null;
-        // себестоимость берём из состава набора (так в CRM), если пользователь не правил услугу
-        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : it.cost;
-        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || cost > 0, price: sv.price, reference:sv.reference };
+        // Локальная правка > подтверждённая ручная выплата > выплата из состава CRM.
+        var manualCost=sv.manualFields&&sv.manualFields.cost;
+        var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : manualCost ? sv.cost : it.cost;
+        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || !!manualCost || cost > 0, price: sv.price, reference:sv.reference };
       }).filter(Boolean);
       (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, added: true }); });
       out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
@@ -8289,7 +8295,7 @@ window.__salesActSetData = function(newData){
     var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+financialCells(s,r,{key:key,kind:'service'})+ruleCell(r,'service',s.sid)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+financialCells(s,r,{key:key,kind:'service'})+ruleCell(r,'service',s.sid)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
   }
 
@@ -8326,7 +8332,7 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prTitle").textContent = state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборы" : "Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "newsets" ? "создавайте и сравнивайте новые наборы" : state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
     renderKpis(visibleSets());
-    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг в источнике · скрыты явные архивные/неактивные позиции и позиции с нулевой ценой · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
+    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "CRM: " + CRM.sets.length + " наборов, " + Object.keys(CRM.catalog).length + " услуг в источнике · ручных дополнений " + (CRM.manualCount||0) + " · скрыты явные архивные/неактивные позиции и позиции с нулевой ценой · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
     root.querySelectorAll('[data-service-pagination]').forEach(function(nav){nav.hidden=state.view!=="services";});
     if (state.view !== "services") renderSets(); else renderServices();
     root.querySelector("#prTableWrap").setAttribute("role", "tabpanel");
