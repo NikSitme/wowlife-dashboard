@@ -94,4 +94,29 @@ assert.equal(t.calcService(t.serviceOf('42')).structure.derived,true,'formula re
 assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1000/.9)<1e-8);
 t.state.sov['42']={cost:1200};assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1200/.9)<1e-8,'recalculate from the effective payout instead of freezing a rounded formula snapshot');
 assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manual tabs by exact stable gid');
+// Explicit removals survive stale CRM caches, manual corrections and saved custom sets.
+const removedConcerts=['42968','42969','42971','42972','42974','42975'];
+const concertCatalog={},concertItems=[];
+for(const sid of [...removedConcerts,'42976']){
+  const service={sid,name:'Музыкальный концерт',partner:'Партнер',city:'СПб',price:1000,cost:700};
+  concertCatalog[sid]=service;concertItems.push({...service});
+}
+for(const sid of removedConcerts){
+  assert.equal(available({...concertCatalog[sid],sid:Number(sid),active:true}),false,sid);
+  assert.equal(catalog.completeCatalog([{city:'СПб',items:[concertCatalog[sid]]}],{})[sid],undefined,'removed concerts cannot return from composition');
+}
+assert.equal(available(concertCatalog['42976']),true,'retain unrelated concerts');
+t.state.sov={};t.state.ov={'concert-set':{added:removedConcerts}};t.state.customServices={};
+t.state.customSets=[{id:'concert-draft',name:'Черновик',city:'СПб',price:2000,items:[...removedConcerts,'42976']}];
+t.setData({catalog:concertCatalog,sets:[{id:'concert-set',name:'Набор',city:'СПб',price:2000,items:concertItems}]});
+assert.deepEqual(Array.from(t.allServices(),x=>x.sid),['42976'],'service table, picker and CSV share the filtered catalog');
+for(const set of t.allSets())assert.deepEqual(Array.from(set.items,x=>x.sid),['42976'],'remove concerts from existing and custom sets');
+for(const sid of removedConcerts){
+  assert.equal(t.usage()[sid],undefined,'removed concerts do not affect usage or calculations');
+  t.state.sov[sid]={name:'Переименованная услуга',price:5000,cost:100};
+  t.state.customServices[sid]={name:'Сохранённая копия',city:'СПб',price:5000,cost:100};
+}
+t.setData({catalog:{},sets:[]});
+for(const sid of removedConcerts)assert.equal(t.serviceOf(sid,{name:'Состав без справочника',city:'СПб',price:5000,cost:100}),null,'saved overrides and fallback rows cannot resurrect an excluded ID');
+assert.equal(t.state.customSets[0].items.length,7,'preserve saved draft data while hiding excluded services');
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');

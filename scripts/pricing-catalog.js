@@ -1,4 +1,6 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePricingCatalog=api;})(typeof window==='undefined'?globalThis:window,function(){
+  // Explicit catalog removals apply to cached data, composition and saved drafts alike.
+  var excludedServiceIds=new Set(['42968','42969','42971','42972','42974','42975']);
   function norm(s){return String(s==null?'':s).toLowerCase().replace(/ё/g,'е').replace(/[_\s]+/g,' ').trim();}
   function inactiveLabel(value){
     var s=norm(value);
@@ -6,7 +8,7 @@
   }
   function inactiveFlag(value){return value===false||value===0||['n','no','false','0','нет','inactive','disabled','archived','deleted'].indexOf(norm(value))>=0||inactiveLabel(value);}
   function available(row){
-    if(!row)return false;
+    if(!row||excludedServiceIds.has(String(row.sid)))return false;
     // Activity and price visibility are separate: a zero price does not mark a product inactive.
     return !inactiveFlag(row.active)&&!inactiveFlag(row.partnerActive)&&!inactiveLabel(row.name)&&!inactiveLabel(row.partner);
   }

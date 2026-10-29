@@ -7899,7 +7899,7 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261029-discount-source"></script>
-<script src="./scripts/pricing-catalog.js?v=20261029-payout-base"></script>
+<script src="./scripts/pricing-catalog.js?v=20261029-concerts-excluded"></script>
 <script src="./scripts/service-catalog.js?v=20261029-discount-source"></script>
 <script src="./scripts/price-structure.js?v=20261029-payout-base"></script>
 <script>
@@ -8045,6 +8045,7 @@ window.__salesActSetData = function(newData){
 
   // ---------- сборка данных с правками ----------
   function serviceOf(sid, fallback){
+    if(!CATALOG.available({sid:sid}))return null;
     var source=CRM && CRM.catalog[sid];
     if(source&&!CATALOG.available(source))return null;
     var base = state.customServices[sid] || source || fallback || null;
