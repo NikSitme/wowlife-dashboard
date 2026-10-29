@@ -38,3 +38,16 @@ assert.equal(S.reference('10884','ROYAL THAI',confirmedIndex),null,'Reference be
 const mixed=S.aggregate(9000,4860,[{partner,cost:4860,reference:ref,weight:1}],confirmedIndex);
 near(mixed.open,5400);near(mixed.commission,540);assert.equal(mixed.derived,false);
 console.log('PASS price structure: components reconcile, percentage bases, weighted sets, zero/unknown/conditional rates, duplicate names, snapshot and no contacts');
+
+const discount={discP:0,discR:0};
+let policy=S.rule(S.service(9000,4860,partner,confirmedIndex,ref),4860,discount);
+near(policy.net,6075);near(policy.gross,6075);near(policy.markup,675);assert.equal(policy.status,'extra');
+policy=S.rule(S.service(5000,4860,partner,confirmedIndex,ref),4860,discount);assert.equal(policy.status,'below');
+policy=S.rule(S.service(6075,4860,partner,confirmedIndex,ref),4860,discount);assert.equal(policy.status,'ok');near(policy.margin,.2);
+policy=S.rule(S.service(5000,4000,'Партнёр',index),4000,discount);near(policy.net,5000);near(policy.markup,0);assert.equal(policy.status,'ok');
+const high=S.index([{id:'8',name:'Высокая',type:'Партнер',terms:'30%'}]);
+policy=S.rule(S.service(7000,3500,'Высокая',high),3500,discount);near(policy.net,5000);near(policy.markup,0);assert.equal(policy.status,'extra');
+policy=S.rule(S.service(6000,4000,'Без',index),4000,discount);near(policy.net,5000);near(policy.markup,1000);
+policy=S.rule(S.service(9000,4860,partner,confirmedIndex,ref),4860,{discP:.1,discR:100});assert(policy.gross*.9-100>=6075);near(policy.net,6075);
+for(const [structure,cost,p] of [[S.unknown(9000,'unknown'),4860,discount],[S.service(9000,4400,partner,confirmedIndex,ref),4400,discount],[S.service(9000,4860,partner,confirmedIndex,ref),4860,{discP:1,discR:0}],[S.service(9000,4860,partner,confirmedIndex,ref),4860,{...discount,partner:{mode:'pct',value:54}}],[S.service(0,0,'Без',index),0,discount]])assert.equal(S.rule(structure,cost,p).gross,null);
+console.log('PASS policy boundaries: 0/10/20/30 percent, exact 20% margin, discounts, conflicts and unknown inputs');

@@ -40,5 +40,18 @@
     open/=total;commission/=total;
     return {price:price,open:open,markup:price-open,markupShare:open>0?(price-open)/open:null,commission:commission,rate:open>0?commission/open:null,terms:'По составу: '+Array.from(new Set(terms)).join('; '),derived:derived,confirmedAsOf:!derived?Array.from(new Set(dates)).join(', '):null};
   }
-  return {index:index,resolve:resolve,reference:reference,defaultPayout:defaultPayout,service:service,aggregate:aggregate,unknown:unknown};
+  function rule(s,payout,p){
+    var margin=s.price>0&&Number.isFinite(payout)?(s.price-payout)/s.price:null;
+    var r={margin:margin,net:null,gross:null,markup:null,status:'unknown',label:'Нужны данные',hint:'Нужны открытая цена, комиссия и полная выплата партнёру.'};
+    if(!(s.open>0)||s.rate===null||s.commission===null||s.mismatch||!Number.isFinite(payout)||payout<0)return r;
+    if(p.partner&&p.partner.mode==='pct'){r.hint='Выплата задана долей цены модели. Задайте полную выплату в рублях для проверки цены по комиссии.';return r;}
+    if(!(p.discP<1)){r.hint='При скидке 100% невозможно получить маржу 20%.';return r;}
+    r.net=s.rate>=.2-1e-10?s.open:payout/.8;r.markup=Math.max(0,r.net-s.open);
+    r.gross=Math.ceil(((r.net+p.discR)/(1-p.discP))*100-1e-8)/100;
+    r.status=s.price<r.net-.01?'below':s.price>r.net+.01?'extra':'ok';
+    r.label=r.status==='below'?(margin!==null&&margin<.2?'Маржа ниже 20%':'Цена ниже правила'):r.status==='extra'?'Лишняя наценка':'По правилу';
+    r.hint='Проверка за одну полную активацию. При комиссии от 20% цена равна открытой; при комиссии ниже 20% цена = выплата / 0,8. Скидка учтена в рекомендуемой новой цене.';
+    return r;
+  }
+  return {index:index,resolve:resolve,reference:reference,defaultPayout:defaultPayout,service:service,aggregate:aggregate,unknown:unknown,rule:rule};
 });

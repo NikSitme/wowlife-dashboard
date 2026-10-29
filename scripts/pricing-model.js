@@ -3,7 +3,7 @@
   var KEYS = ['acq','tax','pack','logistics'];
   function sum(items, match){return (items || []).reduce(function(n,x){return n + (match(x.name) ? Math.abs(Number(x.value)||0) : 0);},0);}
   function defaults(months){
-    var d={act:60,acq:2.1,pack:2,tax:7,logistics:0,disc:0,target:40,fixed:30,months:null};
+    var d={act:60,acq:2.1,pack:2,tax:7,logistics:0,disc:0,target:20,fixed:30,months:null};
     var last=(months||[]).filter(function(m){return m.revenue_total>0;}).slice(-6);
     var site=0,rev=0,fix=0,acq=0,pack=0,delivery=0;
     last.forEach(function(m){

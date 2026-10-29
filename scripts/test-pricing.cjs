@@ -99,7 +99,7 @@ near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);
 near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
-t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,24);assert.equal(exportLines[1].split(';').length,24);console.log('PASS pricing CSV: full filtered selection and 24 aligned columns');
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,26);assert.equal(exportLines[1].split(';').length,26);console.log('PASS pricing CSV: full filtered selection and 26 aligned columns');
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
@@ -107,3 +107,19 @@ t.setData({catalog:{'10884':{sid:'10884',name:'Snowboard',partner:trainer,city:'
 let refSvc=t.serviceOf('10884');near(refSvc.cost,4860);near(t.calcService(refSvc).structure.open,5400);near(t.calcSet(t.allSets()[0]).exp,4860);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).structure.open,5400);
 t.state.sov['10884']={cost:4444};refSvc=t.serviceOf('10884');near(refSvc.cost,4444);assert.equal(t.calcService(refSvc).structure.mismatch,true);
 console.log('PASS confirmed prices: services and bundle items prefer confirmed payout, manual edits preserved and flagged');
+
+// The commission-first policy uses a full activation, independent of the profitability forecast.
+delete t.state.sov['10884'];t.state.params.disc=0;t.state.params.act=60;
+refSvc=t.serviceOf('10884');let policy=t.calcService(refSvc);
+near(policy.target,6075);near(policy.priceRule.margin,.46);assert.equal(policy.priceRule.status,'extra');
+t.state.params.act=10;near(t.calcService(refSvc).target,6075);
+t.state.mode='max';near(t.calcService(refSvc).target,6075);
+t.state.mode='avg';t.state.sov['10884']={price:6075};policy=t.calcService(t.serviceOf('10884'));
+near(policy.priceRule.margin,.2);assert.equal(policy.priceRule.status,'ok');assert.equal(t.serviceOf('10884').basePrice,9000);
+near(t.calcSet(t.allSets()[0]).target,6075);near(t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0])).target,6075);
+t.state.sov['10884'].cost=4444;assert.equal(t.calcService(t.serviceOf('10884')).target,null);
+t.state.params.target=40;t.ensureParams();assert.equal(t.state.params.target,20);
+const policyHeaders=t.pricingHead('service');assert(policyHeaders.indexOf('data-prgroup="commission"')<policyHeaders.indexOf('data-prgroup="markup"'));
+t.state.collapsed.commission=true;const policyCells=t.financialCells(refSvc,policy,{key:'service:10884',kind:'service'});
+assert(policyCells.includes('data-price-component="commissionPct"'));assert(policyCells.includes('data-price-component="commissionRub"'));
+console.log('PASS commission-first policy: full activation, exact model target, preserved CRM, every pricing view, fixed minimum and commission priority');
