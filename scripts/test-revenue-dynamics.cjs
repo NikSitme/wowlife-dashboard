@@ -54,3 +54,10 @@ if(process.argv[2]){
   totals.forEach(n=>assert.ok(Math.abs(n-totals[0])<0.02));
   console.log('Live-source snapshot: September total/site, 2025 MP history and aggregation invariance passed.');
 }
+
+assert.deepEqual(model.keysFor(['site'],'all'),['siteMsk','siteSpb']);
+assert.deepEqual(model.keysFor(['b2b'],'all'),['b2bAll']);
+assert(model.sources.find(s=>s[0]==='site')[1].includes('без B2B'));
+assert.equal(points('month',['b2b'])[0].current,40);
+assert.equal(points('month',['site','b2b'])[0].current,points('month',['site'])[0].current+points('month',['b2b'])[0].current,'B2B is separate and never double-counted in website revenue');
+console.log('Revenue source separation: site excludes B2B, standalone B2B and combined totals reconcile.');

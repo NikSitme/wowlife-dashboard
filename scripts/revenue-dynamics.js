@@ -4,7 +4,7 @@
   else root.RevenueDynamics = api;
 })(typeof window === 'object' ? window : globalThis, function(){
   'use strict';
-  var SOURCES = [['site','Сайт'],['ozon','Ozon'],['wb','Wildberries'],['ym','Яндекс Маркет'],['flowwow','Flowwow'],['b2b','B2B']];
+  var SOURCES = [['site','Сайт (без B2B)'],['ozon','Ozon'],['wb','Wildberries'],['ym','Яндекс Маркет'],['flowwow','Flowwow'],['b2b','B2B']];
   var MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
   function isoDate(value){
     var s = String(value || '').trim(), m = s.match(/^(\d{4})-(\d{2})-(\d{2})/) || s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
@@ -148,6 +148,8 @@
     });
     allInput.checked=true;
     allInput.addEventListener('change',function(){state.sources=allInput.checked ? SOURCES.map(function(s){return s[0];}) : [];render();});
+    card.querySelector('#rdOnlySite').addEventListener('click',function(){state.sources=['site'];render();});
+    card.querySelector('#rdOnlyB2b').addEventListener('click',function(){state.sources=['b2b'];state.city='all';render();});
     card.querySelector('#rdOnlyMarkets').addEventListener('click',function(){state.sources=['ozon','wb','ym','flowwow'];render();});
     card.querySelector('#rdClearSources').addEventListener('click',function(){state.sources=[];render();});
     function closeSourcePicker(e){if(!picker.contains(e.target))picker.open=false;if(!wrap.contains(e.target))hideHover();}
@@ -185,7 +187,8 @@
       card.querySelector('#rdTotal').textContent=selected.length ? money(current) : 'Выберите источники';
       card.querySelector('#rdDelta').textContent=prev===null || !defined.length ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к прошлому году');
       var captions=[];
-      if(state.sources.includes('site') || state.sources.includes('b2b')) captions.push('Сайт / B2B — по '+shortDate(data.coverage.siteMsk.to));
+      if(state.sources.includes('site')) captions.push('Сайт без B2B — по '+shortDate(data.coverage.siteMsk.to));
+      if(state.sources.includes('b2b')) captions.push('B2B — по '+shortDate(data.coverage.b2bAll.to));
       if(state.sources.some(function(s){return ['ozon','wb','ym','flowwow'].includes(s);})) captions.push('Маркеты — по '+shortDate(data.coverage.ozonMsk.to));
       card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — те же даты прошлого года; неполные периоды сравниваются по доступным дням каждого источника';
       card.querySelector('#rdCurrentLegend').textContent='Текущий период: '+shortDate(state.from)+' '+state.from.slice(0,4)+' — '+shortDate(state.to)+' '+state.to.slice(0,4);
