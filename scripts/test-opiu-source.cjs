@@ -50,6 +50,26 @@ const signData=api.computeOpiu(alteredSigns)[0];
 assert.equal(signData.rows['Коробки'],38380,'preserve positive source entries');
 assert.equal(signData.source_warnings[0].code,'packaging_positive');
 
+// The current v2 sheet removed this legacy tax row; valid totals must still load.
+const withoutLegacyTax=rows.filter(r=>r[1]!=='Налоги и пошлины').map(r=>r.slice());
+assert.equal(num(rows.find(r=>r[1]==='Налоги и пошлины')[5]),0);
+const currentLayout=api.computeOpiu(withoutLegacyTax)[0];
+assert.equal(currentLayout.net_profit,september.net_profit);
+assert.ok(!currentLayout.taxes_breakdown.some(r=>r.name==='Налоги и пошлины'));
+const missingRequiredTax=withoutLegacyTax.filter(r=>r[1]!=='НДС по маркетплейсам');
+assert.throws(()=>api.computeOpiu(missingRequiredTax),/не найдена строка/,'required tax rows must not silently disappear');
+
+// Write-off packages are separate from the existing purchase expense "Пакеты".
+const withPackages=withoutLegacyTax.map(r=>r.slice());
+withPackages.splice(withPackages.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Пакеты','','','','-500']);
+for(const label of ['переменные расходы','маржинальная прибыль','Операционная прибыль','чистая прибыль','прибыль после выплаты тела кредита и дивидендов']){
+  const r=withPackages.find(r=>r[0]===label);r[5]=String(num(r[5])-500);
+}
+const packageMonth=api.computeOpiu(withPackages)[0];
+assert.equal(packageMonth.product_creation_breakdown.find(r=>r.name==='Пакеты (списание)').value,500);
+assert.equal(packageMonth.net_profit,september.net_profit-500);
+assert.equal(packageMonth.rows['Пакеты (списание)'],-500);
+
 if(process.argv[2]){
   const live=api.parseCsv(fs.readFileSync(process.argv[2],'utf8'));
   for(const month of embedded){

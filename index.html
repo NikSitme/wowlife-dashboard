@@ -500,7 +500,7 @@
       <p>Это одна статичная HTML-страница, опубликованная на GitHub Pages из репозитория <a href="https://github.com/NikSitme/wowlife-dashboard" target="_blank" rel="noopener">NikSitme/wowlife-dashboard</a>. Сервера и базы данных нет: все расчёты выполняются в браузере, данные читаются напрямую из Google-таблиц через экспорт в CSV (адрес вида <code>…/gviz/tq?tqx=out:csv&amp;sheet=…</code>). Читать можно только те книги, у которых открыт доступ по ссылке.</p>
       <ul>
         <li><b>Кнопка «Обновить данные»</b> скачивает все источники заново, пересчитывает каждую вкладку и сохраняет результат в памяти браузера (localStorage). При следующем открытии страницы сначала показывается сохранённый снимок, затем в фоне идёт обновление.</li>
-        <li><b>Подпись «Обновлено … (частично)»</b> означает, что один из источников не обновился; наведите курсор на подпись, во всплывающей подсказке перечислены ошибки. Остальные вкладки при этом обновлены, а проблемная показывает прошлый снимок.</li>
+        <li><b>Подпись «Обновлено … (частично)»</b> означает, что один из источников не обновился. Рядом перечислены разделы, которые не обновились; наведите курсор на подпись, чтобы прочитать причину. Остальные вкладки обновлены, а проблемная сохраняет прошлый снимок и его дату. Отклонённый при проверке снимок ОПиУ в кэш не записывается.</li>
         <li>В страницу вшит снимок данных на момент публикации: он виден, пока не пришли живые данные.</li>
         <li>Служебные параметры адреса: <code>?tab=opiu|salesact|wowsales|kreditorka|fot|finmodel</code> открывает нужную вкладку, <code>?expand=1</code> раскрывает таблицу ОПиУ полностью.</li>
       </ul>
@@ -6943,6 +6943,7 @@ window.__salesActSetData = function(newData){
       rows = rows.map(function(r){var out=r.slice();var b=(out[1] || "").trim();
         if(b === "упаковка - коробки")out[1]="Коробки";
         if(b === "упаковка - шоколадка")out[1]="Шоколадки";
+        if(b === "упаковка - Пакеты")out[1]="Пакеты (списание)";
         return out;
       });
     }
@@ -6957,6 +6958,13 @@ window.__salesActSetData = function(newData){
       if (a && !(a in labelRowA)) labelRowA[a] = idx + 1; // храним как 1-индексный "python row"
       if (b && !(b in labelRowB)) labelRowB[b] = idx + 1;
     });
+    // В актуальной сборке отдельную старую статью удалили; остальные налоговые
+    // строки и сверка с итогом остаются обязательными.
+    if (sourceV2 && !labelRowB["Налоги и пошлины"]){
+      taxLabels = taxLabels.filter(function(name){return name !== "Налоги и пошлины";});
+    }
+    var productLabels = PRODUCT_CREATION_LABELS.slice();
+    if (sourceV2 && labelRowB["Пакеты (списание)"]) productLabels.push("Пакеты (списание)");
     function cell(r, c){ var row = rows[r - 1]; return row ? row[c - 1] : undefined; }
     function v(r, c){ if (!r) return 0; var x = cell(r, c); if (x === undefined || x === null || x === "") return 0; return Math.round(ruNum(x) * 100) / 100; }
     function rowByA(label){ var r = labelRowA[label]; if (!r) throw new Error("ОПиУ: не найдена строка «" + label + "» (колонка A) — структура листа изменилась?"); return r; }
@@ -7036,7 +7044,7 @@ window.__salesActSetData = function(newData){
       var fact_col = byLabel[label].fact_col;
       var dateIso = byLabel[label].date;
       var fact_revenue = v(rRevenueTotal, fact_col);
-      var productBreakdown = breakdown(PRODUCT_CREATION_LABELS, fact_col, true);
+      var productBreakdown = breakdown(productLabels, fact_col, true);
       var directBreakdown = breakdown(directLabels, fact_col, true);
       if(sourceV2) directBreakdown.forEach(function(it){if(it.name==="Создание продукта")it.value=productBreakdown.reduce(function(a,x){return a+x.value;},0);});
       var sourcePl = [];
@@ -7116,7 +7124,7 @@ window.__salesActSetData = function(newData){
     ["Сервисы разработки", "Проценты по кредитам и займам", "Тело кредита", "Вывод дивидендов"]);
   var OPIU_TREE_CLOSERS = ["налоги"];
   function computeOpiuTree(rows){
-    rows = rows.map(function(r){var out=r.slice();if(out[1]==="упаковка - коробки")out[1]="Коробки";if(out[1]==="упаковка - шоколадка")out[1]="Шоколадки";return out;});
+    rows = rows.map(function(r){var out=r.slice();if(out[1]==="упаковка - коробки")out[1]="Коробки";if(out[1]==="упаковка - шоколадка")out[1]="Шоколадки";if(out[1]==="упаковка - Пакеты")out[1]="Пакеты (списание)";return out;});
     var anchors = {}; OPIU_TREE_ANCHORS.forEach(function(a){ anchors[a] = true; });
     var tree = {}, cur = null;
     rows.forEach(function(row){
@@ -7816,8 +7824,8 @@ window.__salesActSetData = function(newData){
       try {
         var cache = loadCache() || {};
         if (revenueTimeline) cache.revenueTimeline = revenueTimeline;
-        if (opiuData) cache.opiu = opiuData;
-        if (opiuTree){ cache.opiuTree = opiuTree; cache.ops = opsData || null; }
+        if (results.opiu && opiuData) cache.opiu = opiuData;
+        if (results.opiu && opiuTree){ cache.opiuTree = opiuTree; cache.ops = opsData || null; }
         if (saData) cache.salesact = saData;
         if (wsData){
           cache.sales = wsData.sales;
@@ -7837,6 +7845,9 @@ window.__salesActSetData = function(newData){
     btn.textContent = originalText;
     if (statusEl){
       statusEl.textContent = okParts.length ? ("Обновлено " + fmtTime(new Date())) + (errors.length ? " (частично)" : "") : "Обновление не удалось";
+      var partNames = {opiu:"ОПиУ",salesact:"Продажи и активации",wowsales:"Аналитика продаж",kreditorka:"Кредиторка",marketing:"Маркетинг"};
+      var missingParts = Object.keys(results).filter(function(key){return !results[key];});
+      if (missingParts.length) statusEl.textContent += ". Не обновлено: " + missingParts.map(function(key){return partNames[key];}).join(", ");
       statusEl.title = [].concat(okParts, errors).join("\n");
     }
   }
