@@ -1,8 +1,22 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePriceStructure=api;})(typeof window==='undefined'?globalThis:window,function(){
   function norm(s){return String(s||'').normalize('NFKC').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();}
-  function rateFromTerms(value){
-    var text=norm(value),m=text.match(/^(\d+(?:[.,]\d+)?)\s*%(?: от суммы депозита)?$/);
-    var rate=text==='без комиссии'?0:m?Number(m[1].replace(',','.'))/100:null;
+  function rateFromTerms(value,serviceName){
+    var text=norm(value),name=norm(serviceName),m=text.match(/^(\d+(?:[.,]\d+)?)\s*%(?: от суммы депозита| от стоимости по сайту партнера| от цен на официальном сайте)?$/);
+    var fixed=/^(?:фикс|фиксированная(?: цена| за 1 лошадь)?|фиксированный)$/.test(text);
+    var rate=['без комиссии','нет комиссии','нет'].indexOf(text)>=0||fixed?0:m?Number(m[1].replace(',','.'))/100:null;
+    if(name&&text==='15% на индив./сплит, 20% на групповые'){
+      if(/индивидуальн|сплит/.test(name))rate=.15;
+      else if(/групп/.test(name))rate=.2;
+    }
+    if(name&&text==='25% на все услуги, кроме изготовления часов (часы - 15%)'){
+      var options=name.split(':').pop().split('+'),clocks=options.filter(function(x){return /часы|часов/.test(x);}).length;
+      rate=clocks===options.length?.15:clocks===0?.25:null;
+    }
+    if(name&&text==='20% на полеты, 10% на обучение'){
+      if(/обучен/.test(name))rate=.1;
+      else if(/полет/.test(name))rate=.2;
+    }
+    if(name&&text==='15% от цен на официальном сайте, коневец - 500 рублей, валаам - 450 рублей'&&!/коневец|валаам/.test(name))rate=.15;
     return rate!==null&&rate>=0&&rate<1?rate:null;
   }
   function index(rows,prices){var names={},ids={},openPrices={};(rows||[]).filter(function(r){return r.type==='Партнер';}).forEach(function(r){ids[r.id]=r;var n=norm(r.name);(names[n]||(names[n]=[])).push(r);});(prices||[]).forEach(function(p){if(Number.isFinite(p.open)&&p.open>0)openPrices[String(p.sid)]=p;});return {names:names,ids:ids,openPrices:openPrices};}
@@ -15,11 +29,12 @@
   function unknown(price,terms){return {price:price,open:null,markup:null,markupShare:null,commission:null,rate:null,terms:terms,derived:true};}
   function reference(sid,partner,lookup){var p=lookup.openPrices&&lookup.openPrices[String(sid)];return p&&resolve(partner,lookup).id===p.partner_id?p:null;}
   function defaultPayout(ref,partner,lookup){var rate=resolve(partner,lookup).rate;return ref&&rate!==null?ref.open*(1-rate):null;}
-  function service(price,payout,partner,lookup,ref){
+  function service(price,payout,partner,lookup,ref,serviceName){
     var c=resolve(partner,lookup);
+    c.rate=rateFromTerms(c.terms,serviceName);
     var matches=ref&&(ref.partner_name?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
     if(matches&&ref.terms!==undefined){
-      c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms)};
+      c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms,serviceName)};
     }
     var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
     if(matches&&!ref.derived&&Number.isFinite(ref.open)&&ref.open>=0){
@@ -38,7 +53,7 @@
     if(!parts.length)return unknown(price,'Нет услуг с известной выплатой');
     var total=0,open=0,commission=0,expected=0,terms=[],firstOpen=null,derived=false,dates=[];
     for(var i=0;i<parts.length;i++){
-      var part=parts[i],r=service(price,part.cost,part.partner,lookup,part.reference);terms.push((part.partner||'Партнёр не указан')+': '+r.terms);
+      var part=parts[i],r=service(price,part.cost,part.partner,lookup,part.reference,part.name);terms.push((part.partner||'Партнёр не указан')+': '+r.terms);
       if(r.open===null||r.commission===null)return unknown(price,'Нет единого расчёта: '+terms.join('; '));
       derived=derived||r.derived;if(r.confirmedAsOf)dates.push(r.confirmedAsOf);
       if(mode==='max'&&firstOpen!==null&&Math.abs(firstOpen-r.open)>0.01)return unknown(price,'Максимальная выплата одинакова у услуг с разными открытыми ценами; смотрите состав');

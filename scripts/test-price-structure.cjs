@@ -4,7 +4,18 @@ const rows=[{id:'1',name:'Партнёр',type:'Партнер',terms:'20%'},{id
 const index=S.index(rows);let r=S.service(6000,4000,' ПАРТНЕР ',index);
 const deposit=S.service(2860,2340,'Ginza Project',S.index([]),{partner_name:'Ginza Project',terms:'10% от суммы депозита',termsSource:'Размер комиссии услуги CRM',derived:true});
 near(deposit.open,2600);near(deposit.commission,260);near(deposit.markup,260);assert(deposit.terms.includes('Размер комиссии услуги CRM'));
-for(const terms of ['Фиксированная','Фиксированная за 1 лошадь','Фиксированный процент','10% в будни, 15% в выходные','100 ₽ с 1 билета','100% от суммы депозита'])assert.equal(S.service(2860,2340,'Ginza Project',S.index([]),{partner_name:'Ginza Project',terms}).rate,null,terms);
+for(const terms of ['Фиксированный процент','10% в будни, 15% в выходные','100 ₽ с 1 билета','100% от суммы депозита','Фиксированная комиссия 100 ₽'])assert.equal(S.service(2860,2340,'Ginza Project',S.index([]),{partner_name:'Ginza Project',terms}).rate,null,terms);
+for(const terms of ['Фиксированная','Фиксированная за 1 лошадь','Фиксированная цена']){
+ const fixed=S.service(2090,1500,'Golden Horses (Токсово)',S.index([]),{partner_name:'Golden Horses (Токсово)',terms});
+ near(fixed.open,1500);near(fixed.rate,0);near(fixed.commission,0);near(fixed.markup,590);
+}
+const fresh='15% на индив./сплит, 20% на групповые',resin='25% на все услуги, кроме изготовления часов (часы - 15%)',flight='20% на полеты, 10% на обучение',tours='15% от цен на официальном сайте, Коневец - 500 рублей,  Валаам - 450 рублей';
+for(const [terms,name,rate] of [[fresh,'Растяжка: индивидуальное занятие',.15],[fresh,'Растяжка: 5 групповых занятий',.2],[resin,'Мастер-класс: Часы (30 см)',.15],[resin,'Свидание: Часы + Часы',.15],[resin,'Мастер-класс: Кит',.25],[flight,'Обучение полетам: Пробный день',.1],[flight,'Полет на параплане: Для одного',.2],[tours,'Экскурсия в Псков: Для двоих',.15],['10% от стоимости по сайту партнера','Отдых: Домик',.1],['Фиксированный','Катер: 1 час',0],['Фикс','Урок красоты',0],['нет','Музей: депозит',0]]){
+ const ref={partner_name:'Условия',terms,derived:true};const result=S.service(6000,4000,'Условия',index,ref,name);
+ near(result.rate,rate);near(result.open,4000/(1-rate));near(result.markup+result.commission+4000,6000);
+}
+for(const [terms,name]of [[fresh,'Растяжка'],[resin,'Свидание: Часы + Картина'],[flight,'Сертификат'],[tours,'Экскурсия на остров Валаам'],[tours,'Экскурсия на Коневец'],['10% по промо','Отдых']])assert.equal(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms},name).rate,null,terms+' / '+name);
+const named=S.aggregate(6000,4000,[{partner:'Условия',name:'Растяжка: индивидуальное занятие',cost:4000,weight:1,reference:{partner_name:'Условия',terms:fresh,derived:true}}],index);near(named.rate,.15);
 near(r.open,5000);near(r.markup,1000);near(r.commission,1000);near(r.rate,.2);near(r.markupShare,.2);
 near(r.price,r.markup+r.commission+4000);
 assert.equal(S.resolve('ID 1',index).id,'1');assert.equal(S.resolve('Дубль',index).rate,null);

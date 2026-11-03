@@ -36,6 +36,15 @@
     });
     return out;
   }
+  function enrichPartners(catalog,rows){
+    var h=(rows[0]||[]).map(norm),partnerCol=h.indexOf('наименование партнера'),serviceCol=h.indexOf('наименование услуги');
+    if(partnerCol<0||serviceCol<0)throw new Error('В справочнике «Партнеры» нет названия партнёра или услуги');
+    var matches={},out=Object.assign({},catalog),count=0;
+    function key(value){return norm(String(value||'').normalize('NFKC'));}
+    rows.slice(1).forEach(function(row){var name=key(row[serviceCol]),partner=String(row[partnerCol]||'').trim();if(name&&partner)(matches[name]||(matches[name]=new Set())).add(partner);});
+    Object.keys(out).forEach(function(id){var base=out[id],found=matches[key(base.name)];if(!base.partner&&found&&found.size===1){out[id]=Object.assign({},base,{partner:Array.from(found)[0],partnerSource:'Справочник «Партнеры»: точное название услуги'});count++;}});
+    return {catalog:out,count:count};
+  }
   function manualOverlay(catalog,rows,city){
     var out=Object.assign({},catalog),h=(rows[0]||[]).map(norm),count=0,seen=new Set();
     var column=function(name){return h.indexOf(name);};
@@ -63,5 +72,5 @@
     });
     return {catalog:out,count:count};
   }
-  return {available:available,serviceAvailable:serviceAvailable,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,manualOverlay:manualOverlay};
+  return {available:available,serviceAvailable:serviceAvailable,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,enrichPartners:enrichPartners,manualOverlay:manualOverlay};
 });

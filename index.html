@@ -7910,9 +7910,9 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/pricing-catalog.js?v=20261030-services-only"></script>
+<script src="./scripts/pricing-catalog.js?v=20261103-partner-links"></script>
 <script src="./scripts/service-catalog.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/price-structure.js?v=20261103-service-terms"></script>
+<script src="./scripts/price-structure.js?v=20261103-fixed-payout"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7921,7 +7921,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v8-service-terms", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v9-partner-links", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -7970,7 +7970,7 @@ window.__salesActSetData = function(newData){
 
   // ---------- CRM: наборы и услуги ----------
   async function fetchSheet(sheetName){
-    var gids={"Наборы Мск":1101164770,"Наборы СПб":2052534914,"Услуги Мск":540536566,"Услуги СПб":1852118716,"Ручная выгрузка услуги мск":1264019519,"Ручная выгрузка услуги спб ":1440794799};
+    var gids={"Наборы Мск":1101164770,"Наборы СПб":2052534914,"Услуги Мск":540536566,"Услуги СПб":1852118716,"Ручная выгрузка услуги мск":1264019519,"Ручная выгрузка услуги спб ":1440794799,"Партнеры":1975079904};
     var url = "https://docs.google.com/spreadsheets/d/" + NIKITA_ID + (gids[sheetName]!==undefined?"/export?format=csv&gid="+gids[sheetName]:"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(sheetName));
     var res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status + " для листа «" + sheetName + "»");
@@ -8017,10 +8017,10 @@ window.__salesActSetData = function(newData){
     if (!force){ try { var c = JSON.parse(localStorage.getItem(CRM_KEY) || "null"); if (c && c.sets && c.catalog && (Date.now() - new Date(c.savedAt).getTime()) < 36e5 * 24){ CRM = c; render(); return; } } catch (e) {} }
     crmLoading = true; setStatus("Загружаю наборы и услуги из CRM…"); render();
     try {
-      var r = await Promise.all([fetchSheet("Наборы Мск"), fetchSheet("Наборы СПб"), fetchSheet("Услуги Мск"), fetchSheet("Услуги СПб"), fetchSheet("Ручная выгрузка услуги мск"), fetchSheet("Ручная выгрузка услуги спб ")]);
+      var r = await Promise.all([fetchSheet("Наборы Мск"), fetchSheet("Наборы СПб"), fetchSheet("Услуги Мск"), fetchSheet("Услуги СПб"), fetchSheet("Ручная выгрузка услуги мск"), fetchSheet("Ручная выгрузка услуги спб "), fetchSheet("Партнеры")]);
       var cat = {}; parseCatalog(r[2], "Мск", cat); parseCatalog(r[3], "СПб", cat);
       var sets=parseSets(r[0], "Мск").concat(parseSets(r[1], "СПб"));
-      var completed=CATALOG.completeCatalog(sets,cat);
+      var completed=CATALOG.enrichPartners(CATALOG.completeCatalog(sets,cat),r[6]).catalog;
       var manualMsk=CATALOG.manualOverlay(completed,r[4],"Мск");
       var manualSpb=CATALOG.manualOverlay(manualMsk.catalog,r[5],"СПб");
       CRM = { sets:sets, catalog:manualSpb.catalog, manualCount:manualMsk.count+manualSpb.count, savedAt: new Date().toISOString() };
@@ -8127,7 +8127,7 @@ window.__salesActSetData = function(newData){
     var exp = state.mode === "max" ? max : (state.mode === "act" && wavg !== null ? wavg : avg);
     var r = state.mode === "max" ? MODEL.worstCase(s.price,max,p) : MODEL.calculate(s.price,exp,p);
     r.avg=avg;r.max=max;r.wavg=wavg;r.w=w;r.noCost=s.items.length-costs.length;r.n=s.items.length;r.loss=0;r.below=0;
-    var parts=s.items.filter(function(it){return knownCost(it)&&(state.mode==='max'?it.cost===max:w?!!w[it.sid]:true);}).map(function(it){return {partner:it.partner,cost:it.cost,reference:it.reference,weight:w&&state.mode!=='max'?w[it.sid]:1};});
+    var parts=s.items.filter(function(it){return knownCost(it)&&(state.mode==='max'?it.cost===max:w?!!w[it.sid]:true);}).map(function(it){return {name:it.name,partner:it.partner,cost:it.cost,reference:it.reference,weight:w&&state.mode!=='max'?w[it.sid]:1};});
     r.structure=r.noCost?STRUCTURE.unknown(r.price,'Не у всех услуг набора известна выплата партнёру'):STRUCTURE.aggregate(r.price,r.exp,parts,commissionIndex,state.mode);
     applyTargetPrice(r,r.noCost>0);
     if (!(r.price > 0)) return r;
@@ -8137,7 +8137,7 @@ window.__salesActSetData = function(newData){
   }
   function calcItem(set, it, r){
     var p = Object.assign({},r.p,{partner:null});
-    var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,it.partner,commissionIndex,it.reference);applyTargetPrice(c);return c;
+    var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,it.partner,commissionIndex,it.reference,it.name);applyTargetPrice(c);return c;
   }
   function applyTargetPrice(r,incomplete){r.target=incomplete&&!r.p.partner?null:MODEL.targetPrice(r.exp,r.p);return r;}
   function targetCell(r){
@@ -8147,7 +8147,7 @@ window.__salesActSetData = function(newData){
   function coverageMargin(r){return r.price>0?(r.V+r.price*r.p.fP+r.p.fR)/r.price:null;}
   function calcService(sv){
     var p=P("service:"+sv.sid);if(state.mode==="max")p=Object.assign({},p,{a:1});
-    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,sv.partner,commissionIndex,sv.reference);applyTargetPrice(c);return c;
+    var c=MODEL.calculate(sv.price,knownCost(sv)?sv.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,sv.partner,commissionIndex,sv.reference,sv.name);applyTargetPrice(c);return c;
   }
 
   // ---------- рендер ----------

@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v8-service-terms'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v9-partner-links'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -173,7 +173,9 @@ t.state.sov={};t.setData({catalog:liveTerms,sets:[]});
 let live=t.calcService(t.serviceOf('32758')).structure;
 assert.equal(live.rate,.1);assert.equal(live.open,2600);assert.equal(live.commission,260);assert.equal(live.markup,260);
 assert(live.terms.includes('Размер комиссии услуги CRM'));
-assert.equal(t.calcService(t.serviceOf('15275')).structure.open,null,'A fixed payout alone must not invent a zero commission');
+assert.equal(t.calcService(t.serviceOf('15275')).structure.open,1500,'Fixed payout terms use the existing source cost');
+assert.equal(t.calcService(t.serviceOf('15275')).structure.markup,590);
+assert.equal(t.calcService(t.serviceOf('15275')).structure.commission,0);
 const liveManual=catalog.manualOverlay(liveTerms,[['id услуги','наименование','партнер','стоимость','себестоимость','%маржи','размер комиссии','стоимость со скидкой','открытая цена партнера','дата подтверждения','комментарий','тип открытой цены'],['15275','','','','','','0%','','','','','Расчёт из выплаты и комиссии']],'СПб');
 t.setData({catalog:liveManual.catalog,sets:[]});
 live=t.calcService(t.serviceOf('15275')).structure;
@@ -181,3 +183,11 @@ assert.equal(live.open,1500);assert.equal(live.markup,590);assert.equal(live.rat
 t.state.sov['15275']={partner:'Другой партнёр'};
 assert.equal(t.calcService(t.serviceOf('15275')).structure.open,null,'Changing partner must not retain source/manual commission');
 console.log('PASS live service commissions: deposit basis, source terms, manual override, partner changes and fixed-payout ambiguity');
+const partnerHeader=['Наименование контрагента','Наименование партнера','Наименование услуги'];
+const linkInput={a:{sid:'a',name:' Услуга  один ',partner:'',cost:123,price:456,city:'СПб'},b:{sid:'b',name:'Услуга два',partner:'Существующий'},c:{sid:'c',name:'Спорная',partner:''},d:{sid:'d',name:'Неточная',partner:''},e:{sid:'e',name:'Закрытая',partner:''}};
+const links=catalog.enrichPartners(linkInput,[partnerHeader,['ООО','Из справочника','услуга один'],['ООО','Другой','Услуга два'],['ООО','Первый','Спорная'],['ООО','Второй','Спорная'],['ООО','Угаданный','Неточная: Вариант'],['ООО','Партнёр (закрылись)','Закрытая']]);
+assert.equal(links.count,2);assert.equal(links.catalog.a.partner,'Из справочника');assert.equal(links.catalog.a.cost,123);assert.equal(links.catalog.a.price,456);assert.equal(linkInput.a.partner,'');
+assert.equal(links.catalog.b.partner,'Существующий');assert.equal(links.catalog.c.partner,'');assert.equal(links.catalog.d.partner,'');assert.equal(catalog.available(links.catalog.e),false);
+const overridden=catalog.manualOverlay({'99':{...links.catalog.a,sid:'99'}},[['id услуги','наименование','партнер','себестоимость','стоимость со скидкой'],['99','','Ручной','','']],'СПб');
+assert.equal(overridden.catalog['99'].partner,'Ручной');
+console.log('PASS partner links: exact unique names, no fuzzy guesses, existing/manual priority, source costs preserved and inactive markers respected');
