@@ -7910,9 +7910,9 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/pricing-catalog.js?v=20261103-partner-links"></script>
+<script src="./scripts/pricing-catalog.js?v=20261103-confirmed-terms"></script>
 <script src="./scripts/service-catalog.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/price-structure.js?v=20261103-fixed-payout"></script>
+<script src="./scripts/price-structure.js?v=20261103-flat-commission"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7921,7 +7921,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v9-partner-links", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v10-confirmed-terms", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8259,7 +8259,7 @@ window.__salesActSetData = function(newData){
       else if(k==='markupRub'){text=fmtR(structure.markup);css=structure.markup<0?'warn':'';}
       else if(k==='markupPct'){text=fmtP(structure.markupShare);}
       else if(k==='openRub'){text=fmtR(structure.open)+(structure.open!==null?'<span class="meta">'+(structure.derived?'расчёт':'прайс '+esc(structure.confirmedAsOf))+'</span>':'');}
-      else if(k==='commissionPct'){text=fmtP(structure.rate);}
+      else if(k==='commissionPct'){text=fmtP(structure.rate)+(structure.pendingRate?'<span class="meta" title="Временная ставка по указанию Никиты. Требуется уточнение условий.">требуется уточнение</span>':'');}
       else if(k==='commissionRub'){text=fmtR(structure.commission);}
       else if(k==='commissionTerms'){text='<span class="pr-commission-terms" title="'+esc(structure.terms)+'">'+esc(structure.terms)+'</span>';}
       else if(k==='partnerPct'||k==='partnerRub'){

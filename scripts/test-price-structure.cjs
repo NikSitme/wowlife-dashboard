@@ -14,7 +14,11 @@ for(const [terms,name,rate] of [[fresh,'Растяжка: индивидуаль
  const ref={partner_name:'Условия',terms,derived:true};const result=S.service(6000,4000,'Условия',index,ref,name);
  near(result.rate,rate);near(result.open,4000/(1-rate));near(result.markup+result.commission+4000,6000);
 }
-for(const [terms,name]of [[fresh,'Растяжка'],[resin,'Свидание: Часы + Картина'],[flight,'Сертификат'],[tours,'Экскурсия на остров Валаам'],[tours,'Экскурсия на Коневец'],['10% по промо','Отдых']])assert.equal(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms},name).rate,null,terms+' / '+name);
+for(const [terms,name]of [[fresh,'Растяжка'],[resin,'Свидание: Часы + Картина'],[flight,'Сертификат'],['10% по промо','Отдых']])assert.equal(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms},name).rate,null,terms+' / '+name);
+for(const [name,amount]of [['Экскурсия на Валаам: Для одного',450],['Экскурсия на Валаам: Для двоих',450],['Экскурсия на Коневец: Для двоих',500]]){
+ const flat=S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms:tours},name);near(flat.open,4000+amount);near(flat.commission,amount);near(flat.rate,amount/(4000+amount));near(flat.markup+flat.commission+4000,6000);
+}
+const provisional=S.service(8500,6750,'Osteria Amici/TAO',S.index([]),{partner_name:'Osteria Amici/TAO',terms:'5%',pendingRate:true,derived:true});near(provisional.rate,.05);assert.equal(provisional.pendingRate,true);assert(provisional.terms.includes('Требуется уточнение'));
 near(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms:resin},'Картина: 5 часов').rate,.25,'Duration is not a clock-making tariff');
 const named=S.aggregate(6000,4000,[{partner:'Условия',name:'Растяжка: индивидуальное занятие',cost:4000,weight:1,reference:{partner_name:'Условия',terms:fresh,derived:true}}],index);near(named.rate,.15);
 near(r.open,5000);near(r.markup,1000);near(r.commission,1000);near(r.rate,.2);near(r.markupShare,.2);

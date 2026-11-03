@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v9-partner-links'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v10-confirmed-terms'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -191,3 +191,8 @@ assert.equal(links.catalog.b.partner,'Существующий');assert.equal(li
 const overridden=catalog.manualOverlay({'99':{...links.catalog.a,sid:'99'}},[['id услуги','наименование','партнер','себестоимость','стоимость со скидкой'],['99','','Ручной','','']],'СПб');
 assert.equal(overridden.catalog['99'].partner,'Ручной');
 console.log('PASS partner links: exact unique names, no fuzzy guesses, existing/manual priority, source costs preserved and inactive markers respected');
+const provisionalCatalog=catalog.manualOverlay(liveTerms,[['id услуги','наименование','партнер','себестоимость','стоимость со скидкой','размер комиссии','комментарий','тип открытой цены'],['32758','','','','','5%','Временная ставка; требуется уточнение','Расчёт из выплаты и комиссии']],'СПб');
+assert.equal(provisionalCatalog.catalog['32758'].manualReference.pendingRate,true);
+t.state.sov={};t.setData({catalog:provisionalCatalog.catalog,sets:[]});
+assert.equal(t.calcService(t.serviceOf('32758')).structure.pendingRate,true);
+assert(html.includes('требуется уточнение</span>'),'Temporary rates are visibly labelled, not only mentioned in a tooltip');

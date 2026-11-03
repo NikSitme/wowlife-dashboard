@@ -19,6 +19,12 @@
     if(name&&text==='15% от цен на официальном сайте, коневец - 500 рублей, валаам - 450 рублей'&&!/коневец|валаам/.test(name))rate=.15;
     return rate!==null&&rate>=0&&rate<1?rate:null;
   }
+  function amountFromTerms(value,serviceName){
+    if(norm(value)!=='15% от цен на официальном сайте, коневец - 500 рублей, валаам - 450 рублей')return null;
+    var name=norm(serviceName);
+    // These are per-certificate amounts, including certificates for two people.
+    return /валаам/.test(name)?450:/коневец/.test(name)?500:null;
+  }
   function index(rows,prices){var names={},ids={},openPrices={};(rows||[]).filter(function(r){return r.type==='Партнер';}).forEach(function(r){ids[r.id]=r;var n=norm(r.name);(names[n]||(names[n]=[])).push(r);});(prices||[]).forEach(function(p){if(Number.isFinite(p.open)&&p.open>0)openPrices[String(p.sid)]=p;});return {names:names,ids:ids,openPrices:openPrices};}
   function resolve(partner,lookup){
     var n=norm(partner),id=n.match(/^id\s*(\d+)$/),matches=id?(lookup.ids[id[1]]?[lookup.ids[id[1]]]:[]):lookup.names[n]||[];
@@ -32,18 +38,23 @@
   function service(price,payout,partner,lookup,ref,serviceName){
     var c=resolve(partner,lookup);
     c.rate=rateFromTerms(c.terms,serviceName);
+    c.amount=amountFromTerms(c.terms,serviceName);
     var matches=ref&&(ref.partner_name?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
     if(matches&&ref.terms!==undefined){
-      c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms,serviceName)};
+      c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms,serviceName),amount:amountFromTerms(ref.terms,serviceName)};
     }
-    var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
+    var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;r.pendingRate=!!(matches&&ref.pendingRate);
+    if(r.pendingRate)r.terms+=' · Требуется уточнение комиссии';
     if(matches&&!ref.derived&&Number.isFinite(ref.open)&&ref.open>=0){
       r.open=ref.open;r.derived=false;r.confirmedAsOf=ref.as_of;r.markup=price===null?null:price-r.open;r.markupShare=price===null?null:r.markup/r.open;
       r.terms+=ref.as_of?' · Прайс партнёра подтверждён '+ref.as_of:' · Открытая цена из ручной выгрузки';
-      if(c.rate===null||payout===null||!Number.isFinite(payout))return r;
-      var expected=ref.open*(1-c.rate);
+      if(c.rate===null&&c.amount===null||payout===null||!Number.isFinite(payout))return r;
+      var expected=c.amount!==null?ref.open-c.amount:ref.open*(1-c.rate);
       if(Math.abs(expected-payout)>0.01){r.mismatch=true;r.terms+=' · Выплата модели '+payout+' ₽ отличается от выплаты по прайсу '+expected+' ₽; проверьте себестоимость в таблице или правку модели';return r;}
-      r.commission=r.open-payout;return r;
+      r.commission=r.open-payout;if(c.amount!==null)r.rate=r.open>0?r.commission/r.open:null;return r;
+    }
+    if(c.amount!==null&&Number.isFinite(payout)&&payout>=0){
+      r.open=payout+c.amount;r.commission=c.amount;r.rate=r.open>0?c.amount/r.open:null;r.markup=price===null?null:price-r.open;r.markupShare=price===null?null:r.markup/r.open;r.terms+=' · Комиссия за сертификат';return r;
     }
     if(c.rate===null||payout===null||!Number.isFinite(payout)||payout<0)return r;
     r.open=payout/(1-c.rate);r.commission=r.open-payout;r.rate=c.rate;r.markup=price===null?null:price-r.open;r.markupShare=price!==null&&r.open>0?r.markup/r.open:null;
@@ -51,18 +62,18 @@
   }
   function aggregate(price,payout,parts,lookup,mode){
     if(!parts.length)return unknown(price,'Нет услуг с известной выплатой');
-    var total=0,open=0,commission=0,expected=0,terms=[],firstOpen=null,derived=false,dates=[];
+    var total=0,open=0,commission=0,expected=0,terms=[],firstOpen=null,derived=false,dates=[],pendingRate=false;
     for(var i=0;i<parts.length;i++){
       var part=parts[i],r=service(price,part.cost,part.partner,lookup,part.reference,part.name);terms.push((part.partner||'Партнёр не указан')+': '+r.terms);
       if(r.open===null||r.commission===null)return unknown(price,'Нет единого расчёта: '+terms.join('; '));
-      derived=derived||r.derived;if(r.confirmedAsOf)dates.push(r.confirmedAsOf);
+      derived=derived||r.derived;pendingRate=pendingRate||r.pendingRate;if(r.confirmedAsOf)dates.push(r.confirmedAsOf);
       if(mode==='max'&&firstOpen!==null&&Math.abs(firstOpen-r.open)>0.01)return unknown(price,'Максимальная выплата одинакова у услуг с разными открытыми ценами; смотрите состав');
       firstOpen=r.open;
       total+=part.weight;open+=r.open*part.weight;commission+=r.commission*part.weight;expected+=part.cost*part.weight;
     }
     if(!(total>0)||payout===null||Math.abs(expected/total-payout)>0.01)return unknown(price,'Выплата изменена вручную; структура состава не совпадает');
     open/=total;commission/=total;
-    return {price:price,open:open,markup:price-open,markupShare:open>0?(price-open)/open:null,commission:commission,rate:open>0?commission/open:null,terms:'По составу: '+Array.from(new Set(terms)).join('; '),derived:derived,confirmedAsOf:!derived?Array.from(new Set(dates)).join(', '):null};
+    return {price:price,open:open,markup:price-open,markupShare:open>0?(price-open)/open:null,commission:commission,rate:open>0?commission/open:null,terms:'По составу: '+Array.from(new Set(terms)).join('; '),derived:derived,pendingRate:pendingRate,confirmedAsOf:!derived?Array.from(new Set(dates)).join(', '):null};
   }
   function rule(s,payout,p){
     var margin=s.price>0&&Number.isFinite(payout)?(s.price-payout)/s.price:null;
