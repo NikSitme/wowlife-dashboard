@@ -9,7 +9,7 @@
       else if(/групп/.test(name))rate=.2;
     }
     if(name&&text==='25% на все услуги, кроме изготовления часов (часы - 15%)'){
-      var options=name.split(':').pop().split('+'),clocks=options.filter(function(x){return /часы|часов/.test(x);}).length;
+      var options=name.split(':').pop().split('+'),clocks=options.filter(function(x){return /(?:^|[^а-я])часы(?:$|[^а-я])|изготовлен[а-я]* часов/.test(x);}).length;
       rate=clocks===options.length?.15:clocks===0?.25:null;
     }
     if(name&&text==='20% на полеты, 10% на обучение'){

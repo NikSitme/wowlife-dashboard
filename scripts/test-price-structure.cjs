@@ -15,6 +15,7 @@ for(const [terms,name,rate] of [[fresh,'Растяжка: индивидуаль
  near(result.rate,rate);near(result.open,4000/(1-rate));near(result.markup+result.commission+4000,6000);
 }
 for(const [terms,name]of [[fresh,'Растяжка'],[resin,'Свидание: Часы + Картина'],[flight,'Сертификат'],[tours,'Экскурсия на остров Валаам'],[tours,'Экскурсия на Коневец'],['10% по промо','Отдых']])assert.equal(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms},name).rate,null,terms+' / '+name);
+near(S.service(6000,4000,'Условия',index,{partner_name:'Условия',terms:resin},'Картина: 5 часов').rate,.25,'Duration is not a clock-making tariff');
 const named=S.aggregate(6000,4000,[{partner:'Условия',name:'Растяжка: индивидуальное занятие',cost:4000,weight:1,reference:{partner_name:'Условия',terms:fresh,derived:true}}],index);near(named.rate,.15);
 near(r.open,5000);near(r.markup,1000);near(r.commission,1000);near(r.rate,.2);near(r.markupShare,.2);
 near(r.price,r.markup+r.commission+4000);
