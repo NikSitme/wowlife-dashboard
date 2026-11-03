@@ -39,7 +39,7 @@
     var c=resolve(partner,lookup);
     c.rate=rateFromTerms(c.terms,serviceName);
     c.amount=amountFromTerms(c.terms,serviceName);
-    var matches=ref&&(ref.partner_name?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
+    var matches=ref&&(typeof ref.partner_name==='string'?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
     if(matches&&ref.terms!==undefined){
       c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms,serviceName),amount:amountFromTerms(ref.terms,serviceName)};
     }
