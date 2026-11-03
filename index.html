@@ -7912,7 +7912,7 @@ window.__salesActSetData = function(newData){
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261030-services-only"></script>
 <script src="./scripts/service-catalog.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/price-structure.js?v=20261029-payout-base"></script>
+<script src="./scripts/price-structure.js?v=20261103-service-terms"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: состав наборов и прайс услуг — листы «Наборы Мск/СПб», «Услуги Мск/СПб» таблицы «Никита» (CRM),
@@ -7921,7 +7921,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v7-pending-zero", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v8-service-terms", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8004,11 +8004,12 @@ window.__salesActSetData = function(newData){
   }
   function parseCatalog(rows, city, cat){
     var columns=CATALOG.statusColumns(rows[0]),priceColumn=CATALOG.discountedPriceColumn(rows[0]);
+    var termsColumn=(rows[0]||[]).map(function(x){return String(x||'').trim().toLowerCase();}).indexOf('размер комиссии');
     if(priceColumn<0)throw new Error('В листе услуг '+city+' нет столбца «стоимость со скидкой»');
     rows.slice(1).forEach(function(r){
       var id=String(r[0]||'').trim();if(!/^\d+$/.test(id))return;
       var nm=String(r[1]||'').trim();if(!nm)return;
-      cat[id]=Object.assign({sid:id,name:nm,partner:String(r[2]||'').trim(),price:CATALOG.discountedPrice(r,priceColumn),cost:ruNum(r[4]),city:city},CATALOG.readStatus(r,columns));
+      cat[id]=Object.assign({sid:id,name:nm,partner:String(r[2]||'').trim(),price:CATALOG.discountedPrice(r,priceColumn),cost:ruNum(r[4]),sourceTerms:termsColumn>=0?String(r[termsColumn]||'').trim():'',city:city},CATALOG.readStatus(r,columns));
     });
   }
   async function loadCrm(force){
@@ -8064,7 +8065,8 @@ window.__salesActSetData = function(newData){
     var o = state.sov[sid] || {};
     var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.costKnown === true || base.cost > 0, manualFields:base.manualFields, manualSource:base.manualSource, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
     result.reference=STRUCTURE.reference(sid,result.partner,commissionIndex);
-    if(base.manualReference && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},base.manualReference);
+    if(base.sourceTerms && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},{partner_name:base.partner,terms:base.sourceTerms,termsSource:'Размер комиссии услуги CRM'});
+    if(base.manualReference && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},{termsSource:'Ручные данные'},base.manualReference);
     return CATALOG.visiblePrice(result)?result:null;
   }
   function allSets(){

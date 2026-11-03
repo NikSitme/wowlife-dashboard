@@ -2,6 +2,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),S=require('./pr
 const near=(a,b)=>assert(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 const rows=[{id:'1',name:'Партнёр',type:'Партнер',terms:'20%'},{id:'2',name:'Без',type:'Партнер',terms:'Без комиссии'},{id:'3',name:'Условия',type:'Партнер',terms:'15% (в выходные дни 10%)'},{id:'4',name:'Число',type:'Партнер',terms:'25'},{id:'5',name:'Дубль',type:'Партнер',terms:'10%'},{id:'6',name:'Дубль',type:'Партнер',terms:'20%'},{id:'7',name:'Полная',type:'Партнер',terms:'100%'}];
 const index=S.index(rows);let r=S.service(6000,4000,' ПАРТНЕР ',index);
+const deposit=S.service(2860,2340,'Ginza Project',S.index([]),{partner_name:'Ginza Project',terms:'10% от суммы депозита',termsSource:'Размер комиссии услуги CRM',derived:true});
+near(deposit.open,2600);near(deposit.commission,260);near(deposit.markup,260);assert(deposit.terms.includes('Размер комиссии услуги CRM'));
+for(const terms of ['Фиксированная','Фиксированная за 1 лошадь','Фиксированный процент','10% в будни, 15% в выходные','100 ₽ с 1 билета','100% от суммы депозита'])assert.equal(S.service(2860,2340,'Ginza Project',S.index([]),{partner_name:'Ginza Project',terms}).rate,null,terms);
 near(r.open,5000);near(r.markup,1000);near(r.commission,1000);near(r.rate,.2);near(r.markupShare,.2);
 near(r.price,r.markup+r.commission+4000);
 assert.equal(S.resolve('ID 1',index).id,'1');assert.equal(S.resolve('Дубль',index).rate,null);

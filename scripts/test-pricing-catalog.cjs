@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v7-pending-zero'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v8-service-terms'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -166,3 +166,18 @@ assert.equal(t.allSets().length,1,'actual set remains visible in the Sets tab');
 assert.deepEqual(Array.from(t.allSets()[0].items,s=>s.sid),['keep']);
 assert.equal(t.state.sov.gift.name,'Renamed','do not erase saved edits while hiding the wrong product type');
 console.log('PASS service types: sets excluded from services/picker/composition, preserved in the Sets tab');
+// Per-service live commission takes precedence over an absent/old partner-name snapshot.
+const liveTerms={};
+t.parseCatalog([['id услуги','наименование','партнер','стоимость','себестоимость','%маржи','размер комиссии','стоимость со скидкой'],['32758','Юность: депозит 2600','Ginza Project',2860,2340,'','10% от суммы депозита',2860],['15275','Конная прогулка','Golden Horses (Токсово)',2090,1500,'','Фиксированная за 1 лошадь',2090]],'СПб',liveTerms);
+t.state.sov={};t.setData({catalog:liveTerms,sets:[]});
+let live=t.calcService(t.serviceOf('32758')).structure;
+assert.equal(live.rate,.1);assert.equal(live.open,2600);assert.equal(live.commission,260);assert.equal(live.markup,260);
+assert(live.terms.includes('Размер комиссии услуги CRM'));
+assert.equal(t.calcService(t.serviceOf('15275')).structure.open,null,'A fixed payout alone must not invent a zero commission');
+const liveManual=catalog.manualOverlay(liveTerms,[['id услуги','наименование','партнер','стоимость','себестоимость','%маржи','размер комиссии','стоимость со скидкой','открытая цена партнера','дата подтверждения','комментарий','тип открытой цены'],['15275','','','','','','0%','','','','','Расчёт из выплаты и комиссии']],'СПб');
+t.setData({catalog:liveManual.catalog,sets:[]});
+live=t.calcService(t.serviceOf('15275')).structure;
+assert.equal(live.open,1500);assert.equal(live.markup,590);assert.equal(live.rate,0);assert(live.terms.includes('Ручные данные'));
+t.state.sov['15275']={partner:'Другой партнёр'};
+assert.equal(t.calcService(t.serviceOf('15275')).structure.open,null,'Changing partner must not retain source/manual commission');
+console.log('PASS live service commissions: deposit basis, source terms, manual override, partner changes and fixed-payout ambiguity');

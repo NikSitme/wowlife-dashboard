@@ -1,12 +1,16 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePriceStructure=api;})(typeof window==='undefined'?globalThis:window,function(){
   function norm(s){return String(s||'').normalize('NFKC').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();}
+  function rateFromTerms(value){
+    var text=norm(value),m=text.match(/^(\d+(?:[.,]\d+)?)\s*%(?: от суммы депозита)?$/);
+    var rate=text==='без комиссии'?0:m?Number(m[1].replace(',','.'))/100:null;
+    return rate!==null&&rate>=0&&rate<1?rate:null;
+  }
   function index(rows,prices){var names={},ids={},openPrices={};(rows||[]).filter(function(r){return r.type==='Партнер';}).forEach(function(r){ids[r.id]=r;var n=norm(r.name);(names[n]||(names[n]=[])).push(r);});(prices||[]).forEach(function(p){if(Number.isFinite(p.open)&&p.open>0)openPrices[String(p.sid)]=p;});return {names:names,ids:ids,openPrices:openPrices};}
   function resolve(partner,lookup){
     var n=norm(partner),id=n.match(/^id\s*(\d+)$/),matches=id?(lookup.ids[id[1]]?[lookup.ids[id[1]]]:[]):lookup.names[n]||[];
     if(matches.length!==1)return {rate:null,terms:matches.length?'Несколько карточек партнёра':'Комиссия не найдена',id:null};
-    var row=matches[0],text=norm(row.terms),m=text.match(/^(\d+(?:[.,]\d+)?)\s*%$/),rate=text==='без комиссии'?0:m?Number(m[1].replace(',','.'))/100:null;
-    if(rate!==null&&(!(rate>=0)||rate>=1))rate=null;
-    return {rate:rate,terms:row.terms||'Комиссия не указана',id:row.id};
+    var row=matches[0];
+    return {rate:rateFromTerms(row.terms),terms:row.terms||'Комиссия не указана',id:row.id};
   }
   function unknown(price,terms){return {price:price,open:null,markup:null,markupShare:null,commission:null,rate:null,terms:terms,derived:true};}
   function reference(sid,partner,lookup){var p=lookup.openPrices&&lookup.openPrices[String(sid)];return p&&resolve(partner,lookup).id===p.partner_id?p:null;}
@@ -15,8 +19,7 @@
     var c=resolve(partner,lookup);
     var matches=ref&&(ref.partner_name?norm(ref.partner_name)===norm(partner):c.id!==null&&ref.partner_id===c.id);
     if(matches&&ref.terms!==undefined){
-      var terms=norm(ref.terms),m=terms.match(/^(\d+(?:[.,]\d+)?)\s*%$/),rate=terms==='без комиссии'?0:m?Number(m[1].replace(',','.'))/100:null;
-      c={id:c.id,terms:ref.terms+' · Ручные данные',rate:rate!==null&&rate>=0&&rate<1?rate:null};
+      c={id:c.id,terms:ref.terms+' · '+(ref.termsSource||'Ручные данные'),rate:rateFromTerms(ref.terms)};
     }
     var r=unknown(price,c.terms);r.partnerId=c.id;r.rate=c.rate;
     if(matches&&!ref.derived&&Number.isFinite(ref.open)&&ref.open>=0){
