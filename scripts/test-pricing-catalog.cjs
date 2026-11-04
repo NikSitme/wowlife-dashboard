@@ -141,7 +141,7 @@ t.state.sov={};t.setData({catalog:confirmed,sets:[]});assert.equal(t.calcService
 console.log('PASS pricing catalog: inactivity, zero-price visibility, effective proposals, editable drafts, source preservation, parent IDs and complete CSV');
 
 // Non-service products stay hidden across raw data, manual overlays, local edits and composition.
-const excludedIds=['15832','16099','15572','15868','16910','16931','29766','16860','17447','26767','26782','26788','17844','8705','11434','31874','15163','15164','15312','16041','16042','21503','21504','21505','42634','42645','42658','42994','42997','43000','21415','8976','36330','35972','17691','17697','17698','35061','17693','17699','34328','17694','34325','34329','17695','34326','34330','17696','34327','32185','34322','34323','34324','16681','16679','31726','34313','31815','34314','16680','16676','34990','16678','17686','34315','16682','31727','35346','31725','34310','34317','34316','16677','33958','32184','31723','34311','34312'];
+const excludedIds=['30225','42580','42581','42582','42583','42584','42585','42608','42609','42610','42612','42613','42614','42622','42623','42624','42625','42626','42627','42635','42636','42637','42638','42639','42646','42647','42648','42649','42650','42651','42659','42660','42661','42662','42858','15832','16099','15572','15868','16910','16931','29766','16860','17447','26767','26782','26788','17844','8705','11434','31874','15163','15164','15312','16041','16042','21503','21504','21505','42634','42645','42658','42994','42997','43000','21415','8976','36330','35972','17691','17697','17698','35061','17693','17699','34328','17694','34325','34329','17695','34326','34330','17696','34327','32185','34322','34323','34324','16681','16679','31726','34313','31815','34314','16680','16676','34990','16678','17686','34315','16682','31727','35346','31725','34310','34317','34316','16677','33958','32184','31723','34311','34312'];
 for(const sid of excludedIds)assert.equal(available({sid,name:'Renamed',price:1000}),false);
 for(const name of ['Номинальный сертификат','Номинальный сертификат, Москва: 1000 рублей','Номинальный подарочный сертификат: 17000 рублей'])assert.equal(available({sid:'future',name,price:1000}),false);
 for(const name of ['Мастер-класс по фитнесу','Оздоровительный фитнес: I категория','Подарочный набор'])assert.equal(available({sid:'other',name,price:1000}),true);
@@ -150,7 +150,7 @@ t.setData({catalog:Object.fromEntries([...excludedIds,'keep'].map(sid=>[sid,{sid
 assert.deepEqual(Array.from(t.allServices(),s=>s.sid),['keep']);
 for(const set of t.allSets())assert.deepEqual(Array.from(set.items,s=>s.sid),['keep']);
 assert.equal(t.usage()['21415'],undefined);assert.equal(t.state.customSets[0].items.length,4);
-console.log('PASS explicit service cleanup: 48 IDs, both cities, future nominal variants, stale cache and saved drafts');
+console.log('PASS explicit service cleanup: '+excludedIds.length+' IDs, both cities, future nominal variants, stale cache and saved drafts');
 
 // Gift sets are a separate product type; do not hide the actual set tab.
 const setProduct={sid:'gift',name:'Подарочный набор «Женское счастье», Москва',price:5000,cost:0,city:'Мск'};
