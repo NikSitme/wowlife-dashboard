@@ -53,5 +53,32 @@
     return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
   function purchases(rows,s){return(rows||[]).filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,r.city)&&selected(s.sources,r.source);});}
   function purchaseStats(rows){var out={revenue:0,orders:0,lead:{revenue:0,orders:0},direct:{revenue:0,orders:0},types:{'Электронный':{revenue:0,orders:0},'Физический':{revenue:0,orders:0},'Не указан':{revenue:0,orders:0}}};rows.forEach(function(r){out.revenue+=r.revenue;out.orders+=r.orders;var l=out[r.lead?'lead':'direct'];l.revenue+=r.revenue;l.orders+=r.orders;var t=out.types[r.type]||out.types['Не указан'];t.revenue+=r.revenue;t.orders+=r.orders;});out.avg=out.orders?out.revenue/out.orders:null;return out;}
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,crm:crm,purchases:purchases,purchaseStats:purchaseStats};
+  // Packaging is counted by SKU quantity, including zero-price positions. The
+  // amount in the description is the line total; it must not be multiplied by xN.
+  function packaging(rows){
+    var h=rows[0]||[],index={};h.forEach(function(v,i){index[v]=i;});
+    ['id сделки','стадия','дата оплаты','тип товара','город','источник','описание'].forEach(function(k){if(index[k]===undefined)throw new Error('Упаковка: нет колонки '+k);});
+    var seen=new Set(),groups=new Map(),dates=[];
+    rows.slice(1).forEach(function(r){
+      if(!r)return;
+      var id=String(r[index['id сделки']]||'').trim(),d=iso(r[index['дата оплаты']]);
+      if(!id||!d||seen.has(id)||r[index['стадия']]!=='Сделка успешна'||r[index['тип товара']]!=='Физический')return;
+      seen.add(id);dates.push(d);
+      String(r[index['описание']]||'').split(/[;\n]/).forEach(function(line){
+        var m=line.trim().match(/^(.*?)\s+[xх×](\d+)\s+[—–-]\s+(-?\d[\d\s]*(?:[.,]\d{1,2})?)\s*(?:руб\.?|₽)\s*$/i);
+        if(!m)return;
+        var name=m[1].trim().toLowerCase().replace(/\s+/g,' '),article;
+        if(/^(?:пакет премиум|премиум пакет)(?:$|[\s,(])/.test(name))article='Пакеты';
+        else if(/^упаковоч(?:ная|ая) бумага(?:$|[\s,(])/.test(name)||/^упаковка(?:$|[\s,(])/.test(name))article='Упаковка';
+        else return;
+        var qty=Number(m[2]),amount=number(m[3]);if(!Number.isSafeInteger(qty)||qty<=0||amount<0)return;
+        var c=city(r[index['город']]),src=source(r[index['источник']]),key=JSON.stringify([d,c,src,article]),g=groups.get(key);
+        if(!g){g={date:d,city:c,source:src,article:article,quantity:0,paidQuantity:0,zeroQuantity:0,revenue:0};groups.set(key,g);}
+        g.quantity+=qty;g.paidQuantity+=amount>0?qty:0;g.zeroQuantity+=amount===0?qty:0;g.revenue+=amount;
+      });
+    });
+    dates.sort();
+    return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
+  }
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,crm:crm,purchases:purchases,purchaseStats:purchaseStats,packaging:packaging};
 });

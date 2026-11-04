@@ -36,6 +36,32 @@ assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,sources:[]})).orders,0);
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Не определён']})).orders,1);
 
+const packagingHeader=['id сделки','стадия','дата оплаты','тип товара','город','источник','описание'];
+const packagingFixture=[packagingHeader,
+  ['p1','Сделка успешна','2026-10-01','Физический','Москва','Веб-сайт new','Премиум Пакет(Add) x2 — 598 руб.; Упаковочная бумага (синяя)(Add) x3 — 1470 руб.; Подарочный набор «Премиум» x1 — 10000 руб.'],
+  ['p1','Сделка успешна','2026-10-01','Физический','Москва','Веб-сайт new','Премиум Пакет(Add) x2 — 598 руб.'],
+  ['p2','Сделка успешна','2026-10-02','Физический','СПБ','flowwow','Пакет премиум(Add) x1 — 0 руб.; Упаковочная бумага (сердечки) x1 — 490 руб.'],
+  ['p3','Сделка успешна','2026-10-03','Физический','Москва','Звонок','Пакеты курьерские, маленькие(Box) x5 — 0 руб.; Пакеты фирменные(Box) x1 — 0 руб.; Коробка для сертификата WOWlife (Box) x1 — 0 руб.; Конная прогулка: Полный пакет x1 — 28000 руб.'],
+  ['p4','Сделка успешна','2026-10-04','Электронный','Москва','Веб-сайт','Премиум Пакет(Add) x1 — 299 руб.'],
+  ['p5','Сделка провалена','2026-10-04','Физический','Москва','Веб-сайт','Премиум Пакет(Add) x1 — 299 руб.'],
+  ['p6','Сделка успешна','31.02.2026','Физический','Москва','Веб-сайт','Премиум Пакет(Add) x1 — 299 руб.'],
+  ['p7','Сделка успешна','2026-09-30','Физический','Москва','Веб-сайт','Премиум пакет х1 — 299,50 ₽; Упаковка winter (Новый год) ×1 — 490 руб.'],
+  ['p8','Сделка успешна','2026-10-05','Физический','','Веб-сайт','Упаковочная бумага x2 — 0 руб.; Премиум Пакет(Add) x1 — -299 руб.'],
+  ['','Сделка успешна','2026-10-05','Физический','Москва','Веб-сайт','Премиум Пакет(Add) x1 — 299 руб.']
+];
+const packaging=model.packaging(packagingFixture);
+const packagingSelection={...selection,start:'2026-10-01',end:'2026-10-31'};
+const packagingTotals=rows=>rows.reduce((out,r)=>{for(const key of ['quantity','paidQuantity','zeroQuantity','revenue'])out[key]+=r[key];return out;},{quantity:0,paidQuantity:0,zeroQuantity:0,revenue:0});
+const packagingOctober=model.purchases(packaging.rows,packagingSelection);
+assert.deepEqual(packagingTotals(packagingOctober.filter(r=>r.article==='Пакеты')),{quantity:3,paidQuantity:2,zeroQuantity:1,revenue:598},'count xN once per deal; zero-price packages count without adding revenue');
+assert.deepEqual(packagingTotals(packagingOctober.filter(r=>r.article==='Упаковка')),{quantity:6,paidQuantity:4,zeroQuantity:2,revenue:1960},'use line totals rather than multiplying revenue by xN');
+assert.equal(packagingTotals(model.purchases(packaging.rows,{...packagingSelection,cities:['Москва'],sources:['Сайт']})).quantity,5,'shared filters select date, city and CRM source');
+assert.equal(packagingTotals(model.purchases(packaging.rows,{...packagingSelection,sources:['Flowwow']})).quantity,2);
+assert.equal(packagingTotals(model.purchases(packaging.rows,{...packagingSelection,sources:[]})).quantity,0);
+assert.equal(packagingTotals(model.purchases(packaging.rows,{...packagingSelection,cities:['Не определён']})).quantity,2);
+assert.equal(packaging.rows.find(r=>r.date==='2026-09-30'&&r.article==='Пакеты').revenue,299.5,'historical SKU spellings and decimal comma remain supported');
+assert.equal(packaging.sourceEnd,'2026-10-05');
+
 const html = fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let updater = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].find(m=>m[1].includes('var ADESK_SOURCE_ID'))[1];
 updater = updater.replace('  if (document.readyState === "loading")',
@@ -71,6 +97,7 @@ assert.equal(model.sum(model.filter(datasets.activations.rows,{...selection,citi
 const salesActFixture = context.window.testAnalytics.computeSalesAct(raw,act);
 assert.equal(salesActFixture.meta.total_act,8,'trend and analytics must share the same activation definition and deduplication');
 assert.equal(salesActFixture.meta.total_cost,800);
+assert.deepEqual(JSON.parse(JSON.stringify(salesActFixture.packaging.rows)),model.packaging(raw).rows,'live refresh includes the same packaging calculation as the source snapshot');
 assert.equal(salesActFixture.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(datasets.activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(datasets.partners.activationMetric,model.ACTIVATION_METRIC);
