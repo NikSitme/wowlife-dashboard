@@ -10,8 +10,8 @@ assert.equal(september.source_version,2);
 assert.equal(september.source_sheet,'сборка ОПиУ_2');
 assert.equal(september.rows['Коробки'],-38380);
 assert.equal(september.rows['Шоколадки'],-4545);
-assert.equal(september.gross_profit,2483468.54);
-assert.equal(september.net_profit,-474283.25);
+assert.equal(september.gross_profit,2478165.54);
+assert.equal(september.net_profit,-498978.25);
 assert.equal(september.source_warnings.length,0);
 assert.equal(embedded.filter(m=>m.source_warnings.some(w=>w.code==='packaging_positive')).length,12);
 const num = raw => Number(String(raw||'0').replace(/\s/g,'').replace(',','.'));
@@ -39,8 +39,8 @@ for(const item of september.source_pl) rows.push([item.heading?item.label:'',ite
 rows.find(r=>r[0]==='Возвраты')[1]='Возвраты';
 const parsed=api.computeOpiu(rows)[0];
 assert.equal(parsed.rows['Коробки'],-38380);
-assert.equal(parsed.gross_profit,2483468.54);
-assert.equal(parsed.net_profit,-474283.25);
+assert.equal(parsed.gross_profit,2478165.54);
+assert.equal(parsed.net_profit,-498978.25);
 const changed=rows.map(r=>r.slice());changed.find(r=>r[1]==='упаковка - коробки')[5]='-48 380,00';
 assert.throws(()=>api.computeOpiu(changed),/расхождение сверки/,'unreconciled edits must not silently become a fresh snapshot');
 const alteredSigns=rows.map(r=>r.slice());
@@ -51,8 +51,10 @@ assert.equal(signData.rows['Коробки'],38380,'preserve positive source ent
 assert.equal(signData.source_warnings[0].code,'packaging_positive');
 
 // The current v2 sheet removed this legacy tax row; valid totals must still load.
-const withoutLegacyTax=rows.filter(r=>r[1]!=='Налоги и пошлины').map(r=>r.slice());
-assert.equal(num(rows.find(r=>r[1]==='Налоги и пошлины')[5]),0);
+const legacyRows=rows.some(r=>r[1]==='Налоги и пошлины')?rows:rows.concat([['','Налоги и пошлины','','','','0']]);
+assert.equal(api.computeOpiu(legacyRows)[0].net_profit,september.net_profit);
+const withoutLegacyTax=legacyRows.filter(r=>r[1]!=='Налоги и пошлины').map(r=>r.slice());
+assert.equal(num(legacyRows.find(r=>r[1]==='Налоги и пошлины')[5]),0);
 const currentLayout=api.computeOpiu(withoutLegacyTax)[0];
 assert.equal(currentLayout.net_profit,september.net_profit);
 assert.ok(!currentLayout.taxes_breakdown.some(r=>r.name==='Налоги и пошлины'));
@@ -61,7 +63,9 @@ assert.throws(()=>api.computeOpiu(missingRequiredTax),/не найдена ст�
 
 // Write-off packages are separate from the existing purchase expense "Пакеты".
 const withPackages=withoutLegacyTax.map(r=>r.slice());
-withPackages.splice(withPackages.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Пакеты','','','','-500']);
+const packageRow=withPackages.find(r=>r[1]==='упаковка - Пакеты');
+if(packageRow)packageRow[5]='-500';
+else withPackages.splice(withPackages.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Пакеты','','','','-500']);
 for(const label of ['переменные расходы','маржинальная прибыль','Операционная прибыль','чистая прибыль','прибыль после выплаты тела кредита и дивидендов']){
   const r=withPackages.find(r=>r[0]===label);r[5]=String(num(r[5])-500);
 }
@@ -81,4 +85,4 @@ if(process.argv[2]){
     }
   }
 }
-console.log('OПиУ source: current tab, native rows/values/signs, 22 months, packaging aliases, source profit totals, reconciliation failures and positive-cost warnings passed.');
+console.log('OПиУ source: current tab, native rows/values/signs, '+embedded.length+' months, packaging aliases, source profit totals, reconciliation failures and positive-cost warnings passed.');

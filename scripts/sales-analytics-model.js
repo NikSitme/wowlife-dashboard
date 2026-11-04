@@ -1,8 +1,9 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SalesAnalytics=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   var CITIES=['Москва','Санкт-Петербург','Не определён'];
-  var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','B2B'];
+  var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','Мегамаркет','B2B'];
   var ACTIVATION_METRIC='certificate-selection-v1';
+  var CRM_METRIC='certificate-lines-marketplace-sources-v2';
   function number(s){var n=Number(String(s==null?'':s).replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0;}
   function iso(s){s=String(s||'').trim();var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),value;
     if(m)value=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
@@ -10,7 +11,7 @@
     if(!value)return null;var d=new Date(value+'T00:00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===value?value:null;}
   function today(now){return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).format(now||new Date());}
   function city(value){var v=String(value||'').trim().toLowerCase();if(/^(москва|мск)$/.test(v))return CITIES[0];if(/^(санкт[- ]петербург|петербург|спб)$/.test(v))return CITIES[1];return CITIES[2];}
-  function source(value){var v=String(value||'').trim().toLowerCase();if(v==='ozon'||v==='озон')return 'Ozon';if(v==='wildberries'||v==='вб')return 'Wildberries';if(v==='ям'||v==='яндекс маркет'||v==='яндекс.маркет')return 'Яндекс Маркет';if(/^flowwow/.test(v))return 'Flowwow';if(v==='b2b')return 'B2B';return 'Сайт';}
+  function source(value){var v=String(value||'').trim().toLowerCase();if(v==='ozon'||v==='озон')return 'Ozon';if(v==='wildberries'||v==='wildberries цифровой'||v==='вб')return 'Wildberries';if(v==='ям'||v==='яндекс маркет'||v==='яндекс.маркет')return 'Яндекс Маркет';if(/^flowwow/.test(v))return 'Flowwow';if(v==='мегамаркет')return 'Мегамаркет';if(v==='b2b')return 'B2B';return 'Сайт';}
   function date(s){return new Date(s+'T00:00:00Z');}
   function shift(s,n){var d=date(s);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
   function shiftMonths(s,n){var d=date(s),day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+n);var end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();d.setUTCDate(Math.min(day,end));return d.toISOString().slice(0,10);}
@@ -53,6 +54,19 @@
     return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
   function purchases(rows,s){return(rows||[]).filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,r.city)&&selected(s.sources,r.source);});}
   function purchaseStats(rows){var out={revenue:0,orders:0,lead:{revenue:0,orders:0},direct:{revenue:0,orders:0},types:{'Электронный':{revenue:0,orders:0},'Физический':{revenue:0,orders:0},'Не указан':{revenue:0,orders:0}}};rows.forEach(function(r){out.revenue+=r.revenue;out.orders+=r.orders;var l=out[r.lead?'lead':'direct'];l.revenue+=r.revenue;l.orders+=r.orders;var t=out.types[r.type]||out.types['Не указан'];t.revenue+=r.revenue;t.orders+=r.orders;});out.avg=out.orders?out.revenue/out.orders:null;return out;}
+  function certificateQuantity(description){
+    var parts=String(description||'').split(/[;\n]/),quantity=0,parsed=0;
+    parts.forEach(function(line){
+      var m=line.trim().match(/^(.*?)\s+[xх×](\d+)\s*[—–-]/i);if(!m)return;
+      parsed++;
+      var name=m[1].trim();
+      if(/\((?:Add|Box)\)/i.test(name)||/^(?:услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата)/i.test(name))return;
+      quantity+=Number(m[2]);
+    });
+    // Preserve the documented one-certificate fallback when CRM has no readable
+    // product lines. A readable basket containing only extras has no certificates.
+    return parsed?quantity:1;
+  }
   // Packaging is counted by SKU quantity, including zero-price positions. The
   // amount in the description is the line total; it must not be multiplied by xN.
   function packaging(rows){
@@ -80,5 +94,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,crm:crm,purchases:purchases,purchaseStats:purchaseStats,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateQuantity:certificateQuantity,packaging:packaging};
 });

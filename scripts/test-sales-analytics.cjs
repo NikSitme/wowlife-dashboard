@@ -35,6 +35,14 @@ assert.equal(Object.values(stats.types).reduce((sum,r)=>sum+r.orders,0), stats.o
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Москва'],sources:['Сайт']})).orders,1);
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,sources:[]})).orders,0);
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Не определён']})).orders,1);
+assert.equal(model.certificateQuantity('Подарочный набор «Релакс» x1 — 4050 руб.; Подарочный набор «Воплоти мечту» x2 — 8680 руб.'),3,'all certificate lines count, not only the first multiplier');
+assert.equal(model.certificateQuantity('Премиум Пакет(Add) x4 — 1196 руб.; Сертификат на массаж x2 — 12000 руб.; Услуги доставки СПб, Мск x1 — 350 руб.; Мужские(Box) x2 — 0 руб.'),2,'extras before the main product must not determine certificate count');
+assert.equal(model.certificateQuantity('Конная прогулка: Полный пакет х2 — 20000 руб.; Семейная фотосессия: Пакет «Стандарт» ×3 — 45000 руб.'),5,'package wording inside service names remains a certificate');
+assert.equal(model.certificateQuantity('Упаковочная бумага (синяя)(Add) x3 — 1470 руб.; Пакет премиум(Add) x1 — 299 руб.'),0,'a basket of extras has no certificates');
+assert.equal(model.certificateQuantity(''),1,'missing descriptions retain the documented fallback');
+assert.equal(model.source('Wildberries Цифровой'),'Wildberries','digital Wildberries orders must not become direct website orders');
+assert.equal(model.source('Мегамаркет'),'Мегамаркет','historical marketplace source remains separate from website');
+assert.ok(model.SOURCES.includes('Мегамаркет'));
 
 const packagingHeader=['id сделки','стадия','дата оплаты','тип товара','город','источник','описание'];
 const packagingFixture=[packagingHeader,
@@ -107,7 +115,7 @@ const sales = embedded('ws-dashboard-data'), activations = embedded('ws-dashboar
 const bodies = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 const opiu = JSON.parse(bodies.find(s=>s.includes('window.__opiuData = DATA;')).match(/var DATA = ([^\n]+);/)[1]);
 const salesAct = JSON.parse(bodies.find(s=>s.includes('window.__salesActData = DATA;')).match(/const DATA = ([^\n]+);/)[1]);
-assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).orders,993,'fresh 29 October source snapshot; zero-value deals remain excluded');
+assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).orders,993,'4 November source snapshot; zero-value deals remain excluded');
 assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).revenue,8609590);
 for(const month of opiu){
   // In-progress months change between independently downloaded exports.
@@ -121,8 +129,9 @@ assert.equal(activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(partners.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(salesAct.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(model.sum(model.filter(activations.rows,selection)).count,869);
-assert.equal(model.sum(model.filter(activations.rows,{...selection,start:'2026-10-01',end:'2026-10-29'})).count,687);
-assert.equal(salesAct.daily.act.dates.reduce((total,d,i)=>total+(d.startsWith('2026-10-')?salesAct.daily.act.count[i]:0),0),687);
+assert.equal(model.sum(model.filter(activations.rows,{...selection,start:'2026-10-01',end:'2026-10-29'})).count,693);
+assert.equal(salesAct.daily.act.dates.reduce((total,d,i)=>total+(d.startsWith('2026-10-')?salesAct.daily.act.count[i]:0),0),738);
+assert.equal(salesAct.crmMetric,model.CRM_METRIC);
 assert.deepEqual(model.sum(model.filter(activations.rows,selection)),model.sum(model.filter(partners.rows,selection)));
 // Old browser caches may contain the former five-stage metric. Reject their
 // activation data while allowing independently cached financial sales to load.
@@ -132,6 +141,8 @@ const cacheContext={window:{SalesAnalytics:model},DATA:{activationMetric:model.A
 vm.runInNewContext(cachedSaSetter+'\n'+cachedWsSetter,cacheContext);
 cacheContext.window.__salesActSetData({purchaseRows:[],meta:{total_act:8}});
 assert.equal(cacheContext.DATA.activationMetric,model.ACTIVATION_METRIC);
+cacheContext.window.__salesActSetData({purchaseRows:[],activationMetric:model.ACTIVATION_METRIC,meta:{total_sales:999}});
+assert.equal(cacheContext.DATA.meta,undefined,'old CRM cache must not restore incorrect source mapping or first-product counts');
 const cachedSales={schemaVersion:2,rows:[]};
 cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersion:2});
 assert.equal(cacheContext.DATASETS.sales,cachedSales);
