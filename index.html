@@ -6685,13 +6685,13 @@ window.__salesActSetData = function(newData){
   function renderChannels(){
     var m = MK && MK.months[state.month], pm = MK && MK.months[addMonths(state.month, -1)], body = root.querySelector("#mkChannels");
     if (!m){ body.innerHTML = '<tr><td class="mk-empty">Нет данных</td></tr>'; return; }
-    var chs = Object.keys(m.byChannel).sort(function(a, b){ return m.byChannel[b].revenue - m.byChannel[a].revenue; });
-    var html = '<tr><th>Канал</th><th class="num">Сертификаты</th><th class="num">Выручка</th><th class="num">Доля</th><th class="num">к пред. мес.</th></tr>';
+    var chs = Object.keys(m.byChannel).sort(function(a, b){ return m.byChannel[b].orders - m.byChannel[a].orders; });
+    var html = '<tr><th>Канал</th><th class="num">Сертификаты</th><th class="num">Выручка</th><th class="num">Доля сертификатов</th><th class="num">Сертификаты к пред. мес.</th></tr>';
     chs.forEach(function(ch){
       var c = m.byChannel[ch], p = pm && pm.byChannel[ch];
-      html += '<tr><td>' + ch + '</td><td class="num">' + fmtN(c.orders) + '</td><td class="num">' + fmtR(c.revenue) + '</td><td class="num">' + fmtP(c.revenue / m.revenue, 0) + '</td>' + deltaTd(c.revenue, p && p.revenue, false) + '</tr>';
+      html += '<tr><td>' + ch + '</td><td class="num">' + fmtN(c.orders) + '</td><td class="num">' + fmtR(c.revenue) + '</td><td class="num">' + fmtP(safeDiv(c.orders,m.orders), 1) + '</td>' + deltaTd(c.orders, p && p.orders, false) + '</tr>';
     });
-    html += '<tr class="t"><td>Итого сайт</td><td class="num">' + fmtN(m.orders) + '</td><td class="num">' + fmtR(m.revenue) + '</td><td class="num">100 %</td>' + deltaTd(m.revenue, pm && pm.revenue, false) + '</tr>';
+    html += '<tr class="t"><td>Итого сайт</td><td class="num">' + fmtN(m.orders) + '</td><td class="num">' + fmtR(m.revenue) + '</td><td class="num">100 %</td>' + deltaTd(m.orders, pm && pm.orders, false) + '</tr>';
     body.innerHTML = html;
   }
   function renderTraffic(){
