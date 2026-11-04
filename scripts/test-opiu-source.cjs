@@ -61,8 +61,9 @@ assert.ok(!currentLayout.taxes_breakdown.some(r=>r.name==='Налоги и по�
 const missingRequiredTax=withoutLegacyTax.filter(r=>r[1]!=='НДС по маркетплейсам');
 assert.throws(()=>api.computeOpiu(missingRequiredTax),/не найдена строка/,'required tax rows must not silently disappear');
 
-// Write-off packages are separate from the existing purchase expense "Пакеты".
+// Support both the transitional sheet and the current write-off-only sheet.
 const withPackages=withoutLegacyTax.map(r=>r.slice());
+if(!withPackages.some(r=>r[1]==='Пакеты')) withPackages.push(['','Пакеты','','','','0']);
 const packageRow=withPackages.find(r=>r[1]==='упаковка - Пакеты');
 if(packageRow)packageRow[5]='-500';
 else withPackages.splice(withPackages.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Пакеты','','','','-500']);
@@ -73,6 +74,16 @@ const packageMonth=api.computeOpiu(withPackages)[0];
 assert.equal(packageMonth.product_creation_breakdown.find(r=>r.name==='Пакеты (списание)').value,500);
 assert.equal(packageMonth.net_profit,september.net_profit-500);
 assert.equal(packageMonth.rows['Пакеты (списание)'],-500);
+
+const writeOffOnly=withPackages.filter(r=>r[1]!=='Пакеты');
+const writeOffMonth=api.computeOpiu(writeOffOnly)[0];
+assert.equal(writeOffMonth.net_profit,packageMonth.net_profit);
+assert.equal(writeOffMonth.product_creation_breakdown.find(r=>r.name==='Пакеты (списание)').value,500);
+assert.ok(!writeOffMonth.product_creation_breakdown.some(r=>r.name==='Пакеты'));
+assert.throws(()=>api.computeOpiu(writeOffOnly.filter(r=>r[1]!=='упаковка - Пакеты')),/не найдена строка/,'a missing purchase row requires the replacement write-off row');
+const lostWriteOff=writeOffOnly.map(r=>r.slice());
+lostWriteOff.find(r=>r[1]==='упаковка - Пакеты')[5]='0';
+assert.throws(()=>api.computeOpiu(lostWriteOff),/расхождение сверки/,'missing expense amounts must still fail reconciliation');
 
 if(process.argv[2]){
   const live=api.parseCsv(fs.readFileSync(process.argv[2],'utf8'));
