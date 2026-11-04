@@ -21,7 +21,7 @@ function computeSnapshots(directory, html) {
   return {
     opiu,
     salesact: api.computeSalesAct(marketing, activations),
-    wowsales: api.computeWowsales(read('catalog'), transactions, marketplaces, activations),
+    wowsales: api.computeWowsales(read('catalog'), transactions, marketplaces, activations, marketing),
     revenueTimeline: revenue.fromRows(transactions, marketplaces, model.today()),
     packaging: model.packaging(marketing)
   };

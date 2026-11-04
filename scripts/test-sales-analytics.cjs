@@ -18,8 +18,8 @@ const header = ['id сделки','стадия','дата оплаты','сум
 const raw = [header,
   ['1','Сделка успешна','2026-09-01','1 000,50','Веб-сайт','Москва','Y','Электронный'],
   ['1','Сделка успешна','2026-09-01','1 000,50','Веб-сайт','Москва','Y','Электронный'],
-  ['2','Сделка успешна','2026-09-02','2000','OZON','СПБ','','Физический'],
-  ['3','Сделка успешна','2026-09-03','0','Веб-сайт','Москва','','Физический'],
+  ['2','Сделка успешна','2026-09-02','2000','OZON','СПБ','','Физический','Подарочный набор «Тест» x1 — 2000 руб.'],
+  ['3','Сделка успешна','2026-09-03','0','Веб-сайт','Москва','','Физический','Массаж x3 — 0 руб.'],
   ['4','Сделка провалена','2026-09-03','3000','Веб-сайт','Москва','','Физический'],
   ['5','Сделка успешна','','3000','Веб-сайт','Москва','','Физический'],
   ['6','Сделка успешна','2026-09-04','4000','Веб-сайт','','',''],
@@ -28,11 +28,13 @@ const raw = [header,
 const selection = {start:'2026-09-01',end:'2026-09-30',cities:model.CITIES,sources:model.SOURCES};
 const purchases = model.crm(raw);
 const stats = model.purchaseStats(model.purchases(purchases, selection));
-assert.equal(stats.orders, 3);
+assert.equal(stats.orders, 4);
+assert.equal(stats.quantity, 6,'zero-sum deals and every certificate in a basket count');
+assert.equal(stats.avg,stats.revenue/6,'average amount is per certificate');
 assert.equal(stats.revenue, 7000.5);
 assert.equal(stats.lead.revenue + stats.direct.revenue, stats.revenue);
-assert.equal(Object.values(stats.types).reduce((sum,r)=>sum+r.orders,0), stats.orders);
-assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Москва'],sources:['Сайт']})).orders,1);
+assert.equal(Object.values(stats.types).reduce((sum,r)=>sum+r.quantity,0), stats.quantity);
+assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Москва'],sources:['Сайт']})).quantity,4);
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,sources:[]})).orders,0);
 assert.equal(model.purchaseStats(model.purchases(purchases,{...selection,cities:['Не определён']})).orders,1);
 assert.equal(model.certificateQuantity('Подарочный набор «Релакс» x1 — 4050 руб.; Подарочный набор «Воплоти мечту» x2 — 8680 руб.'),3,'all certificate lines count, not only the first multiplier');
@@ -73,7 +75,7 @@ assert.equal(packaging.sourceEnd,'2026-10-05');
 const html = fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let updater = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].find(m=>m[1].includes('var ADESK_SOURCE_ID'))[1];
 updater = updater.replace('  if (document.readyState === "loading")',
-  '  window.testAnalytics = { computeWowsales, computeSalesAct };\n  if (document.readyState === "loading")');
+  '  window.testAnalytics = { computeWowsales, computeSalesAct, computeMarketing };\n  if (document.readyState === "loading")');
 const context = {window:{SalesAnalytics:model},document:{readyState:'loading',addEventListener(){}},console};
 vm.runInNewContext(updater,context);
 const actHeader = ['id сделки','стадия','дата активации','себестоимость','наименование услуги','партнеры','город'];
@@ -94,8 +96,18 @@ const mp = [['Дата операции','Цена','','','','город','пл�
   ['01.09.2026','300','','','Услуга','СПБ','ВБ'],
   ['01.09.2026','-30','','','Услуга','СПБ','ВБ']];
 const catalog = [[],[],[],[],...Array.from({length:300},(_,i)=>['','Категория','Подкатегория','Услуга '+i])];
-const datasets = context.window.testAnalytics.computeWowsales(catalog,tx,mp,act);
+catalog.push(['','Наборы впечатлений','Универсальные','Подарочный набор «Тест»']);
+const datasets = context.window.testAnalytics.computeWowsales(catalog,tx,mp,act,raw);
 assert.equal(model.sum(model.filter(datasets.sales.rows,selection)).revenue,570);
+assert.equal(model.sum(model.filter(datasets.sales.rows,selection)).count,6,'category rows count certificates rather than financial records');
+assert.equal(datasets.sales.salesMetric,model.CRM_METRIC);
+assert.equal(datasets.sales.rows.find(r=>r.recordKind==='certificate'&&r.item==='Подарочный набор «Тест»').count,1,'CRM product names map to the same financial catalog');
+const marketingRaw=raw.map((r,i)=>r.concat(i===0?['utm source','id контакта']:['','']));
+const marketingAct=act.map((r,i)=>r.concat(i===0?['id контакта']:['']));
+const marketingFixture=context.window.testAnalytics.computeMarketing(marketingRaw,marketingAct);
+assert.equal(marketingFixture.months['2026-09'].orders,5,'marketing volume counts certificates, including zero-sum deals');
+assert.equal(marketingFixture.months['2026-09'].byDay['2026-09-03'].orders,3);
+assert.equal(marketingFixture.salesMetric,model.CRM_METRIC);
 assert.equal(model.sum(model.filter(datasets.sales.rows,{...selection,cities:['Москва'],sources:['Сайт']})).revenue,100,'bank article wins over conflicting description; credit date selects month');
 assert.equal(model.sum(model.filter(datasets.sales.rows,{...selection,sources:['B2B']})).revenue,200);
 assert.equal(model.sum(datasets.activations.rows).count,8,'certificate selection is an activation even before the visit or settlement');
@@ -105,6 +117,7 @@ assert.equal(model.sum(model.filter(datasets.activations.rows,{...selection,citi
 const salesActFixture = context.window.testAnalytics.computeSalesAct(raw,act);
 assert.equal(salesActFixture.meta.total_act,8,'trend and analytics must share the same activation definition and deduplication');
 assert.equal(salesActFixture.meta.total_cost,800);
+assert.equal(salesActFixture.revenueByTypeMonth['2026-09']['Не указан'].count,1,'missing type and missing city remain visible in OPiU totals');
 assert.deepEqual(JSON.parse(JSON.stringify(salesActFixture.packaging.rows)),model.packaging(raw).rows,'live refresh includes the same packaging calculation as the source snapshot');
 assert.equal(salesActFixture.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(datasets.activations.activationMetric,model.ACTIVATION_METRIC);
@@ -115,7 +128,7 @@ const sales = embedded('ws-dashboard-data'), activations = embedded('ws-dashboar
 const bodies = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 const opiu = JSON.parse(bodies.find(s=>s.includes('window.__opiuData = DATA;')).match(/var DATA = ([^\n]+);/)[1]);
 const salesAct = JSON.parse(bodies.find(s=>s.includes('window.__salesActData = DATA;')).match(/const DATA = ([^\n]+);/)[1]);
-assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).orders,993,'4 November source snapshot; zero-value deals remain excluded');
+assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).quantity,1038,'all certificates, including successful zero-sum deals');
 assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,selection)).revenue,8609590);
 for(const month of opiu){
   // In-progress months change between independently downloaded exports.
@@ -124,6 +137,7 @@ for(const month of opiu){
   assert.ok(Math.abs(model.sum(rows).revenue-month.revenue_total)<0.02,'same revenue scope must reconcile with OПиУ in '+month.label);
 }
 assert.equal(sales.schemaVersion,2);
+assert.equal(sales.salesMetric,model.CRM_METRIC);
 assert.equal(model.sum(model.filter(sales.rows,selection)).revenue,8755966);
 assert.equal(activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(partners.activationMetric,model.ACTIVATION_METRIC);
@@ -145,6 +159,9 @@ cacheContext.window.__salesActSetData({purchaseRows:[],activationMetric:model.AC
 assert.equal(cacheContext.DATA.meta,undefined,'old CRM cache must not restore incorrect source mapping or first-product counts');
 const cachedSales={schemaVersion:2,rows:[]};
 cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersion:2});
+assert.equal(cacheContext.DATASETS.sales,undefined,'old financial row counts must not replace certificate counts');
+cachedSales.salesMetric=model.CRM_METRIC;
+cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersion:2});
 assert.equal(cacheContext.DATASETS.sales,cachedSales);
 assert.equal(cacheContext.DATASETS.activations,activations);
 assert.equal(cacheContext.DATASETS.partners,partners);
@@ -157,4 +174,23 @@ for(const month of ['2025-01','2025-09','2026-01','2026-09']) {
   assert.ok(Math.abs(total.revenue-citySum)<0.02);
   assert.ok(Math.abs(total.revenue-sourceSum)<0.02);
 }
-console.log('Sales analytics: paid orders, deduplication, shared filters, Moscow calendar, refunds, dated certificate selections independent of later stages, trend/analytics/partners consistency and embedded snapshot reconciliation passed.');
+for(const month of [...new Set(salesAct.purchaseRows.map(r=>r.date.slice(0,7)))]){
+  const sel={...selection,start:month+'-01',end:month+'-31'};
+  const stats=model.purchaseStats(model.purchases(salesAct.purchaseRows,sel));
+  const site=model.purchaseStats(model.purchases(salesAct.purchaseRows,{...sel,sources:['Сайт']}));
+  assert.equal(Object.values(salesAct.revenueByTypeMonth[month]||{}).reduce((n,r)=>n+r.count,0),site.quantity,'OPiU and analytics share the same site certificates in '+month);
+  assert.equal(model.sum(model.filter(sales.rows,sel)).count,stats.quantity,'all category quantities match CRM in '+month);
+  assert.equal(salesAct.daily.sales.dates.reduce((n,d,i)=>n+(d.startsWith(month)?salesAct.daily.sales.count[i]:0),0),stats.quantity,'sales timeline uses certificates in '+month);
+  for(const cities of [model.CITIES,['Москва'],['Санкт-Петербург'],['Не определён']])for(const src of [model.SOURCES,['Сайт'],['Wildberries']]){
+    const filter={...sel,cities,sources:src};
+    assert.equal(model.sum(model.filter(sales.rows,filter)).count,model.purchaseStats(model.purchases(salesAct.purchaseRows,filter)).quantity,'quantity across period/city/source');
+  }
+}
+const oct={...selection,start:'2026-10-01',end:'2026-10-31',sources:['Сайт']};
+const octSite=model.purchaseStats(model.purchases(salesAct.purchaseRows,oct));
+assert.equal(octSite.quantity,730);
+assert.equal(octSite.types['Электронный'].quantity,430);
+assert.equal(octSite.types['Физический'].quantity,300);
+assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,{...oct,cities:['Москва','Санкт-Петербург']})).quantity,727);
+assert.equal(Object.values(salesAct.revenueByTypeMonth['2026-10']).reduce((n,r)=>n+r.count,0),730,'OPiU includes unknown-city certificates too');
+console.log('Sales analytics: certificate quantities, zero-sum deals, baskets, category/source/city/timeline consistency, caches and financial reconciliation passed.');

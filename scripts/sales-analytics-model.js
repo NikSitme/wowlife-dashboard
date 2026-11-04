@@ -3,7 +3,7 @@
   var CITIES=['Москва','Санкт-Петербург','Не определён'];
   var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','Мегамаркет','B2B'];
   var ACTIVATION_METRIC='certificate-selection-v1';
-  var CRM_METRIC='certificate-lines-marketplace-sources-v2';
+  var CRM_METRIC='certificates-all-successful-v3';
   function number(s){var n=Number(String(s==null?'':s).replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0;}
   function iso(s){s=String(s||'').trim();var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),value;
     if(m)value=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
@@ -47,26 +47,30 @@
     });
     return out;
   }
-  function crm(rows){var h=rows[0]||[],index={};h.forEach(function(v,i){index[v]=i;});['id сделки','стадия','дата оплаты','сумма','источник','город','из лида','тип товара'].forEach(function(k){if(index[k]===undefined)throw new Error('CRM: нет колонки '+k);});
-    var seen=new Set(),groups=new Map();rows.slice(1).forEach(function(r){var id=String(r[index['id сделки']]||'').trim(),d=iso(r[index['дата оплаты']]),amount=number(r[index['сумма']]);if(!id||seen.has(id)||r[index['стадия']]!=='Сделка успешна'||!d||amount<=0)return;seen.add(id);
-      var src=source(r[index['источник']]),c=city(r[index['город']]),type=String(r[index['тип товара']]||'').trim();if(!['Электронный','Физический'].includes(type))type='Не указан';var lead=String(r[index['из лида']]||'').trim()==='Y';
-      var key=JSON.stringify([d,c,src,type,lead]),g=groups.get(key);if(!g){g={date:d,city:c,source:src,type:type,lead:lead,revenue:0,orders:0};groups.set(key,g);}g.revenue+=amount;g.orders++;});
+  function successful(rows){var h=rows[0]||[],index={};h.forEach(function(v,i){index[v]=i;});['id сделки','стадия','дата оплаты','сумма','источник','город','из лида','тип товара','описание'].forEach(function(k){if(index[k]===undefined)throw new Error('CRM: нет колонки '+k);});
+    var seen=new Set(),out=[];rows.slice(1).forEach(function(r){if(!r)return;var id=String(r[index['id сделки']]||'').trim(),d=iso(r[index['дата оплаты']]);if(!id||seen.has(id)||r[index['стадия']]!=='Сделка успешна'||!d)return;seen.add(id);
+      var type=String(r[index['тип товара']]||'').trim();if(!['Электронный','Физический'].includes(type))type='Не указан';
+      var items=certificateLines(r[index['описание']]);out.push({id:id,date:d,city:city(r[index['город']]),source:source(r[index['источник']]),type:type,lead:String(r[index['из лида']]||'').trim()==='Y',revenue:number(r[index['сумма']]),quantity:items.reduce(function(n,item){return n+item.quantity;},0),items:items});
+    });return out;}
+  function crm(rows){var groups=new Map();successful(rows).forEach(function(r){
+      var key=JSON.stringify([r.date,r.city,r.source,r.type,r.lead]),g=groups.get(key);if(!g){g={date:r.date,city:r.city,source:r.source,type:r.type,lead:r.lead,revenue:0,orders:0,quantity:0};groups.set(key,g);}g.revenue+=r.revenue;g.orders++;g.quantity+=r.quantity;});
     return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
   function purchases(rows,s){return(rows||[]).filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,r.city)&&selected(s.sources,r.source);});}
-  function purchaseStats(rows){var out={revenue:0,orders:0,lead:{revenue:0,orders:0},direct:{revenue:0,orders:0},types:{'Электронный':{revenue:0,orders:0},'Физический':{revenue:0,orders:0},'Не указан':{revenue:0,orders:0}}};rows.forEach(function(r){out.revenue+=r.revenue;out.orders+=r.orders;var l=out[r.lead?'lead':'direct'];l.revenue+=r.revenue;l.orders+=r.orders;var t=out.types[r.type]||out.types['Не указан'];t.revenue+=r.revenue;t.orders+=r.orders;});out.avg=out.orders?out.revenue/out.orders:null;return out;}
-  function certificateQuantity(description){
-    var parts=String(description||'').split(/[;\n]/),quantity=0,parsed=0;
+  function purchaseStats(rows){function empty(){return{revenue:0,orders:0,quantity:0};}var out=empty();out.lead=empty();out.direct=empty();out.types={'Электронный':empty(),'Физический':empty(),'Не указан':empty()};rows.forEach(function(r){[out,out[r.lead?'lead':'direct'],out.types[r.type]||out.types['Не указан']].forEach(function(g){g.revenue+=r.revenue;g.orders+=r.orders;g.quantity+=r.quantity;});});out.avg=out.quantity?out.revenue/out.quantity:null;return out;}
+  function certificateLines(description){
+    var parts=String(description||'').split(/[;\n]/),items=[],parsed=0;
     parts.forEach(function(line){
       var m=line.trim().match(/^(.*?)\s+[xх×](\d+)\s*[—–-]/i);if(!m)return;
       parsed++;
       var name=m[1].trim();
       if(/\((?:Add|Box)\)/i.test(name)||/^(?:услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата)/i.test(name))return;
-      quantity+=Number(m[2]);
+      var quantity=Number(m[2]);if(quantity>0)items.push({name:name,quantity:quantity});
     });
     // Preserve the documented one-certificate fallback when CRM has no readable
     // product lines. A readable basket containing only extras has no certificates.
-    return parsed?quantity:1;
+    return parsed?items:[{name:'Без названия сертификата',quantity:1}];
   }
+  function certificateQuantity(description){return certificateLines(description).reduce(function(n,item){return n+item.quantity;},0);}
   // Packaging is counted by SKU quantity, including zero-price positions. The
   // amount in the description is the line total; it must not be multiplied by xN.
   function packaging(rows){
@@ -94,5 +98,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,successful:successful,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
 });
