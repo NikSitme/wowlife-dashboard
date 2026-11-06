@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v13-commission-20261106'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v14-site-sets-20261106'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -94,6 +94,18 @@ assert.equal(t.calcService(t.serviceOf('42')).structure.derived,true,'formula re
 assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1000/.9)<1e-8);
 t.state.sov['42']={cost:1200};assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1200/.9)<1e-8,'recalculate from the effective payout instead of freezing a rounded formula snapshot');
 assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manual tabs by exact stable gid');
+// Verified website membership can include a tariff without standalone sale; never restore exclusions.
+t.state.sov={};t.state.ov={};t.state.customSets=[];t.state.customServices={};
+const setHeader=['ID строки','Набор','Услуга','Цена на сайте, ₽','Выплата партнёру, ₽','Город','Партнёр','Комиссия','Открытая цена партнёра, ₽','Источник сайта','Дата сверки','Комментарий'];
+const verifiedSets=t.parseSets([setHeader,['nabor_16378','Подарочный набор «LoveStory»','',14707,'','СПб','','','','https://example.com','2026-11-06'],['service_16378_28383','','Отель «Гелиос»: Стандарт','',6100,'СПб','Отель Гелиос','0%'],['service_16378_29323','','Катер',10000,5000,'СПб','Bortneva','0%'],['service_16378_41','','Неактивная',0,400,'СПб','Действующий','0%']],'СПб');
+t.setData({catalog:{28383:{sid:'28383',name:'Отель «Гелиос»: Стандарт',price:0,cost:6100,city:'СПб',partner:'Отель Гелиос'},41:{sid:'41',name:'Неактивная',price:0,cost:400,active:false}},sets:verifiedSets});
+assert.equal(t.allSets()[0].price,14707,'Use explicit visible website price rather than title or backend discount');
+assert.deepEqual(Array.from(t.allSets()[0].items,i=>i.sid),['28383']);
+assert.equal(t.serviceOf('28383'),null,'Set-only membership does not create a standalone sale');
+assert.equal(t.allServices().length,0);
+assert.throws(()=>t.parseSets([setHeader,['nabor_16378','Без цены']],'СПб'),/Нет проверенной цены/);
+for(const sid of ['34596','34594','33892','33894','33895','29323','29926'])assert.equal(catalog.serviceAvailable({sid,name:'Переименованная',price:10000,active:true}),false);
+assert(html.includes('2026110634')&&html.includes('2026110639'),'Read verified sets by their stable gids');
 // Explicit removals survive stale CRM caches, manual corrections and saved custom sets.
 const removedConcerts=['35509','11360','11361','17845','17846','33857','33858','33851','33852','35497'];
 for(const sid of ['42968','42969','42971','42972','42974','42975'])assert.equal(available({sid,name:'Музыкальный концерт',active:true,price:4830}),true,'active site concerts restored after CRM verification');
