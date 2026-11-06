@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v12-catalog-20261106'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v13-commission-20261106'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -124,6 +124,11 @@ assert.equal(t.state.customSets[0].items.length,removedConcerts.length+1,'preser
 const pendingHeader=[...manualHeader,'тип открытой цены'];
 const blankPending=catalog.manualOverlay(auto,[pendingHeader,['42','','','','','','',2100,'','2026-11-06','','Данные уточняются']],'Мск').catalog;
 assert.equal(blankPending[42].cost,0);assert.equal(blankPending[42].costKnown,false);assert.equal(blankPending[42].manualFields.cost,true,'pending blank must override stale composition payout');
+const knownRatePending=catalog.manualOverlay(auto,[pendingHeader,['42','','','','','','25%',2100,'','2026-11-06','','Данные уточняются']],'Мск').catalog;
+t.state.sov={};t.state.ov={};t.state.customServices={};t.setData({catalog:knownRatePending,sets:[]});
+const knownRateCalc=t.calcService(t.serviceOf('42'));
+assert.equal(knownRateCalc.structure.rate,.25,'confirmed commission remains visible while payout is unknown');
+assert.equal(knownRateCalc.structure.open,null);assert.equal(knownRateCalc.structure.markup,null);assert.equal(knownRateCalc.mpAct,null);
 const pending=catalog.manualOverlay(auto,[pendingHeader,['42','','','',0,'','0%','',0,'2026-10-30','','Данные уточняются']],'Мск').catalog;
 assert.equal(pending[42].cost,0);assert.equal(pending[42].costKnown,false);
 t.state.sov={};t.state.ov={};t.state.customServices={};t.state.customSets=[{id:'pending-draft',name:'Черновик',city:'Мск',price:5000,items:['42']}];

@@ -67,7 +67,7 @@
       if(norm(text(row,'тип открытой цены'))==='данные уточняются'){
         next.cost=0;fields.cost=true;
         next.costKnown=false;
-        next.manualReference={partner_name:next.partner,terms:'Данные уточняются',derived:true};
+        next.manualReference={partner_name:next.partner,terms:terms||'Данные уточняются',derived:true};
       }
       if(base&&!available(base))next.active=false;
       next.manualFields=fields;next.manualSource='Ручная выгрузка '+city;out[id]=next;count++;
