@@ -3801,6 +3801,9 @@ window.__salesActSetData = function(newData){
   .pr-table input.in.changed { border-color: var(--s1); font-weight: 650; }
   .pr-table .tag { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--pr-key-bg); color: var(--s1); margin-left: 6px; vertical-align: 1px; }
   .pr-table .tag.z { background: var(--pr-warn-bg); color: var(--s4); } .pr-table .tag.r { background: var(--pr-bad-bg); color: var(--bad); }
+  .pr-table tbody tr.pr-review-deferred > td,
+  .pr-table tbody tr.pr-review-deferred:hover > td { background: var(--pr-bad-bg); }
+  .pr-table tr.pr-review-deferred > td:first-child { box-shadow: inset 3px 0 var(--bad); }
   .pr-sub > td { padding: 0 0 14px 0 !important; white-space: normal; background: var(--surface-2); }
   .pr-subbox { padding: 12px 16px 6px 28px; }
   .pr-subbox .hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12.5px; }
@@ -8284,6 +8287,9 @@ window.__salesActSetData = function(newData){
     }
     return GROUPS.map(function(g){return visibleCols(g).map(function(c,i){var h=cell(c,g);return i===0?h.replace('class="','class="pr-group-start '):h;}).join('');}).join('');
   }
+  // Nikita deferred the payout discrepancy for this specific tariff on 2026-11-06.
+  function deferredReview(sid){return String(sid)==='42675';}
+  function deferredReviewTag(sid){return deferredReview(sid)?'<span class="tag r">Проверка отложена</span>':'';}
   function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
@@ -8305,7 +8311,7 @@ window.__salesActSetData = function(newData){
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr><td><span class="nm">'+esc(it.name)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8318,7 +8324,7 @@ window.__salesActSetData = function(newData){
     var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
   }
 
