@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v11-full-manual-20261104'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v12-catalog-20261106'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -95,7 +95,8 @@ assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1000/.9)<1e-8);
 t.state.sov['42']={cost:1200};assert(Math.abs(t.calcService(t.serviceOf('42')).structure.open-1200/.9)<1e-8,'recalculate from the effective payout instead of freezing a rounded formula snapshot');
 assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manual tabs by exact stable gid');
 // Explicit removals survive stale CRM caches, manual corrections and saved custom sets.
-const removedConcerts=['42968','42969','42971','42972','42974','42975'];
+const removedConcerts=['35509','11360','11361','17845','17846','33857','33858','33851','33852','35497'];
+for(const sid of ['42968','42969','42971','42972','42974','42975'])assert.equal(available({sid,name:'Музыкальный концерт',active:true,price:4830}),true,'active site concerts restored after CRM verification');
 const concertCatalog={},concertItems=[];
 for(const sid of [...removedConcerts,'42976']){
   const service={sid,name:'Музыкальный концерт',partner:'Партнер',city:'СПб',price:1000,cost:700};
@@ -118,9 +119,11 @@ for(const sid of removedConcerts){
 }
 t.setData({catalog:{},sets:[]});
 for(const sid of removedConcerts)assert.equal(t.serviceOf(sid,{name:'Состав без справочника',city:'СПб',price:5000,cost:100}),null,'saved overrides and fallback rows cannot resurrect an excluded ID');
-assert.equal(t.state.customSets[0].items.length,7,'preserve saved draft data while hiding excluded services');
+assert.equal(t.state.customSets[0].items.length,removedConcerts.length+1,'preserve saved draft data while hiding excluded services');
 // Temporary zero placeholders must not fabricate a free payout or 100% margin.
 const pendingHeader=[...manualHeader,'тип открытой цены'];
+const blankPending=catalog.manualOverlay(auto,[pendingHeader,['42','','','','','','',2100,'','2026-11-06','','Данные уточняются']],'Мск').catalog;
+assert.equal(blankPending[42].cost,0);assert.equal(blankPending[42].costKnown,false);assert.equal(blankPending[42].manualFields.cost,true,'pending blank must override stale composition payout');
 const pending=catalog.manualOverlay(auto,[pendingHeader,['42','','','',0,'','0%','',0,'2026-10-30','','Данные уточняются']],'Мск').catalog;
 assert.equal(pending[42].cost,0);assert.equal(pending[42].costKnown,false);
 t.state.sov={};t.state.ov={};t.state.customServices={};t.state.customSets=[{id:'pending-draft',name:'Черновик',city:'Мск',price:5000,items:['42']}];
