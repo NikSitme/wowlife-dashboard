@@ -76,9 +76,9 @@ t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,200
 // Group headers, body cells and composition use exactly the same column count.
 set=t.allSets()[0];calc=t.calcSet(set);
 const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
-assert.equal((cells.match(/<td /g)||[]).length+3,t.colCount());
-assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,38);
-t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+3,t.colCount());
+assert.equal((cells.match(/<td /g)||[]).length+4,t.colCount());
+assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,39);
+t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+4,t.colCount());
 t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
 t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
 // Forecast applies to standalone services too, without a parallel worst column.
@@ -102,7 +102,7 @@ near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);
 near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
-t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,24);assert.equal(exportLines[1].split(';').length,24);console.log('PASS pricing CSV: full filtered selection and 24 aligned columns');
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,26);assert.equal(exportLines[1].split(';').length,26);console.log('PASS pricing CSV: full filtered selection and 26 aligned columns');
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;

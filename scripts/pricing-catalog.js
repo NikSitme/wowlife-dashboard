@@ -27,6 +27,15 @@
     return {active:h.findIndex(function(x){return ['active','активность','активен','активна','статус активности','статус услуги','статус набора'].indexOf(x)>=0;}),partnerActive:h.findIndex(function(x){return ['partner active','активность партнера','статус партнера'].indexOf(x)>=0;})};
   }
   function readStatus(row,columns){var out={};Object.keys(columns).forEach(function(k){if(columns[k]>=0)out[k]=row[columns[k]];});return out;}
+  function activationInfo(header,row){
+    var index=(header||[]).findIndex(function(h){return /^активаций за 12 мес\./.test(norm(h));});
+    if(index<0)return {activations12m:null,activationPeriod:''};
+    var period=String(header[index]).match(/\d{2}\.\d{2}\.\d{4}[–—-]\d{2}\.\d{2}\.\d{4}/);
+    if(!period)throw new Error('У счётчика активаций не указан период');
+    var value=row[index],n=value===null||value===undefined||String(value).trim()===''?null:Number(String(value).replace(/[\s\u00a0\u202f]/g,''));
+    if(n!==null&&(!Number.isSafeInteger(n)||n<0))throw new Error('Количество активаций должно быть целым неотрицательным числом');
+    return {activations12m:n,activationPeriod:period[0]};
+  }
   function completeCatalog(sets,catalog){
     var out=Object.assign({},catalog);
     (sets||[]).forEach(function(set){
@@ -71,9 +80,10 @@
         next.manualReference={partner_name:next.partner,terms:terms||'Данные уточняются',derived:true};
       }
       if(base&&!available(base))next.active=false;
+      Object.assign(next,activationInfo(rows[0],row));
       next.manualFields=fields;next.manualSource='Ручная выгрузка '+city;out[id]=next;count++;
     });
     return {catalog:out,count:count};
   }
-  return {available:available,serviceAvailable:serviceAvailable,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,enrichPartners:enrichPartners,manualOverlay:manualOverlay};
+  return {available:available,serviceAvailable:serviceAvailable,visiblePrice:visiblePrice,discountedPriceColumn:discountedPriceColumn,discountedPrice:discountedPrice,inactiveLabel:inactiveLabel,statusColumns:statusColumns,readStatus:readStatus,completeCatalog:completeCatalog,enrichPartners:enrichPartners,manualOverlay:manualOverlay,activationInfo:activationInfo};
 });

@@ -4020,6 +4020,7 @@ window.__salesActSetData = function(newData){
     <p class="pr-status" id="prStatus"></p>
     <p class="pr-status" id="prCommissionStatus">Структура цены — за одну активацию. Наценка = цена со скидкой − открытая цена; комиссия удерживается из открытой цены. Прогноз использования влияет на МП и ЧП.</p>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav>
+    <details class="pr-help"><summary>Активации услуг за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. В составе набора показаны все активации услуги; сумма по составу не является количеством активаций набора.</p><p>Учтены однозначные совпадения названий и подтверждённые прежние названия. Записи без названия или с неустановленным тарифом не распределены. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
     <div class="pr-scroll" id="prTableWrap"></div>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг снизу" hidden></nav>
     <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
@@ -7915,7 +7916,7 @@ window.__salesActSetData = function(newData){
 </script>
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
-<script src="./scripts/pricing-catalog.js?v=20261106-verified-sets"></script>
+<script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/service-catalog.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
 <script>
@@ -7926,7 +7927,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v14-site-sets-20261106", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v15-activations-20261107", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8007,6 +8008,7 @@ window.__salesActSetData = function(newData){
       var ms=String(r[0]||'').trim().match(/^service_(\d+)_(\d+)$/);if(!ms||!byId[ms[1]])return;
       var nm=String(r[2]||'').trim().replace(/^\d+\)\s*/,'');if(!nm)return;
       var items=byId[ms[1]].items,item=Object.assign({sid:ms[2],name:nm,price:ruNum(r[3]),cost:ruNum(r[4])},CATALOG.readStatus(r,columns));
+      Object.assign(item,CATALOG.activationInfo(rows[0],r));
       if(verifiedSite){item.siteSetMember=true;item.partner=String(r[6]||'');item.sourceTerms=String(r[7]||'');}
       var existing=items.findIndex(function(x){return x.sid===item.sid;});if(existing>=0)items[existing]=item;else items.push(item);
     });
@@ -8033,7 +8035,10 @@ window.__salesActSetData = function(newData){
       var completed=CATALOG.enrichPartners(CATALOG.completeCatalog(sets,cat),r[6]).catalog;
       var manualMsk=CATALOG.manualOverlay(completed,r[4],"Мск");
       var manualSpb=CATALOG.manualOverlay(manualMsk.catalog,r[5],"СПб");
-      CRM = { sets:sets, catalog:manualSpb.catalog, manualCount:manualMsk.count+manualSpb.count, savedAt: new Date().toISOString() };
+      var periods=new Set();Object.keys(manualSpb.catalog).forEach(function(id){var p=manualSpb.catalog[id].activationPeriod;if(p)periods.add(p);});
+      sets.forEach(function(s){s.items.forEach(function(it){if(it.activationPeriod)periods.add(it.activationPeriod);});});
+      if(periods.size>1)throw new Error('В таблицах разные периоды активаций');
+      CRM = { activationPeriod:Array.from(periods)[0]||'', sets:sets, catalog:manualSpb.catalog, manualCount:manualMsk.count+manualSpb.count, savedAt: new Date().toISOString() };
       try { localStorage.setItem(CRM_KEY, JSON.stringify(CRM)); } catch (e) {}
       setStatus("");
     } catch (e) { setStatus("Не удалось загрузить CRM: " + e.message + ". Проверьте доступ к таблице «Никита»."); }
@@ -8074,6 +8079,8 @@ window.__salesActSetData = function(newData){
     if (!CATALOG.serviceAvailable(base)||fallback&&!CATALOG.serviceAvailable(fallback)) return null;
     var o = state.sov[sid] || {};
     var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.costKnown === true || base.cost > 0, manualFields:base.manualFields, manualSource:base.manualSource, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
+    result.activations12m=base.activations12m==null?null:base.activations12m;
+    result.activationPeriod=base.activationPeriod||'';
     result.reference=STRUCTURE.reference(sid,result.partner,commissionIndex);
     if(base.sourceTerms && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},{partner_name:base.partner,terms:base.sourceTerms,termsSource:'Размер комиссии услуги CRM'});
     if(base.manualReference && result.partner===base.partner) result.reference=Object.assign({},result.reference||{},{termsSource:'Ручные данные'},base.manualReference);
@@ -8087,18 +8094,18 @@ window.__salesActSetData = function(newData){
       if (o.hidden||!CATALOG.available(s)||!CATALOG.visiblePrice({price:o.price!==undefined?o.price:s.price})) return;
       var removed = o.removed || {};
       var items = s.items.filter(function(it){ return !removed[it.sid]&&CATALOG.available(it); }).map(function(it){
-        var sv = serviceOf(it.sid, { name: it.name, partner: it.partner||"", city: s.city, price: it.price, cost: it.cost, sourceTerms:it.sourceTerms||'',siteSetMember:it.siteSetMember===true });
+        var sv = serviceOf(it.sid, { name: it.name, partner: it.partner||"", city: s.city, price: it.price, cost: it.cost, sourceTerms:it.sourceTerms||'',siteSetMember:it.siteSetMember===true,activations12m:it.activations12m,activationPeriod:it.activationPeriod });
         if(!sv)return null;
         // Локальная правка > подтверждённая ручная выплата > выплата из состава CRM.
         var manualCost=sv.manualFields&&sv.manualFields.cost;
         var cost = (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) ? state.sov[it.sid].cost : manualCost ? sv.cost : it.cost;
-        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || (manualCost ? sv.costKnown : cost > 0), price: sv.price, reference:sv.reference };
+        return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || (manualCost ? sv.costKnown : cost > 0), price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod };
       }).filter(Boolean);
-      (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, added: true }); });
+      (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod, added: true }); });
       out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
     });
     state.customSets.forEach(function(s){
-      var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference } : null; }).filter(Boolean);
+      var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod } : null; }).filter(Boolean);
       if(CATALOG.available(s))out.push({ id: s.id, name: s.name, city: s.city, price: s.price, basePrice: null, items: items, custom: true });
     });
     return out;
@@ -8207,7 +8214,7 @@ window.__salesActSetData = function(newData){
     return match[2]==='Rub'?r.expenses[match[1]]:cost.rub>0?(r.price>0?r.expenses[match[1]]/r.price:null):cost.pct;
   }
   function financialGetters(calc,idKey,parent){
-    var getters={name:function(s){return s.name;}};
+    var getters={name:function(s){return s.name;},activations12m:function(s){return s.activations12m;}};
     var keys=['price','net','target','exp','mp','m','np','npRub','loss','partnerFull','feesSum'];
     GROUPS.forEach(function(g){g.cols.forEach(function(c){if(c[0]!=='commissionTerms')keys.push(c[0]);});});
     keys.forEach(function(key){getters[key]=function(s){return financialValue(parent||s,calc[s[idKey]],key);};});
@@ -8235,10 +8242,11 @@ window.__salesActSetData = function(newData){
     var key={markup:'markupRub',mp:'mpRub',fees:'feesSum',pack:'packRub',logistics:'logisticsRub',np:'npRub'}[g.id];
     return [['summary','Итого, ₽',g.tip,key]];
   }
-  function colCount(weight){return 3+(weight?1:0)+GROUPS.reduce(function(n,g){return n+visibleCols(g).length;},0);}
+  function colCount(weight){return 4+(weight?1:0)+GROUPS.reduce(function(n,g){return n+visibleCols(g).length;},0);}
   function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort;return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' data-tip="'+esc(tip+(sort?' Нажмите для сортировки; повторный клик меняет направление.':''))+'" tabindex="0">'+esc(label)+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
   function pricingHead(kind,weight){
     var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.','name','rowspan="2"',kind==='item');
+    h+=headCell('Активации, 12 мес.','Количество уникальных активаций этой услуги за '+(CRM&&CRM.activationPeriod||'период из таблицы')+'. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах. Для набора итога нет: в источнике не указан исходный набор.','activations12m','rowspan="2"',kind==='item');
     if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.','weight','rowspan="2"',true);
     GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'" data-tip="'+esc(g.tip)+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
     h+=headCell('Целевая цена, ₽','Цена до дополнительной скидки, которая покрывает прогноз выплаты партнёру, переменные и постоянные расходы из блока «Цель». ЧП при этой цене равна нулю. Учитываются выбранный прогноз активаций и расходы строки.','target','rowspan="2" class="key"',kind==='item');
@@ -8290,6 +8298,10 @@ window.__salesActSetData = function(newData){
   // Nikita deferred the payout discrepancy for this specific tariff on 2026-11-06.
   function deferredReview(sid){return String(sid)==='42675';}
   function deferredReviewTag(sid){return deferredReview(sid)?'<span class="tag r">Проверка отложена</span>':'';}
+  function activationCell(row){
+    var n=row.activations12m,tip=row.activationPeriod?'Активации услуги: '+row.activationPeriod:row.items?'Нет привязки активаций к исходному набору':'Нет данных об активациях за период';
+    return '<td data-activations-12m title="'+esc(tip)+'">'+(Number.isSafeInteger(n)?fmtN(n):'—')+'</td>';
+  }
   function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
@@ -8297,7 +8309,7 @@ window.__salesActSetData = function(newData){
     var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>';
     if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите «+ Новый набор» и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
     sets.forEach(function(s){var r=calc[s.id],key='set:'+s.id,open=!!state.open[s.id];
-      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td><span class="nm">'+esc(s.name)+(s.custom?'<span class="tag">мой</span>':s.edited?'<span class="tag">правки</span>':'')+'</span><span class="meta">'+s.city+' · услуг '+s.items.length+'</span></td>'+financialCells(s,r,{key:key,kind:'set'})+targetCell(r)+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
+      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td><span class="nm">'+esc(s.name)+(s.custom?'<span class="tag">мой</span>':s.edited?'<span class="tag">правки</span>':'')+'</span><span class="meta">'+s.city+' · услуг '+s.items.length+'</span></td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'set'})+targetCell(r)+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
       if(open)h+='<tr class="pr-sub"><td colspan="'+colCount()+'">'+renderSetItems(s,r)+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
   }
@@ -8311,7 +8323,7 @@ window.__salesActSetData = function(newData){
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8324,7 +8336,7 @@ window.__salesActSetData = function(newData){
     var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
   }
 
@@ -8360,6 +8372,7 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prHowSets").hidden = state.view === "services"; root.querySelector("#prHowServices").hidden = state.view !== "services";
     root.querySelector("#prTitle").textContent = state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборы" : "Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "newsets" ? "создавайте и сравнивайте новые наборы" : state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
+    root.querySelector('#prActivationPeriod').textContent=CRM&&CRM.activationPeriod?CRM.activationPeriod:'период не загружен';
     renderKpis(visibleSets());
     if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "Проверенный прайс: " + CRM.sets.length + " наборов · ручных услуг " + (CRM.manualCount||0) + " · 3 вхождения Bortneva исключены по решению Никиты · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
     root.querySelectorAll('[data-service-pagination]').forEach(function(nav){nav.hidden=state.view!=="services";});
@@ -8473,9 +8486,9 @@ window.__salesActSetData = function(newData){
   root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
   root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
-    var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽']];
+    var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽','Активации услуги за 12 мес.','Период активаций']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
-    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target]);});
+    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target,services?s.activations12m:null,services?s.activationPeriod:'']);});
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
   }
