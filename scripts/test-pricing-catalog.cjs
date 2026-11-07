@@ -50,7 +50,7 @@ assert(t.allServices().some(x=>x.sid==='u2'),'A new service remains visible befo
 assert.equal(t.usage()['1'],undefined,'Zero-price services do not contribute to displayed usage counts');
 assert.equal(t.state.customSets[0].items.length,4,'Saved drafts remain recoverable');
 assert.equal(t.usage()['2'],undefined);
-assert(html.includes('wowlife-pricing-crm-v15-activations-20261107'),'Invalidate obsolete parsed catalog cache');
+assert(html.includes('wowlife-pricing-crm-v16-activation-sets-20261107'),'Invalidate obsolete parsed catalog cache');
 assert(html.includes('/export?format=csv&gid='),'Read full CSV instead of filtered gviz snapshots');
 // Source prices are mapped by header, distinguish zero from absent, and are not discounted twice.
 assert.equal(catalog.discountedPriceColumn(['id','Стоимость со скидкой','Стоимость']),1);
@@ -111,8 +111,10 @@ assert(html.includes('1440794799')&&html.includes('1264019519'),'fetch both manu
 // Verified website membership can include a tariff without standalone sale; never restore exclusions.
 t.state.sov={};t.state.ov={};t.state.customSets=[];t.state.customServices={};
 const setHeader=['ID строки','Набор','Услуга','Цена на сайте, ₽','Выплата партнёру, ₽','Город','Партнёр','Комиссия','Открытая цена партнёра, ₽','Источник сайта','Дата сверки','Комментарий'];
-const verifiedSets=t.parseSets([setHeader,['nabor_16378','Подарочный набор «LoveStory»','',14707,'','СПб','','','','https://example.com','2026-11-06'],['service_16378_28383','','Отель «Гелиос»: Стандарт','',6100,'СПб','Отель Гелиос','0%'],['service_16378_29323','','Катер',10000,5000,'СПб','Bortneva','0%'],['service_16378_41','','Неактивная',0,400,'СПб','Действующий','0%']],'СПб');
+const verifiedSets=t.parseSets([[...setHeader,activationHeader],['nabor_16378','Подарочный набор «LoveStory»','',14707,'','СПб','','','','https://example.com','2026-11-06','',23],['service_16378_28383','','Отель «Гелиос»: Стандарт','',6100,'СПб','Отель Гелиос','0%'],['service_16378_29323','','Катер',10000,5000,'СПб','Bortneva','0%'],['service_16378_41','','Неактивная',0,400,'СПб','Действующий','0%']],'СПб');
 t.setData({catalog:{28383:{sid:'28383',name:'Отель «Гелиос»: Стандарт',price:0,cost:6100,city:'СПб',partner:'Отель Гелиос'},41:{sid:'41',name:'Неактивная',price:0,cost:400,active:false}},sets:verifiedSets});
+assert.equal(t.allSets()[0].activations12m,23,'Read original set activations independently of member counts');
+assert.equal(t.allSets()[0].activationPeriod,'01.11.2025–31.10.2026');
 assert.equal(t.allSets()[0].price,14707,'Use explicit visible website price rather than title or backend discount');
 assert.deepEqual(Array.from(t.allSets()[0].items,i=>i.sid),['28383']);
 assert.equal(t.serviceOf('28383'),null,'Set-only membership does not create a standalone sale');

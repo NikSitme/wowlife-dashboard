@@ -4020,7 +4020,7 @@ window.__salesActSetData = function(newData){
     <p class="pr-status" id="prStatus"></p>
     <p class="pr-status" id="prCommissionStatus">Структура цены — за одну активацию. Наценка = цена со скидкой − открытая цена; комиссия удерживается из открытой цены. Прогноз использования влияет на МП и ЧП.</p>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav>
-    <details class="pr-help"><summary>Активации услуг за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. В составе набора показаны все активации услуги; сумма по составу не является количеством активаций набора.</p><p>Учтены однозначные совпадения названий и подтверждённые прежние названия. Записи без названия или с неустановленным тарифом не распределены. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
+    <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. В строке набора показаны его активации по исходному товару сертификата в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; одна карточка с разными исходными наборами исключена из счётчиков наборов. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
     <div class="pr-scroll" id="prTableWrap"></div>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг снизу" hidden></nav>
     <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
@@ -7927,7 +7927,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v15-activations-20261107", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v16-activation-sets-20261107", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8002,6 +8002,7 @@ window.__salesActSetData = function(newData){
       var price=verifiedSite?ruNum(r[sitePriceColumn]):mp?ruNum(mp[1]):0;
       if(verifiedSite&&!(price>0))throw new Error('Нет проверенной цены набора '+mid[1]);
       var set=Object.assign({id:mid[1],name:name,city:city,price:price,changed:verifiedSite?String(r[10]||''):mp?mp[2].slice(0,10):'',items:[]},CATALOG.readStatus(r,columns));
+      Object.assign(set,CATALOG.activationInfo(rows[0],r));
       sets.push(set);byId[set.id]=set;
     });
     rows.forEach(function(r){
@@ -8036,7 +8037,7 @@ window.__salesActSetData = function(newData){
       var manualMsk=CATALOG.manualOverlay(completed,r[4],"Мск");
       var manualSpb=CATALOG.manualOverlay(manualMsk.catalog,r[5],"СПб");
       var periods=new Set();Object.keys(manualSpb.catalog).forEach(function(id){var p=manualSpb.catalog[id].activationPeriod;if(p)periods.add(p);});
-      sets.forEach(function(s){s.items.forEach(function(it){if(it.activationPeriod)periods.add(it.activationPeriod);});});
+      sets.forEach(function(s){if(s.activationPeriod)periods.add(s.activationPeriod);s.items.forEach(function(it){if(it.activationPeriod)periods.add(it.activationPeriod);});});
       if(periods.size>1)throw new Error('В таблицах разные периоды активаций');
       CRM = { activationPeriod:Array.from(periods)[0]||'', sets:sets, catalog:manualSpb.catalog, manualCount:manualMsk.count+manualSpb.count, savedAt: new Date().toISOString() };
       try { localStorage.setItem(CRM_KEY, JSON.stringify(CRM)); } catch (e) {}
@@ -8102,7 +8103,7 @@ window.__salesActSetData = function(newData){
         return { sid: it.sid, name: sv.name, partner: sv.partner, cost: cost, costKnown: (state.sov[it.sid] && state.sov[it.sid].cost !== undefined) || (manualCost ? sv.costKnown : cost > 0), price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod };
       }).filter(Boolean);
       (o.added || []).forEach(function(sid){ var sv = serviceOf(sid); if (sv && !items.some(function(x){ return x.sid === sid; })) items.push({ sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod, added: true }); });
-      out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
+      out.push({ id: s.id, name: o.name !== undefined ? o.name : s.name, city: s.city, price: o.price !== undefined ? o.price : s.price, basePrice: s.price, changed: s.changed, items: items, activations12m:s.activations12m, activationPeriod:s.activationPeriod, edited: !!(o.price !== undefined || o.name !== undefined || (o.added && o.added.length) || Object.keys(removed).length) });
     });
     state.customSets.forEach(function(s){
       var items = (s.items || []).map(function(sid){ var sv = serviceOf(sid); return sv ? { sid: sid, name: sv.name, partner: sv.partner, cost: sv.cost, costKnown: sv.costKnown, price: sv.price, reference:sv.reference, activations12m:sv.activations12m, activationPeriod:sv.activationPeriod } : null; }).filter(Boolean);
@@ -8246,7 +8247,7 @@ window.__salesActSetData = function(newData){
   function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort;return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' data-tip="'+esc(tip+(sort?' Нажмите для сортировки; повторный клик меняет направление.':''))+'" tabindex="0">'+esc(label)+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
   function pricingHead(kind,weight){
     var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.','name','rowspan="2"',kind==='item');
-    h+=headCell('Активации, 12 мес.','Количество уникальных активаций этой услуги за '+(CRM&&CRM.activationPeriod||'период из таблицы')+'. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах. Для набора итога нет: в источнике не указан исходный набор.','activations12m','rowspan="2"',kind==='item');
+    h+=headCell('Активации, 12 мес.','Количество уникальных активаций за '+(CRM&&CRM.activationPeriod||'период из таблицы')+'. '+(kind==='set'?'Активации исходного набора по товару сертификата в CRM.':'Все активации услуги: из любых наборов и отдельных сертификатов. Это не число выборов услуги только в данном наборе.'),'activations12m','rowspan="2"',kind==='item');
     if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.','weight','rowspan="2"',true);
     GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'" data-tip="'+esc(g.tip)+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
     h+=headCell('Целевая цена, ₽','Цена до дополнительной скидки, которая покрывает прогноз выплаты партнёру, переменные и постоянные расходы из блока «Цель». ЧП при этой цене равна нулю. Учитываются выбранный прогноз активаций и расходы строки.','target','rowspan="2" class="key"',kind==='item');
@@ -8299,7 +8300,7 @@ window.__salesActSetData = function(newData){
   function deferredReview(sid){return String(sid)==='42675';}
   function deferredReviewTag(sid){return deferredReview(sid)?'<span class="tag r">Проверка отложена</span>':'';}
   function activationCell(row){
-    var n=row.activations12m,tip=row.activationPeriod?'Активации услуги: '+row.activationPeriod:row.items?'Нет привязки активаций к исходному набору':'Нет данных об активациях за период';
+    var n=row.activations12m,tip=row.activationPeriod?(row.items?'Активации исходного набора: ':'Все активации услуги: ')+row.activationPeriod:'Нет данных об активациях за период';
     return '<td data-activations-12m title="'+esc(tip)+'">'+(Number.isSafeInteger(n)?fmtN(n):'—')+'</td>';
   }
   function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
