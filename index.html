@@ -4045,6 +4045,10 @@ window.__salesActSetData = function(newData){
   .pr-packaging .pr-btn { min-height: 34px; font-size: 13px; padding: 7px 10px; }
   .pr-packaging .pr-btn:disabled { opacity: .5; cursor: default; }
   .pr-packaging-status { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+  .pr-target-value { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+  .pr-target-apply { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; width: 24px; height: 24px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--s1); font: inherit; line-height: 1; cursor: pointer; }
+  .pr-target-apply:hover { background: var(--pr-hover-bg); }
+  .pr-target-apply:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
   @media(max-width:900px){.pr-filter-line .pr-calculation{flex-basis:100%;}}
   @media(max-width:600px){.pr-table-bar .pr-search{width:100%;}.pr-table-bar .pr-pagination{flex-basis:100%;}.pr-table-bar .pr-page-controls{margin-left:0;}}
 
@@ -8270,9 +8274,22 @@ window.__salesActSetData = function(newData){
     var c = MODEL.calculate(set.price,knownCost(it)?it.cost:null,p);c.share=c.partnerShare;c.structure=STRUCTURE.service(c.price,c.exp,it.partner,commissionIndex,it.reference,it.name);applyTargetPrice(c);return c;
   }
   function applyTargetPrice(r,incomplete){r.target=incomplete&&!r.p.partner?null:MODEL.targetPrice(r.exp,r.p);return r;}
-  function targetCell(r){
-    var hint=r.target===null?'Не хватает данных о выплате или расходы не позволяют покрыть затраты при этих условиях.':'Цена до дополнительной скидки, при которой ЧП равна нулю: покрыты прогноз выплаты, переменные и постоянные расходы.';
-    return '<td class="key" data-target-price title="'+esc(hint)+'">'+fmtR(r.target)+'</td>';
+  function targetProposal(target){return typeof target==='number'&&Number.isFinite(target)&&target>=0?Math.max(0,Math.ceil(target-1e-9)):null;}
+  function targetCell(r,ctx){
+    var price=targetProposal(r.target),button=price!==null&&ctx?'<button type="button" class="pr-target-apply" data-use-target="'+ctx.kind+'" data-target-id="'+esc(ctx.id)+'"'+(ctx.sid?' data-target-sid="'+esc(ctx.sid)+'"':'')+' aria-label="Применить целевую цену '+esc(fmtR(price))+(ctx.kind==='item'?' к набору ':' · ')+esc(ctx.name)+'">←</button>':'';
+    return '<td class="key" data-target-price><span class="pr-target-value"><span>'+fmtR(price)+'</span>'+button+'</span></td>';
+  }
+  function useTargetPrice(kind,id,sid){
+    var row,result;
+    if(kind==='service'){row=serviceOf(id);if(!row)return null;result=calcService(row);}
+    else if(kind==='set'||kind==='item'){
+      row=allSets().find(function(s){return s.id===id;});if(!row)return null;result=calcSet(row);
+      if(kind==='item'){var item=row.items.find(function(it){return it.sid===sid;});if(!item)return null;result=calcItem(row,item,result);}
+    }else return null;
+    var price=targetProposal(result.target);if(price===null)return null;
+    if(kind==='service')sov(id).price=price;
+    else {var custom=findCustomSet(id);if(custom)custom.price=price;else ov(id).price=price;}
+    return price;
   }
   function coverageMargin(r){return r.price>0?(r.V+r.price*r.p.fP+r.p.fR)/r.price:null;}
   function calcService(sv){
@@ -8448,7 +8465,7 @@ window.__salesActSetData = function(newData){
     closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>'+collectionRow('set');
     if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите значок папки с «+» над списком и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
     sets.forEach(function(s){var r=calc[s.id],key='set:'+s.id,open=!!state.open[s.id];
-      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td>'+setName(s)+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'set'})+targetCell(r)+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
+      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td>'+setName(s)+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'set'})+targetCell(r,{kind:'set',id:s.id,name:s.name})+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
       if(open)h+='<tr class="pr-sub"><td colspan="'+colCount()+'">'+renderSetItems(s,r)+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
@@ -8462,7 +8479,7 @@ window.__salesActSetData = function(newData){
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr><td><span class="nm">'+esc(it.name)+'</span>'+'<span class="meta pr-partner">'+(it.partner?esc(it.partner)+' · ':'')+'ID '+esc(it.sid)+'</span>'+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr><td><span class="nm">'+esc(it.name)+'</span>'+'<span class="meta pr-partner">'+(it.partner?esc(it.partner)+' · ':'')+'ID '+esc(it.sid)+'</span>'+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c,{kind:'item',id:s.id,sid:it.sid,name:s.name})+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8475,7 +8492,7 @@ window.__salesActSetData = function(newData){
     closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span>'+'<span class="meta pr-partner">'+(s.partner?esc(s.partner)+' · ':'')+'ID '+esc(s.sid)+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span>'+'<span class="meta pr-partner">'+(s.partner?esc(s.partner)+' · ':'')+'ID '+esc(s.sid)+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r,{kind:'service',id:s.sid,name:s.name})+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
 
@@ -8568,6 +8585,7 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("click", function(e){
     var t = e.target, b, id;
+    if((b=t.closest('[data-use-target]'))){if(useTargetPrice(b.getAttribute('data-use-target'),b.getAttribute('data-target-id'),b.getAttribute('data-target-sid'))!==null){save();render();}return;}
     if(t.closest('#prPackagingUse')){var parts=packagingSummary(state.packaging);if(!parts.complete)return;state.packagingLinked=true;syncPackaging();save();render();return;}
     if((b=t.closest('[data-set-menu]'))){toggleSetMenu(b);return;}
     if(t.closest('#prRowMenu'))closeSetMenu();

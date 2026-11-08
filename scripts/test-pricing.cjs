@@ -45,7 +45,7 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,packagingSummary,syncPackaging,packagingMarkup,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='';
 const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
@@ -238,3 +238,26 @@ t.state.packagingVersion=0;t.state.packaging={box:0,chocolate:25,label:4,tray:15
 assert.equal(t.state.packaging.box,0);assert.equal(t.state.packaging.chocolate,25);assert.equal(t.state.packaging.label,4);assert.equal(t.state.packaging.tray,15);
 assert.equal(t.state.packaging.coloredInsert,3);assert.equal(t.state.packaging.yellowInsert,7);
 console.log('PASS packaging defaults migration: old empty prices filled, custom values/zero retained, subsequent empty inputs retained');
+
+// One click applies the displayed target as a local proposal, with upward ruble rounding.
+assert.equal(t.targetProposal(1234.01),1235);assert.equal(t.targetProposal(1234.00000000001),1234);assert.equal(t.targetProposal(0),0);
+for(const value of [null,undefined,NaN,Infinity,-1])assert.equal(t.targetProposal(value),null);
+t.state.params={act:60,acq:2.65,tax:7,pack:244,logistics:2.4,fixed:10};t.state.pmode={pack:'rub'};t.state.packagingLinked=false;
+t.state.sov={};t.state.ov={};t.state.customServices={};t.state.customSets=[];t.state.mode='avg';
+t.state.rowParams={'service:one':{disc:{mode:'pct',value:20}},'set:target-set':{disc:{mode:'pct',value:10}}};
+t.setData({catalog:{one:{sid:'one',name:'One',partner:'One',city:'Msk',price:5000,cost:2000,costKnown:true},two:{sid:'two',name:'Two',partner:'Two',city:'Msk',price:10000,cost:8000,costKnown:true},missing:{sid:'missing',name:'Missing',city:'Msk',price:5000,cost:0,costKnown:false}},sets:[{id:'target-set',name:'Target set',city:'Msk',price:5000,items:[{sid:'one',cost:2000},{sid:'two',cost:8000}]}]});
+const serviceTarget=t.targetProposal(t.calcService(t.serviceOf('one')).target);
+const targetMarkup=t.targetCell({target:1234.01},{kind:'service',id:'one',name:'One'});
+assert(targetMarkup.includes('1\u00a0235'));assert(targetMarkup.includes('data-use-target="service"'));
+assert(!t.targetCell({target:null},{kind:'service',id:'missing',name:'Missing'}).includes('<button'));
+assert.equal(t.useTargetPrice('service','one'),serviceTarget);assert.equal(t.serviceOf('one').price,serviceTarget);assert.equal(t.serviceOf('one').basePrice,5000);assert.equal(t.serviceOf('one').cost,2000);
+assert.equal(t.state.rowParams['service:one'].disc.value,20);assert(t.calcService(t.serviceOf('one')).npAct>=-1e-8);assert(t.calcService(t.serviceOf('one')).npAct<1);
+let targetSet=t.allSets()[0],expectedSetTarget=t.targetProposal(t.calcSet(targetSet).target);
+assert.equal(t.useTargetPrice('set','target-set'),expectedSetTarget);assert.equal(t.allSets()[0].price,expectedSetTarget);assert.equal(t.allSets()[0].basePrice,5000);
+targetSet=t.allSets()[0];const targetItem=targetSet.items.find(it=>it.sid==='two'),itemTarget=t.targetProposal(t.calcItem(targetSet,targetItem,t.calcSet(targetSet)).target);
+assert.equal(t.useTargetPrice('item','target-set','two'),itemTarget);assert.equal(t.allSets()[0].price,itemTarget);assert.equal(t.serviceOf('two').price,10000);
+targetSet=t.allSets()[0];assert(t.calcItem(targetSet,targetSet.items.find(it=>it.sid==='two'),t.calcSet(targetSet)).npAct>=-1e-8);
+t.state.customSets=[{id:'custom-target',name:'Custom',city:'Msk',price:100,items:['one']}];
+const customTarget=t.useTargetPrice('set','custom-target');assert.equal(t.state.customSets[0].price,customTarget);assert.equal(t.state.ov['custom-target'],undefined);
+assert.equal(t.useTargetPrice('service','missing'),null);assert.equal(t.state.sov.missing,undefined);assert.equal(t.useTargetPrice('service','unknown-id'),null);assert.equal(t.useTargetPrice('item','target-set','unknown-item'),null);
+console.log('PASS target button: service/set/custom/composition proposals, positive coverage after rounding, row discount and source cost preserved, missing targets do nothing');
