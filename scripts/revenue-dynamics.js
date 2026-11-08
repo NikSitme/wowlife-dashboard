@@ -165,7 +165,7 @@
     card.querySelector('#yearRangePresets').addEventListener('change',function(e){
       if(e.target.value==='custom')state.preset='custom';else setPreset(e.target.value);
       render();
-      if(state.preset==='custom')card.querySelector('#yearFromDate').focus();
+      if(state.preset==='custom'){var dateInput=card.querySelector('#yearFromDate');if(window.WowlifeDatePicker)window.WowlifeDatePicker.focus(dateInput);else dateInput.focus();}
     });
     function render(){
       if (!data){wrap.innerHTML='<p class="cap">Загружаю выручку…</p>';return;}
@@ -181,6 +181,7 @@
       card.querySelector('#yearStepPresets').value=state.step;
       card.querySelector('#yearRangePresets').value=state.preset;
       card.querySelector('#yearFromDate').value=state.from; card.querySelector('#yearToDate').value=state.to;
+      if(window.WowlifeDatePicker)window.WowlifeDatePicker.refresh();
       var selected=keysFor(state.sources,state.city), points=series(data,state), defined=points.filter(function(p){return p.current!==null;});
       var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.previous!==null;}) ? defined.reduce(function(a,p){return a+p.previous;},0) : null;
       var names=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];}).join(' + ');
