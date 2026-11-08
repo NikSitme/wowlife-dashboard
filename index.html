@@ -4034,6 +4034,17 @@ window.__salesActSetData = function(newData){
   .pr-menu-button { font-size: 22px; }
   .pr-subbox { padding: 16px 18px; }
   .pr-subbox .hdr { font-size: 14px; margin-bottom: 12px; gap: 10px; }
+  .pr-packaging { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+  .pr-packaging summary { cursor: pointer; color: var(--text-secondary); font-weight: 600; }
+  .pr-packaging summary span { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .pr-packaging-list { display: grid; gap: 8px; margin: 14px 0; }
+  .pr-packaging-list label { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .pr-packaging-list label > span:last-child { display: flex; align-items: center; gap: 8px; }
+  .pr .pr-packaging-list input { width: 90px; min-height: 34px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); font: inherit; text-align: right; }
+  .pr-packaging-total { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .pr-packaging .pr-btn { min-height: 34px; font-size: 13px; padding: 7px 10px; }
+  .pr-packaging .pr-btn:disabled { opacity: .5; cursor: default; }
+  .pr-packaging-status { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
   @media(max-width:900px){.pr-filter-line .pr-calculation{flex-basis:100%;}}
   @media(max-width:600px){.pr-table-bar .pr-search{width:100%;}.pr-table-bar .pr-pagination{flex-basis:100%;}.pr-table-bar .pr-page-controls{margin-left:0;}}
 
@@ -7998,7 +8009,7 @@ window.__salesActSetData = function(newData){
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v17-tank-payout-20261108", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
-  var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var state = { params: null, pmode: {}, packaging: null, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
@@ -8016,6 +8027,24 @@ window.__salesActSetData = function(newData){
     { k: "tax", g: "Переменные расходы с каждой продажи", lbl: "Налоги с выручки", rub: true, max: 30, step: 0.5, hint: "НДС 5 % + УСН 1 % + 1 % за регистрацию" },
     { k: "fixed", g: "Цель", lbl: "Постоянные расходы", rub: true, max: 90, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. Учитываются в ЧП и целевой цене покрытия всех расходов" }
   ];
+  var PACKAGING_PARTS = [
+    {key:'box',label:'Коробка',value:null},
+    {key:'chocolate',label:'Шоколад',value:null},
+    {key:'inserts',label:'Вкладыши',value:null},
+    {key:'label',label:'Наклейка / термоэтикетка',value:2},
+    {key:'tray',label:'Ложемент',value:12}
+  ];
+  function packagingSummary(parts){
+    var cents=0,filled=0;parts=parts||{};
+    PACKAGING_PARTS.forEach(function(part){var value=parts[part.key];if(typeof value==='number'&&Number.isFinite(value)&&value>=0){cents+=Math.round(value*100);filled++;}});
+    return {total:cents/100,filled:filled,complete:filled===PACKAGING_PARTS.length};
+  }
+  function syncPackaging(){
+    var summary=packagingSummary(state.packaging);
+    if(state.packagingLinked&&summary.complete){state.params.pack=summary.total;state.pmode.pack='rub';}
+    else if(state.packagingLinked)state.packagingLinked=false;
+    return summary;
+  }
 
   function fmtR(n){ return n === null || !isFinite(n) ? "—" : Math.round(n).toLocaleString("ru-RU") + " ₽"; }
   function fmtN(n){ return n === null || !isFinite(n) ? "—" : Math.round(n).toLocaleString("ru-RU"); }
@@ -8026,8 +8055,8 @@ window.__salesActSetData = function(newData){
   function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
 
   // ---------- хранение ----------
-  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, packaging: state.packaging, packagingLinked: state.packagingLinked, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
@@ -8040,6 +8069,9 @@ window.__salesActSetData = function(newData){
     delete state.params.ret; delete state.pmode.ret;
     delete state.params.target; delete state.pmode.target;
     delete state.params.disc; delete state.pmode.disc;
+    if(!state.packaging||typeof state.packaging!=='object')state.packaging={};
+    PACKAGING_PARTS.forEach(function(part){if(state.packaging[part.key]===undefined)state.packaging[part.key]=part.value;});
+    syncPackaging();
     Object.keys(state.rowParams).forEach(function(key){
       var row=state.rowParams[key];
       ['acq','tax','pack','logistics','fixed'].forEach(function(field){delete row[field];});
@@ -8245,6 +8277,17 @@ window.__salesActSetData = function(newData){
 
   // ---------- рендер ----------
   function refPrice(){ var ps = allSets().filter(function(s){ return s.price > 0; }).map(function(s){ return s.price; }); return ps.length ? mean(ps) : 5000; }
+  function packagingMarkup(){
+    var previous=root.querySelector('#prPackaging'),open=previous&&previous.open;
+    return '<details id="prPackaging" class="pr-packaging"'+(open?' open':'')+'><summary>Состав упаковки<span id="prPackagingProgress"></span></summary><div class="pr-packaging-list">'+PACKAGING_PARTS.map(function(part){var value=state.packaging[part.key];return '<label><span>'+part.label+'</span><span><input type="number" min="0" step="0.01" data-pack-part="'+part.key+'" value="'+(value===null?'':decimal(value))+'" aria-label="'+part.label+', ₽" placeholder="Цена"><span>₽</span></span></label>';}).join('')+'</div><div class="pr-packaging-total"><strong id="prPackagingTotal"></strong><button type="button" class="pr-btn" id="prPackagingUse">Использовать итог</button></div><p id="prPackagingStatus" class="pr-packaging-status"></p></details>';
+  }
+  function updatePackagingUI(){
+    var summary=packagingSummary(state.packaging),progress=root.querySelector('#prPackagingProgress');if(!progress)return;
+    progress.textContent=summary.filled+' из '+PACKAGING_PARTS.length;
+    root.querySelector('#prPackagingTotal').textContent=(summary.complete?'Итого: ':'Заполненные позиции: ')+fmtR(summary.total);
+    var button=root.querySelector('#prPackagingUse');button.disabled=!summary.complete||state.packagingLinked;button.textContent=state.packagingLinked?'Итог используется':'Использовать итог';
+    root.querySelector('#prPackagingStatus').textContent=!summary.complete?'Заполните стоимость всех позиций. Если позиция не используется, укажите 0 ₽.':state.packagingLinked?'Стоимость упаковки для всех строк рассчитывается по этому составу.':'Итог можно использовать как общую стоимость упаковки на продажу.';
+  }
   function renderParams(){
     var box = root.querySelector("#prParams"); var ref = refPrice(); var groups = [];
     PARAM_DEFS.filter(function(d){return d.k!=="act";}).forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
@@ -8252,9 +8295,10 @@ window.__salesActSetData = function(newData){
       return '<div class="pr-group"><h4>' + g.name + '</h4>' + g.items.map(function(d){
         var v = state.params[d.k], f = FACT[d.k], rub = isRub(d.k), ch = !rub && Math.abs(v - f) > 1e-9;
         var fact = rub ? "≈ " + String(Math.round(v / ref * 1000) / 10).replace(".", ",") + " % при средней цене " + fmtR(ref) : (d.k === "act" ? "история: ≤ 60 %" : d.k === "target" ? "" : (ch ? "факт ОПиУ: " + String(f).replace(".", ",") + " %" : "факт ОПиУ"));
-        return '<div class="pr-param' + (ch || rub ? " changed" : "") + '"><div><div class="lbl">' + d.lbl + '</div><div class="hint">' + esc(d.hint) + (fact ? " · " + fact : "") + '</div></div><div class="ctl"><input type="number" data-k="' + d.k + '" min="0" max="' + (rub ? 100000 : d.max) + '" step="' + (rub ? 10 : d.step) + '" value="' + v + '"'+(d.k==='target'?' readonly aria-readonly="true"':'')+'><span class="unit">' + (rub ? "₽" : "%") + '</span>' + (d.rub ? '<span class="pr-mode"><button type="button" data-pm="' + d.k + '" data-m="pct" class="' + (rub ? "" : "on") + '">%</button><button type="button" data-pm="' + d.k + '" data-m="rub" class="' + (rub ? "on" : "") + '">₽</button></span>' : "") + '</div></div>';
+        return '<div class="pr-param' + (ch || rub ? " changed" : "") + '"><div><div class="lbl">' + d.lbl + '</div><div class="hint">' + esc(d.hint) + (fact ? " · " + fact : "") + '</div></div><div class="ctl"><input type="number" data-k="' + d.k + '" min="0" max="' + (rub ? 100000 : d.max) + '" step="' + (rub ? 10 : d.step) + '" value="' + v + '"'+(d.k==='target'?' readonly aria-readonly="true"':'')+'><span class="unit">' + (rub ? "₽" : "%") + '</span>' + (d.rub ? '<span class="pr-mode"><button type="button" data-pm="' + d.k + '" data-m="pct" class="' + (rub ? "" : "on") + '">%</button><button type="button" data-pm="' + d.k + '" data-m="rub" class="' + (rub ? "on" : "") + '">₽</button></span>' : "") + '</div></div>'+(d.k==='pack'?packagingMarkup():'');
       }).join("") + '</div>';
     }).join("");
+    updatePackagingUI();
     var chip = root.querySelector("#prFactChip"); chip.textContent = FACT.months ? "факт ОПиУ · " + FACT.months : "факт ОПиУ"; chip.title = "Эквайринг, упаковка и логистика — доля от выручки сайта; постоянные — доля от всей выручки. Последние 6 месяцев ОПиУ";
   }
   function renderKpis(sets){
@@ -8484,8 +8528,16 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
+    var part=t.getAttribute("data-pack-part");
+    if(part){
+      if(!PACKAGING_PARTS.some(function(x){return x.key===part;})||t.validity&&t.validity.badInput)return;
+      var amount=t.value===''?null:Number(t.value);if(amount!==null&&(!Number.isFinite(amount)||amount<0))return;
+      state.packaging[part]=amount;syncPackaging();
+      if(state.packagingLinked)root.querySelector('#prParams [data-k="pack"]').value=state.params.pack;
+      updatePackagingUI();save();renderKpis(visibleSets());if(state.view==='services')renderServices();else renderSets();return;
+    }
     if(k==="target"||k==="disc")return;
-    if (k && (t.closest("#prParams")||t.closest("#prModeGroup"))){ var v = parseFloat(t.value); if (isNaN(v)) return; if(k==="act"){v=Math.max(0,Math.min(100,v));t.value=v;} state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); if(t.closest(".pr-param"))t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
+    if (k && (t.closest("#prParams")||t.closest("#prModeGroup"))){ var v = parseFloat(t.value); if (isNaN(v)) return; if(k==="act"){v=Math.max(0,Math.min(100,v));t.value=v;} state.params[k] = v; if(k==="pack"){state.packagingLinked=false;updatePackagingUI();} save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); if(t.closest(".pr-param"))t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
     if (t.id === "prQ"){ state.q = t.value; resetServicePage(); save(); if (state.view !== "services") renderSets(); else renderServices(); renderKpis(visibleSets()); return; }
 
   });
@@ -8511,6 +8563,7 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("click", function(e){
     var t = e.target, b, id;
+    if(t.closest('#prPackagingUse')){var parts=packagingSummary(state.packaging);if(!parts.complete)return;state.packagingLinked=true;syncPackaging();save();render();return;}
     if((b=t.closest('[data-set-menu]'))){toggleSetMenu(b);return;}
     if(t.closest('#prRowMenu'))closeSetMenu();
     if((b=t.closest("[data-service-page]"))){if(!b.disabled)changeServicePage(Number(b.getAttribute("data-service-page")),b.closest("[data-service-pagination]")===root.querySelector("[data-service-pagination]")?0:1);return;}
@@ -8519,8 +8572,8 @@ window.__salesActSetData = function(newData){
     if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); resetServicePage(); state.sort = { k: "name", d: 1 }; save(); render(); root.querySelector("#prTableWrap").scrollLeft = 0; root.querySelector("#prTableWrap").scrollTop = 0; return; }
     if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); resetServicePage(); save(); render(); return; }
     if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
-    if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; save(); render(); return; }
-    if ((b = t.closest("[data-pm]"))){ var pk = b.getAttribute("data-pm"), pm = b.getAttribute("data-m"); if ((state.pmode[pk] === "rub") === (pm === "rub")) return; var ref = refPrice(); var cur = state.params[pk] || 0; state.params[pk] = pm === "rub" ? Math.round(cur / 100 * ref / 10) * 10 : Math.round(cur / ref * 1000) / 10; state.pmode[pk] = pm; save(); render(); return; }
+    if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; state.packaging=null; state.packagingLinked=false; save(); render(); return; }
+    if ((b = t.closest("[data-pm]"))){ var pk = b.getAttribute("data-pm"), pm = b.getAttribute("data-m"); if ((state.pmode[pk] === "rub") === (pm === "rub")) return; var ref = refPrice(); var cur = state.params[pk] || 0; state.params[pk] = pm === "rub" ? Math.round(cur / 100 * ref / 10) * 10 : Math.round(cur / ref * 1000) / 10; state.pmode[pk] = pm; if(pk==="pack")state.packagingLinked=false; save(); render(); return; }
     if (t.closest("#prCrm")){ loadCrm(true); return; }
     if (t.closest("#prResetAll")){ if (!confirm("Удалить все правки цен, расходов и состава, новые наборы и услуги?")) return; state.ov = {}; state.sov = {}; state.rowParams = {}; state.customSets = []; state.customServices = {}; state.open = {}; save(); render(); return; }
     if (t.closest("#prNewSet")){ var ns = { id: newId(), name: "Новый набор", city: state.city === "СПб" ? "СПб" : "Мск", price: 0, items: [] }; state.customSets.unshift(ns); state.view = "newsets"; state.open = {}; state.open[ns.id] = true; state.sort = { k: "name", d: 1 }; state.q = ""; save(); render(); var inp = root.querySelector('[data-setname="' + ns.id + '"]'); if (inp){ root.querySelector("#prTableWrap").scrollTop = 0; inp.focus(); inp.select(); } return; }

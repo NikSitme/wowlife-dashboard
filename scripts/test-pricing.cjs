@@ -45,7 +45,7 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,packagingSummary,syncPackaging,packagingMarkup,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='';
 const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
@@ -211,3 +211,21 @@ near(t.calcService(sharedSvc).expenses.acq,328.5);near(t.calcService(sharedSvc).
 near(t.calcSet(sharedSet).expenses.acq,292);near(t.calcSet(sharedSet).expenses.pack,300);near(t.calcSet(sharedSet).npAct,2856);
 assert(!/\{ k: "disc",/.test(html),'No global discount control remains');
 console.log('PASS shared costs: old row overrides ignored and migrated, global changes affect service/set/composition, row discounts and partner edits preserved, no global discount');
+
+// Packaging articles have editable defaults and become shared costs only after applying a complete structure.
+t.state.packaging=null;t.state.packagingLinked=false;t.ensureParams();
+assert.equal(t.state.packaging.label,2);assert.equal(t.state.packaging.tray,12);
+assert.equal(t.state.packaging.box,null);assert.equal(t.state.packaging.chocolate,null);assert.equal(t.state.packaging.inserts,null);
+let parts=t.packagingSummary(t.state.packaging);near(parts.total,14);assert.equal(parts.filled,2);assert.equal(parts.complete,false);near(t.state.params.pack,300);
+assert(t.packagingMarkup().includes('data-pack-part="label"'));assert(t.packagingMarkup().includes('data-pack-part="tray"'));
+t.state.packaging={box:70,chocolate:20,inserts:8,label:2,tray:12};t.state.packagingLinked=true;
+parts=t.syncPackaging();assert.equal(parts.complete,true);near(t.state.params.pack,112);assert.equal(t.state.pmode.pack,'rub');
+near(t.calcService(sharedSvc).expenses.pack,112);near(t.calcService(sharedSvc).npAct,4813.5);
+near(t.calcSet(sharedSet).expenses.pack,112);near(t.calcSet(sharedSet).npAct,3044);
+t.state.packaging.label=3;t.syncPackaging();near(t.state.params.pack,113);
+t.state.packaging.label=null;t.syncPackaging();assert.equal(t.state.packagingLinked,false);near(t.state.params.pack,113);
+t.state.params.pack=200;t.state.packaging.label=4;t.syncPackaging();near(t.state.params.pack,200);
+assert.equal(t.packagingSummary({box:0,chocolate:0,inserts:0,label:2,tray:12}).complete,true);
+near(t.packagingSummary({box:.1,chocolate:.2,inserts:0,label:2,tray:12}).total,14.3);
+assert.equal(t.packagingSummary({box:-1,chocolate:NaN,inserts:0,label:2,tray:12}).filled,3);
+console.log('PASS packaging structure: editable 2/12 defaults, incomplete and zero costs, cent rounding, explicit application, linked recalculation, manual cost preserved');
