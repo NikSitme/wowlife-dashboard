@@ -586,7 +586,7 @@
         <li><b>Параметры.</b> Эквайринг, логистика и упаковка («Создание продукта») по умолчанию — доля от выручки сайта за последние 6 месяцев ОПиУ; логистика — сумма статей доставки / выручка сайта за тот же период; возвраты исключены из ценообразования; налоги с выручки 7 % (НДС 5 % + УСН 1 % + 1 % за регистрацию); активация 60 % (исторический максимум за 2 года); постоянные расходы — персонал + косвенные + административные, % от выручки за те же 6 месяцев. Каждый расход можно задать в % от цены или в ₽ на один набор (переключатель % / ₽; при переключении значение пересчитывается по средней цене наборов). «Сбросить к факту» возвращает значения по умолчанию.</li>
         <li><b>Формулы.</b> Цена после скидки P = цена × (1 − скидка %) − скидка ₽. Переменные V = P × (сумма % расходов) + сумма ₽ расходов. Ожидаемая выплата партнёру C — за выбранную услугу: средняя по услугам набора, максимальная или взвешенная по частоте активаций партнёров в городе. Прогноз активаций задаётся отдельно: выбранный процент или 100%. МП = P − C × активация; маржа = МП / P. «Максимальная» выбирает наибольшую выплату из состава и не меняет процент активаций; отдельная правка прогноза выплаты набора здесь не применяется. Для проверки худшего случая выберите 100% активаций и максимальную выплату. Для отдельной услуги используется её полная выплата, умноженная на выбранный процент активаций. МП, маржа, ЧП и целевая цена показывают только выбранный прогноз, отдельного худшего показателя нет. ЧП = МП − V − постоянные (P × % или ₽). Целевая цена после скидки = (C × активация + расходы ₽ + постоянные ₽) / (1 − расходы % − постоянные %). Если выплата задана в % цены, её доля × активация также вычитается из знаменателя. Затем возвращаем дополнительную скидку, чтобы показать цену до неё. При неполных выплатах или невозможности покрытия цель не рассчитывается. Услуга «убыточна при активации», если P − её себестоимость &lt; 0.</li>
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
-        <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «Добавить услуги» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории сопоставляются по наименованию с классификатором Адеск «Выручка New» (снимок 13.10.2026), нераспознанные остаются в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. Целевая цена — справочный расчёт покрытия всех расходов; цена модели меняется вручную.</li>
+        <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «⋮ → Добавить услугу» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории и порядок — по Figma WOW CJM, привязка тарифов по ID через карточки сайта. Новые услуги без сопоставления доступны в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. Целевая цена — справочный расчёт покрытия всех расходов; цена модели меняется вручную.</li>
         <li><b>Актуальность.</b> Скрываются позиции с явными пометками «не работаем», «не сотрудничаем», «закрылись», «архив», «неактивен», а также со статусом отключения, если он передан в выгрузке. Правило действует в прайсе, составе, подборе, показателях и CSV. Нулевая цена не является признаком отключения. Текущая выгрузка не содержит отдельного поля активности, поэтому позиции без явного признака остаются видимыми. Сохранённые проекты и история не удаляются.</li>
         <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
         <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава, если нет ручной выплаты или локальной правки.</li>
@@ -3825,7 +3825,6 @@ window.__salesActSetData = function(newData){
   .pr-items .meta { display: block; font-size: 11px; color: var(--text-muted); }
   .pr-x { font: inherit; font-size: 12px; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; padding: 1px 6px; cursor: pointer; }
   .pr-x:hover { color: var(--bad); background: var(--pr-bad-bg); }
-  .pr-add-catalog { margin-top: 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
   .pr-catalog { width:min(1120px,calc(100vw - 32px)); max-width:1120px; max-height:90vh; padding:24px; border:1px solid var(--border); border-radius:20px; background:var(--surface-1); color:var(--text-primary); box-sizing:border-box; box-shadow:0 24px 90px #0005; }
   .pr-catalog::backdrop { background:#14243b88; }
   .pr-catalog[open] { display:flex; flex-direction:column; overflow:hidden; }
@@ -8007,7 +8006,7 @@ window.__salesActSetData = function(newData){
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
-<script src="./scripts/service-catalog.js?v=20261108-id-search"></script>
+<script src="./scripts/service-catalog.js?v=20261108-figma-categories"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
@@ -8489,7 +8488,7 @@ window.__salesActSetData = function(newData){
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
       h+='<tr><td><span class="nm">'+esc(it.name)+'</span>'+'<span class="meta pr-partner">'+(it.partner?esc(it.partner)+' · ':'')+'ID '+esc(it.sid)+'</span>'+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c,{kind:'item',id:s.id,sid:it.sid,name:s.name})+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
-    return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
+    return h+'</tbody></table></div>';
   }
   function renderServices(){
     var u=usage(),list=filtered(allServices()),calc={};list.forEach(function(s){calc[s.sid]=calcService(s);});
@@ -8628,15 +8627,18 @@ window.__salesActSetData = function(newData){
     if ((b = t.closest("tr.row.set"))){ id = b.getAttribute("data-id"); if (state.open[id]) delete state.open[id]; else state.open[id] = true; render(); return; }
   });
   // Каталог услуг набора: город берётся из самого набора.
-  var catalogSelection={id:null,q:'',min:'',max:'',category:'',partner:'',sort:'name'},catalogClassify=null,catalogLoading=null;
+  var catalogSelection={id:null,q:'',min:'',max:'',category:'',partner:'',sort:'name'},catalogClassify=null,catalogCategoryOrder=[],catalogLoading=null;
   function catalogSet(){return allSets().find(function(s){return s.id===catalogSelection.id;});}
-  function catalogServices(){return allServices().map(function(s){return Object.assign({},s,{category:catalogClassify?catalogClassify(s.name):'Без категории'});});}
+  function catalogServices(){return allServices().map(function(s){return Object.assign({},s,{category:catalogClassify?catalogClassify(s):'Без категории'});});}
   async function loadCatalogCategories(){
     if(catalogClassify)return;if(catalogLoading)return catalogLoading;
-    catalogLoading=fetch('./data/pricing-categories.json').then(function(r){if(!r.ok)throw new Error('Категории недоступны');return r.json();}).then(function(d){catalogClassify=window.WowlifeServiceCatalog.classifier(d.taxonomy);}).catch(function(){catalogClassify=window.WowlifeServiceCatalog.classifier([]);});return catalogLoading;
+    catalogLoading=fetch('./data/pricing-categories.json?v=20261108-figma').then(function(r){if(!r.ok)throw new Error('Категории недоступны');return r.json();}).then(function(d){if(d.schemaVersion!==2||!Array.isArray(d.categories)||!d.services)throw new Error('Неверный формат категорий');catalogCategoryOrder=d.categories;catalogClassify=window.WowlifeServiceCatalog.classifier(d);}).catch(function(){catalogClassify=window.WowlifeServiceCatalog.classifier({});});return catalogLoading;
   }
   function catalogOptions(services,field,selected,allLabel){
-    var values=Array.from(new Set(services.map(function(s){return s[field];}))).sort(function(a,b){return a.localeCompare(b,'ru');});
+    var values=Array.from(new Set(services.map(function(s){return s[field];}))).sort(function(a,b){
+      if(field==='category'){var ai=catalogCategoryOrder.indexOf(a),bi=catalogCategoryOrder.indexOf(b);if(ai!==bi)return (ai<0?Infinity:ai)-(bi<0?Infinity:bi);}
+      return a.localeCompare(b,'ru');
+    });
     return '<option value="">'+allLabel+'</option>'+values.map(function(v){var value=v||'__missing__';return '<option value="'+esc(value)+'"'+(selected===value?' selected':'')+'>'+esc(v||'Партнёр не указан')+'</option>';}).join('');
   }
   function catalogFilters(){
@@ -8645,7 +8647,7 @@ window.__salesActSetData = function(newData){
     root.querySelector('#prCatalogPartner').innerHTML=catalogOptions(services,'partner',catalogSelection.partner,'Все партнёры');
     root.querySelector('#prCatalogName').textContent='Добавить услуги в «'+set.name+'»';
     root.querySelector('#prCatalogCity').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · '+services.length+' услуг в каталоге';
-    root.querySelector('#prCatalogHint').textContent=catalogClassify?'Категории — по классификатору Адеска. Без совпадения: «Без категории». Цена — из прайса услуг с вашими правками.':'Загружаю категории…';
+    root.querySelector('#prCatalogHint').textContent=!catalogClassify?'Загружаю категории…':catalogCategoryOrder.length?'Категории — по структуре Figma.':'Категории недоступны. Доступен поиск по названию, партнёру и ID.';
   }
   function catalogResults(){
     var set=catalogSet();if(!set)return;var services=catalogServices(),selection=Object.assign({},catalogSelection);if(selection.partner==='__missing__'){services=services.filter(function(s){return !s.partner;});selection.partner='';}

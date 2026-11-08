@@ -1,11 +1,12 @@
 const assert=require('node:assert/strict');
 const C=require('./service-catalog');
-const classify=C.classifier([['Водные развлечения','Катера','Аренда катера'],['Водные развлечения','Катера','Аренда катера Regal'],['Наборы впечатлений','Для женщин','Набор'],['Полеты','Самолеты','Полёт на самолёте']]);
-assert.equal(classify('Аренда катера Regal: 2 часа, Москва'),'Водные развлечения');
-assert.equal(classify('Полет на самолете: 30 минут'),'Полеты');
-assert.equal(classify('Новый неизвестный товар'),'Без категории');
-assert.equal(classify('Набор'),'Без категории');
-assert.equal(classify(''),'Без категории');
+const classify=C.classifier({categories:['Водные развлечения'],services:{'42':{city:'Мск',category:'Водные развлечения'}}});
+assert.equal(classify({sid:'42',city:'Мск',name:'Переименованная услуга'}),'Водные развлечения','Renaming a proposal must not change its category');
+assert.equal(classify({sid:'42',city:'СПб'}),'Без категории','Never assign a category from another city');
+assert.equal(classify({sid:'142',city:'Мск',name:'Водные развлечения'}),'Без категории','Exact tariff ID, no substring matching');
+assert.equal(classify({sid:'u42',city:'Мск',name:'Аренда катера'}),'Без категории','New custom services remain available without invented categories');
+assert.equal(classify(null),'Без категории');
+assert.equal(C.classifier({})({sid:'42',city:'Мск'}),'Без категории','Unavailable taxonomy leaves search functional');
 const services=[{sid:'1',city:'Мск',name:'Аренда катера',partner:'Вода',price:5000,category:'Водные развлечения'},{sid:'2',city:'СПб',name:'Аренда катера',partner:'Вода',price:5000,category:'Водные развлечения'},{sid:'3',city:'Мск',name:'Массаж',partner:'Спа',price:2500,category:'Красота и здоровье'},{sid:'4',city:'Мск',name:'Новая услуга',partner:'',price:0,category:'Без категории'}];
 assert.deepEqual(C.filter(services,'Мск',{}).map(s=>s.sid),['1','3','4']);
 assert.deepEqual(C.filter(services,'Мск',{min:2500,max:5000,category:'Водные развлечения',partner:'Вода',q:'КАТЕРА'}).map(s=>s.sid),['1']);
@@ -39,7 +40,19 @@ assert(!html.includes('function showAddResults'),'Old truncated autocomplete rem
 assert(!html.includes('list.slice(0,400)'),'Main services table has no hard cutoff');
 assert.equal((html.match(/<nav class="pr-pagination"/g)||[]).length,2,'Pagination is outside the scroller, above and below');
 const data=JSON.parse(fs.readFileSync('data/pricing-categories.json','utf8'));
-assert(data.taxonomy.length>300);assert.equal(C.classifier(data.taxonomy)('Аренда катера Regal 2660'),'Водные развлечения');
+assert.equal(data.schemaVersion,2);assert.equal(data.categories.length,12);assert.equal(Object.keys(data.services).length,2134);
+assert.deepEqual(data.categories.slice(0,3),['Полёты и прыжки','Катание и управление техникой','Водные развлечения']);
+assert.equal(new Set(data.categories).size,data.categories.length);
+const figmaClassify=C.classifier(data);
+for(const [sid,record] of Object.entries(data.services)){
+  assert(/^\d+$/.test(sid));assert(['Мск','СПб'].includes(record.city));assert(data.categories.includes(record.category));
+  assert.equal(figmaClassify({sid,city:record.city,name:'Любое новое название'}),record.category);
+  assert.equal(figmaClassify({sid,city:record.city==='Мск'?'СПб':'Мск'}),'Без категории');
+}
+for(const [sid,city,category] of [['21514','Мск','СПА, массаж, баня'],['8918','Мск','СПА, массаж, баня'],['30067','СПб','СПА, массаж, баня'],['43160','СПб','Спорт и активный отдых'],['31977','СПб','Развлечения и досуг'],['16001','СПб','Полёты и прыжки'],['15988','СПб','Мастер-классы и обучение']]){
+  assert.equal(figmaClassify({sid,city}),category,sid);
+}
+assert(!data.categories.some(c=>['Прочее','Романтические впечатления','Семейный отдых','Без категории','Наборы и сертификат на сумму'].includes(c)),'Only the 12 service categories from the Figma board');
 console.log('PASS service catalog: city isolation, combined filters, price boundaries, categories, uncapped results, syntax and city selector removal');
 
 const search=require("./service-catalog").matchesQuery;
