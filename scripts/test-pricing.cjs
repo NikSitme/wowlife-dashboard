@@ -45,10 +45,10 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,load,save,usagePercent,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
-let exportedCsv='';
-const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
+let exportedCsv='',savedPricing=null;
+const context={localStorage:{getItem(){return savedPricing;},setItem(k,v){savedPricing=v;}},Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
@@ -58,13 +58,13 @@ t.state.params={...defaults};t.state.pmode={...modes};t.ensureParams();
 t.setData({catalog:{a:{sid:'a',name:'A',partner:'One',city:'Мск',price:2000,cost:1000},b:{sid:'b',name:'B',partner:'Two',city:'Мск',price:1500,cost:500}},sets:[{id:'x',name:'Set',city:'Мск',price:2000,items:[{sid:'a',price:2000,cost:1000},{sid:'b',price:1500,cost:500}]}]},{counts:{'Мск':{One:3,Two:1}}});
 let set=t.allSets()[0];near(t.calcSet(set).exp,750);
 assert.equal(t.calcSet(set).m100,undefined);assert.equal(t.calcSet(set).mp100,undefined);
-t.state.mode='max';near(t.calcSet(set).exp,1000);
+t.state.mode='max';t.state.usageMode='full';near(t.calcSet(set).exp,1000);
 near(t.calcSet(set).partnerForecast,1000);near(t.calcSet(set).p.a,1);
 near(t.calcSet(set).mpAct,1000);near(t.calcSet(set).npAct,570);
 near(t.calcSet(set).mAct,.5);assert.equal(t.state.params.act,60);
 t.state.rowParams['set:x']={partner:{mode:'rub',value:100}};
 near(t.calcSet(set).exp,1000);delete t.state.rowParams['set:x'];
-t.state.mode='act';near(t.calcSet(set).exp,875);
+t.state.mode='act';t.state.usageMode='custom';near(t.calcSet(set).exp,875);
 assert.equal(t.calcSet(set).mp100,undefined);
 t.state.rowParams['set:x']={logistics:{mode:'rub',value:0},disc:{mode:'pct',value:0}};
 let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,100);
@@ -86,14 +86,14 @@ t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
 const svc={sid:'forecast',name:'Example',price:2000,cost:1000,costKnown:true};
 t.state.params.act=60;t.state.params.disc=0;t.state.params.logistics=0;
 t.state.mode='avg';near(t.calcService(svc).partnerForecast,600);near(t.calcService(svc).mpAct,1400);
-t.state.mode='max';near(t.calcService(svc).partnerForecast,1000);near(t.calcService(svc).mpAct,1000);near(t.calcService(svc).mAct,.5);
+t.state.mode='max';t.state.usageMode='full';near(t.calcService(svc).partnerForecast,1000);near(t.calcService(svc).mpAct,1000);near(t.calcService(svc).mAct,.5);
 assert.equal(t.state.params.act,60,'Worst forecast must not overwrite the planned activation percentage');
 t.state.rowParams['service:forecast']={partner:{mode:'rub',value:1200}};near(t.calcService(svc).partnerForecast,1200);near(t.calcService(svc).mpAct,800);
-t.state.mode='avg';near(t.calcService(svc).partnerForecast,720);near(t.calcService(svc).mpAct,1280);
+t.state.mode='avg';t.state.usageMode='custom';near(t.calcService(svc).partnerForecast,720);near(t.calcService(svc).mpAct,1280);
 t.state.sort.k='m100';t.ensureParams();assert.equal(t.state.sort.k,'m');
 assert(!html.includes("['m100'"));assert(!html.includes('Худший, %'));assert(!html.includes('Маржа при 100% (набор'));
 const modeMarkup=html.slice(html.indexOf('id="prModeGroup"'),html.indexOf('<div class="pr-scroll"',html.indexOf('id="prModeGroup"')));
-assert(modeMarkup.includes('id="prActivation"')&&modeMarkup.includes('id="prMode"'),'Activation and forecast must share one control group');
+assert(modeMarkup.includes('id="prActivation"')&&modeMarkup.includes('id="prMode"')&&modeMarkup.includes('id="prUsageMode"'),'Independent usage and payout controls are visible');
 assert(!html.includes('root.querySelector("#prModeGroup").hidden'),'Forecast is visible in every pricing view');
 console.log('PASS pricing: discounts, expenses, target price, defaults, migration, row inheritance, CRM proposals, forecasts, composition and headers');
 
@@ -117,9 +117,9 @@ t.state.sov['10884']={cost:4860};t.state.params.disc=0;t.state.params.act=60;
 refSvc=t.serviceOf('10884');let policy=t.calcService(refSvc);
 near(model.calculate(policy.target,4860,policy.p).npAct,0);
 const target60=policy.target;t.state.params.act=10;assert(t.calcService(refSvc).target<target60);
-t.state.mode='max';assert(t.calcService(refSvc).target>target60);
+t.state.usageMode='full';assert(t.calcService(refSvc).target>target60);
 near(model.calculate(t.calcService(refSvc).target,4860,t.calcService(refSvc).p).npAct,0);
-t.state.mode='avg';
+t.state.mode='avg';t.state.usageMode='custom';
 for(const c of [t.calcSet(t.allSets()[0]),t.calcItem(t.allSets()[0],t.allSets()[0].items[0],t.calcSet(t.allSets()[0]))])near(model.calculate(c.target,c.exp,c.p).npAct,0);
 t.state.params.target=40;t.ensureParams();assert.equal(t.state.params.target,undefined);
 const policyHeaders=t.pricingHead('service');assert(policyHeaders.indexOf('data-prgroup="commission"')<policyHeaders.indexOf('data-prgroup="markup"'));
@@ -261,3 +261,41 @@ t.state.customSets=[{id:'custom-target',name:'Custom',city:'Msk',price:100,items
 const customTarget=t.useTargetPrice('set','custom-target');assert.equal(t.state.customSets[0].price,customTarget);assert.equal(t.state.ov['custom-target'],undefined);
 assert.equal(t.useTargetPrice('service','missing'),null);assert.equal(t.state.sov.missing,undefined);assert.equal(t.useTargetPrice('service','unknown-id'),null);assert.equal(t.useTargetPrice('item','target-set','unknown-item'),null);
 console.log('PASS target button: service/set/custom/composition proposals, positive coverage after rounding, row discount and source cost preserved, missing targets do nothing');
+
+// Every payout forecast works with an independent usage forecast, including 0%.
+t.state.params={act:60,acq:2,tax:7,pack:50,logistics:100,fixed:5};t.state.pmode={pack:'rub',logistics:'rub'};
+t.state.rowParams={};t.state.sov={};t.state.ov={};t.state.customSets=[];t.state.customServices={};
+t.setData({catalog:{a:{sid:'a',name:'A',partner:'One',city:'Мск',price:2000,cost:1000},b:{sid:'b',name:'B',partner:'Two',city:'Мск',price:1500,cost:500}},sets:[{id:'independent',name:'Independent',city:'Мск',price:2000,items:[{sid:'a',cost:1000},{sid:'b',cost:500}]}]},{counts:{'Мск':{One:3,Two:1}}});
+const independentSet=t.allSets()[0];
+for(const [mode,payout] of [['avg',750],['act',875],['max',1000]]){
+ t.state.mode=mode;
+ for(const usage of [0,60,100]){
+  t.state.usageMode='custom';t.state.params.act=usage;
+  const result=t.calcSet(independentSet),item=t.calcItem(independentSet,independentSet.items[0],result);
+  near(result.exp,payout);near(result.partnerForecast,payout*usage/100);
+  near(result.mpAct,2000-payout*usage/100);near(result.npAct,1570-payout*usage/100);
+  near(model.calculate(result.target,payout,result.p).npAct,0);
+  near(item.partnerForecast,1000*usage/100);near(t.calcService(t.serviceOf('a')).partnerForecast,1000*usage/100);
+ }
+ t.state.params.act=60;t.state.usageMode='full';near(t.calcSet(independentSet).partnerForecast,payout);
+ assert.equal(t.state.params.act,60);t.state.usageMode='custom';near(t.calcSet(independentSet).partnerForecast,payout*.6);
+}
+t.state.sov.a={cost:1200};near(t.calcSet(t.allSets()[0]).partnerForecast,720);t.state.sov={};
+t.state.view='sets';t.state.city='all';t.state.q='';t.exportCsv();
+const independentCsv=exportedCsv.trim().split('\n').map(line=>line.split(';'));
+const forecastColumn=independentCsv[0].findIndex(x=>x.includes('Прогноз с учётом активации'));
+assert(forecastColumn>=0,'CSV has a forecast payout column');
+assert.equal(independentCsv[1][forecastColumn],'600');
+console.log('PASS independent forecasts: average/weighted/maximum × 0/60/100%, full usage, child rows, standalone services, edited payouts, net profit, target and CSV');
+
+// Legacy worst-case models retain their old result; new maximum + custom models remain independent.
+const preserved={params:{...t.state.params,act:60},mode:'max',sov:{a:{price:2400,cost:1100}},ov:{independent:{price:2300}},rowParams:{'set:independent':{disc:{mode:'pct',value:10}}},customSets:[{id:'saved-draft',name:'Draft',city:'Мск',price:2500,items:[{sid:'a'}]}]};
+savedPricing=JSON.stringify(preserved);t.load();t.ensureParams();
+assert.equal(t.state.usageMode,'full');near(t.usagePercent(),100);assert.equal(t.state.params.act,60);
+near(t.calcSet(t.allSets().find(s=>s.id==='independent')).partnerForecast,1100);
+assert.equal(t.state.sov.a.price,2400);assert.equal(t.state.ov.independent.price,2300);assert.equal(t.state.rowParams['set:independent'].disc.value,10);assert.equal(t.state.customSets[0].name,'Draft');
+t.state.usageMode='custom';t.save();t.state.usageMode='full';t.load();
+assert.equal(t.state.mode,'max');assert.equal(t.state.usageMode,'custom');near(t.usagePercent(),60);
+near(t.calcSet(t.allSets().find(s=>s.id==='independent')).partnerForecast,660);
+for(const mode of ['avg','act']){savedPricing=JSON.stringify({...preserved,mode});t.load();assert.equal(t.state.usageMode,'custom');near(t.usagePercent(),60);}
+console.log('PASS forecast persistence: legacy worst migrates to full + maximum, new selections reload independently, prices/discounts/drafts preserved');
