@@ -4002,6 +4002,44 @@ window.__salesActSetData = function(newData){
   .pr-rowmenu button:hover { background: var(--pr-key-bg); }
   .pr-rowmenu .pr-delete { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 14px; color: var(--bad); }
 
+  /* Compact pricing rows and controls immediately above their table. */
+  .pr-filter-line { display: flex; align-items: flex-start; gap: 20px 28px; flex-wrap: wrap; }
+  .pr-filter-line > .pr-filter-group { flex: 0 0 auto; }
+  .pr-filter-line .pr-calculation { flex: 1 1 580px; min-width: 0; flex-direction: row; align-items: flex-start; }
+  .pr-filter-line #prForecastHint { flex-basis: 100%; font-size: 13px; line-height: 1.4; }
+  .pr-table-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+  .pr-table-controls .pr-search { width: 320px; min-width: 0; max-width: 100%; }
+  .pr-table-bar .pr-pagination { flex: 1 1 520px; gap: 8px 16px; padding: 0; margin: 0; font-size: 14px; }
+  .pr-table-bar .pr-page-controls { margin-left: auto; }
+  .pr-table-bar .pr-page-controls .pr-btn,.pr-table-bar .pr-page-controls select { font-size: 14px; min-height: 38px; padding: 8px 12px; border-radius: 8px; }
+  .pr-table { font-size: 14px; }
+  .pr-table th,.pr-table td { padding: 8px 12px; }
+  .pr-financial td,.pr-financial thead .pr-column-head th { min-width: 96px; }
+  .pr-financial > thead > .pr-group-head > th:first-child,
+  .pr-financial > tbody > tr:not(.pr-sub) > td:first-child { width: 300px; min-width: 280px; max-width: 320px; }
+  .pr-financial thead .pr-group-head { height: 44px; }
+  .pr-financial thead .pr-group-head th { height: 44px; font-size: 13px; padding: 9px 12px; }
+  .pr-financial thead .pr-column-head th { top: 44px; font-size: 12px; padding: 9px 10px; }
+  .pr-financial thead .pr-column-head th:first-child { min-width: 96px; }
+  .pr-financial .pr-activation-heading { min-width: 72px; }
+  .pr-table .nm { min-width: 0; max-width: 280px; line-height: 1.3; }
+  .pr-table .meta,.pr-table .tag:not(.r):not(.z) { display: none; }
+  .pr-table .meta.pr-partner { display: block; font-size: 12px; line-height: 1.3; margin-top: 3px; }
+  .pr-table input.in { width: 88px; min-height: 32px; padding: 5px 8px; font-size: 14px; border-radius: 6px; }
+  .pr-table input.in.txt { width: 100%; }
+  .pr-table .tag { font-size: 11px; padding: 2px 5px; }
+  .pr-table .pr-x { font-size: 14px; padding: 4px 6px; }
+  .pr-collection-row > td { height: 42px; }
+  .pr-set-name { gap: 9px; align-items: center; }
+  .pr-folder-icon { width: 18px; height: 18px; }
+  .pr-set-name > .pr-folder-icon { margin-top: 0; }
+  .pr-folder-add,.pr-menu-button { width: 28px; height: 28px; border-radius: 6px; }
+  .pr-menu-button { font-size: 22px; }
+  .pr-subbox { padding: 16px 18px; }
+  .pr-subbox .hdr { font-size: 14px; margin-bottom: 12px; gap: 10px; }
+  @media(max-width:900px){.pr-filter-line .pr-calculation{flex-basis:100%;}}
+  @media(max-width:600px){.pr-table-bar .pr-search{width:100%;}.pr-table-bar .pr-pagination{flex-basis:100%;}.pr-table-bar .pr-page-controls{margin-left:0;}}
+
 </style>
 <div class="pr">
 
@@ -4050,11 +4088,11 @@ window.__salesActSetData = function(newData){
     </details>
     <p class="pr-status" id="prStatus"></p>
     <p class="pr-status" id="prCommissionStatus">Структура цены — за одну активацию. Наценка = цена со скидкой − открытая цена; комиссия удерживается из открытой цены. Прогноз использования влияет на МП и ЧП.</p>
-    <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav>
     <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. Активируют конкретную услугу. В строке набора показано, сколько активаций услуг пришлось на сертификаты, купленные как этот набор; связь определяется по исходному товару в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; у 10 сертификатов типа «Набор» не заполнен исходный товар, ещё в одной карточке указаны разные наборы — эти 11 карточек не распределены по наборам. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
-    <div class="pr-table-controls"><div class="pr-filters">
-      <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
-    <label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label></div><div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div></div>
+    <div class="pr-table-controls">
+      <div class="pr-filter-line"><div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div><div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div></div>
+      <div class="pr-table-bar"><label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label><nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav></div>
+    </div>
     <div class="pr-scroll" id="prTableWrap"></div>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг снизу" hidden></nav>
     <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
@@ -8377,7 +8415,7 @@ window.__salesActSetData = function(newData){
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+' · ID '+esc(it.sid)+'</span></td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span>'+(it.partner?'<span class="meta pr-partner">'+esc(it.partner)+'</span>':'')+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8387,10 +8425,10 @@ window.__salesActSetData = function(newData){
     if(serviceRevealId){var revealIndex=list.findIndex(function(s){return s.sid===serviceRevealId;});if(revealIndex>=0)servicePage=Math.floor(revealIndex/100)+1;serviceRevealId=null;}
     var page=window.WowlifeServiceCatalog.paginate(list,servicePage,100);servicePage=page.page;list=page.items;
     renderServicePagination(page);
-    closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>'+collectionRow('service');
+    closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'<span class="meta">ID '+esc(s.sid)+'</span></td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span>'+(s.partner?'<span class="meta pr-partner">'+esc(s.partner)+'</span>':''))+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
 
