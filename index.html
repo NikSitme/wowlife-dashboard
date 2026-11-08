@@ -6,6 +6,7 @@
 <meta charset="utf-8">
 <title>Финансовый дашборд WOWlife</title>
 <style>
+  :root,
   .viz-root {
     color-scheme: light;
     --surface-1:      #fcfcfb;
@@ -31,6 +32,7 @@
     --mp4: #e87ba4; /* Flowwow */
   }
   @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])),
     :root:where(:not([data-theme="light"])) .viz-root {
       color-scheme: dark;
       --surface-1:      #1a1a19;
@@ -56,6 +58,7 @@
       --mp4: #d55181;
     }
   }
+  :root[data-theme="dark"],
   :root[data-theme="dark"] .viz-root {
     color-scheme: dark;
     --surface-1:      #1a1a19;
@@ -81,13 +84,20 @@
     --mp4: #d55181;
   }
 
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--surface-2);
+  }
+
   .viz-root {
     background: var(--surface-2);
     color: var(--text-primary);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     padding: 24px;
     box-sizing: border-box;
-    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   .viz-root * { box-sizing: border-box; }
   .wrap { max-width: 1180px; margin: 0 auto; }
