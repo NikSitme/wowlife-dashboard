@@ -60,17 +60,17 @@ let set=t.allSets()[0];near(t.calcSet(set).exp,750);
 assert.equal(t.calcSet(set).m100,undefined);assert.equal(t.calcSet(set).mp100,undefined);
 t.state.mode='max';near(t.calcSet(set).exp,1000);
 near(t.calcSet(set).partnerForecast,1000);near(t.calcSet(set).p.a,1);
-near(t.calcSet(set).mpAct,800);near(t.calcSet(set).npAct,398);
-near(t.calcSet(set).mAct,800/1800);assert.equal(t.state.params.act,60);
+near(t.calcSet(set).mpAct,1000);near(t.calcSet(set).npAct,570);
+near(t.calcSet(set).mAct,.5);assert.equal(t.state.params.act,60);
 t.state.rowParams['set:x']={partner:{mode:'rub',value:100}};
 near(t.calcSet(set).exp,1000);delete t.state.rowParams['set:x'];
 t.state.mode='act';near(t.calcSet(set).exp,875);
 assert.equal(t.calcSet(set).mp100,undefined);
 t.state.rowParams['set:x']={logistics:{mode:'rub',value:0},disc:{mode:'pct',value:0}};
-let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,0);
+let calc=t.calcSet(set);near(calc.price,2000);near(calc.expenses.logistics,100);
 near(t.calcItem(set,set.items[0],calc).price,2000);
-near(t.calcItem(set,set.items[0],calc).expenses.logistics,0);
-t.state.params.logistics=200;near(t.calcSet(set).expenses.logistics,0);near(t.calcService(t.serviceOf('a')).expenses.logistics,200);
+near(t.calcItem(set,set.items[0],calc).expenses.logistics,100);
+t.state.params.logistics=200;near(t.calcSet(set).expenses.logistics,200);near(t.calcService(t.serviceOf('a')).expenses.logistics,200);
 delete t.state.rowParams['set:x'];near(t.calcSet(set).expenses.logistics,200);
 t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,2000);assert.equal(t.serviceOf('a').price,2500);near(t.allSets()[0].items[0].cost,1200);
 // Group headers, body cells and composition use exactly the same column count.
@@ -184,3 +184,30 @@ near(model.calculate(5979,1000,model.parameters(discountParams,{}, {disc:{mode:"
 near(model.calculate(5979,1000,model.parameters(discountParams,{}, {disc:{mode:"pct",value:t.rowParameterValue("","disc","pct")}})).price,5979);
 assert(!/title=|data-tip=/.test(t.tableMarkup(t.financialCells(set,calc,{key:"set:x",kind:"set"}))));
 assert.equal((t.collectionRow("set").match(/<td/g)||[]).length,t.colCount());
+
+// Shared costs are read-only in every row, including saved models from before this policy.
+t.state.params={act:100,acq:2.65,tax:7,pack:200,logistics:2.4,fixed:10,disc:50};
+t.state.pmode={pack:'rub',disc:'rub'};t.state.mode='avg';t.state.sov={};t.state.ov={};t.state.customSets=[];t.state.customServices={};t.state.collapsed={};
+const legacyCosts={acq:{mode:'rub',value:999},tax:{mode:'pct',value:99},pack:{mode:'rub',value:0},logistics:{mode:'rub',value:0},fixed:{mode:'pct',value:0}};
+t.state.rowParams={'set:shared-set':{...legacyCosts,disc:{mode:'pct',value:20},partner:{mode:'rub',value:3000}},'service:shared':{...legacyCosts,disc:{mode:'pct',value:10}}};
+t.setData({catalog:{shared:{sid:'shared',name:'Shared',partner:'One',city:'Msk',price:10000,cost:2000,costKnown:true}},sets:[{id:'shared-set',name:'Shared set',city:'Msk',price:10000,items:[{sid:'shared',name:'Shared',cost:2000,price:10000}]}]});
+let sharedSet=t.allSets()[0],sharedSvc=t.serviceOf('shared'),setResult=t.calcSet(sharedSet),svcResult=t.calcService(sharedSvc),itemResult=t.calcItem(sharedSet,sharedSet.items[0],setResult);
+near(t.calcService({...sharedSvc,sid:'fresh-without-discount'}).price,10000);
+near(setResult.price,8000);near(setResult.exp,3000);near(setResult.expenses.acq,212);near(setResult.expenses.tax,560);near(setResult.expenses.pack,200);near(setResult.expenses.logistics,192);near(setResult.npAct,3036);
+near(svcResult.price,9000);near(svcResult.expenses.acq,238.5);near(svcResult.expenses.tax,630);near(svcResult.expenses.pack,200);near(svcResult.expenses.logistics,216);near(svcResult.npAct,4815.5);
+near(itemResult.expenses.acq,212);near(itemResult.expenses.pack,200);near(itemResult.expenses.logistics,192);
+for(const [row,result,kind] of [[sharedSet,setResult,'set'],[sharedSvc,svcResult,'service'],[sharedSet,itemResult,'item']]){
+ const markup=t.financialCells(row,result,{key:kind==='service'?'service:shared':'set:shared-set',kind,sid:'shared',itemName:'Shared'});
+ assert(!/data-rp-field="(?:acq|tax|pack|logistics|fixed)"/.test(markup));
+ for(const field of ['acqPct','acqRub','taxPct','taxRub','packPct','packRub','logisticsPct','logisticsRub'])assert(markup.includes('data-price-component="'+field+'"'));
+}
+t.state.rowParams['service:costs-only']={...legacyCosts};
+t.ensureParams();assert.equal(t.state.params.disc,undefined);assert.equal(t.state.pmode.disc,undefined);assert.equal(t.state.rowParams['service:costs-only'],undefined);
+for(const key of ['set:shared-set','service:shared'])for(const field of ['acq','tax','pack','logistics','fixed'])assert.equal(t.state.rowParams[key][field],undefined);
+assert.equal(t.state.rowParams['set:shared-set'].disc.value,20);assert.equal(t.state.rowParams['set:shared-set'].partner.value,3000);assert.equal(t.state.rowParams['service:shared'].disc.value,10);
+near(t.calcService(sharedSvc).npAct,4815.5);near(t.calcSet(sharedSet).npAct,3036);
+t.state.params.acq=3.65;t.state.params.pack=300;
+near(t.calcService(sharedSvc).expenses.acq,328.5);near(t.calcService(sharedSvc).expenses.pack,300);near(t.calcService(sharedSvc).npAct,4625.5);
+near(t.calcSet(sharedSet).expenses.acq,292);near(t.calcSet(sharedSet).expenses.pack,300);near(t.calcSet(sharedSet).npAct,2856);
+assert(!/\{ k: "disc",/.test(html),'No global discount control remains');
+console.log('PASS shared costs: old row overrides ignored and migrated, global changes affect service/set/composition, row discounts and partner edits preserved, no global discount');

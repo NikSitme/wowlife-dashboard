@@ -4047,7 +4047,7 @@ window.__salesActSetData = function(newData){
     <div class="pr-top"><h2>1. Параметры прайса</h2><span class="sub">правила, по которым считается каждая услуга и набор</span>
       <div class="right"><span class="chip" id="prFactChip">факт ОПиУ</span><button type="button" class="pr-btn quiet" id="prParamsReset">Сбросить к факту</button></div></div>
     <div class="pr-howto">
-      <div><b>Что сделать</b><span>Проверить расходы (по умолчанию — факт ОПиУ за 6 месяцев) и выставить прогноз активаций. Любой расход можно задать в ₽ на продажу вместо %. Скидка и расходы строки наследуются из параметров; ↺ возвращает их к исходным значениям.</span></div>
+      <div><b>Что сделать</b><span>Проверить общие расходы (по умолчанию — факт ОПиУ за 6 месяцев) и выставить прогноз активаций. Любой расход можно задать в ₽ на продажу вместо %. Эти параметры действуют для всех строк. Скидку можно задать в строке конкретной услуги или набора.</span></div>
       <div><b>Что получаем</b><span>МП = цена со скидкой − выплата партнёру в расчёте. ЧП = МП − комиссии и налоги − упаковка − логистика − постоянные расходы.</span></div>
       <div><b>Зачем</b><span>Отдельно видеть, сколько остаётся после партнёра и после всех остальных расходов. Целевая цена покрывает все расходы и соответствует ЧП = 0.</span></div>
       <div><b>Почему так</b><span>Выплата учитывает выбранный прогноз активации. В худшем сценарии используются 100% активаций и самая высокая выплата из состава. Остальные расходы вычитаются только при расчёте ЧП.</span></div>
@@ -8017,7 +8017,6 @@ window.__salesActSetData = function(newData){
     { k: "pack", g: "Переменные расходы с каждой продажи", lbl: "Упаковка", rub: true, max: 20, step: 0.1, hint: "коробка, шоколад, вкладыши — «Создание продукта» в ОПиУ" },
     { k: "logistics", g: "Переменные расходы с каждой продажи", lbl: "Логистика", rub: true, max: 50, step: 0.1, hint: "доставка: сумма статей «Доставка», Далли, СДЭК и 5Post / выручка сайта за 6 месяцев" },
     { k: "tax", g: "Переменные расходы с каждой продажи", lbl: "Налоги с выручки", rub: true, max: 30, step: 0.5, hint: "НДС 5 % + УСН 1 % + 1 % за регистрацию" },
-    { k: "disc", g: "Переменные расходы с каждой продажи", lbl: "Дополнительная скидка", rub: true, max: 90, step: 1, hint: "Дополнительная скидка модели. Скидка из столбца H уже включена в цену услуги" },
     { k: "fixed", g: "Цель", lbl: "Постоянные расходы", rub: true, max: 90, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. Учитываются в ЧП и целевой цене покрытия всех расходов" }
   ];
 
@@ -8043,6 +8042,12 @@ window.__salesActSetData = function(newData){
     PARAM_DEFS.forEach(function(d){ if (state.params[d.k] === undefined) state.params[d.k] = FACT[d.k]; });
     delete state.params.ret; delete state.pmode.ret;
     delete state.params.target; delete state.pmode.target;
+    delete state.params.disc; delete state.pmode.disc;
+    Object.keys(state.rowParams).forEach(function(key){
+      var row=state.rowParams[key];
+      ['acq','tax','pack','logistics','fixed'].forEach(function(field){delete row[field];});
+      if(!Object.keys(row).length)delete state.rowParams[key];
+    });
     if(state.sort.k==="m100")state.sort.k="m";
   }
 
@@ -8194,7 +8199,7 @@ window.__salesActSetData = function(newData){
 
   // ---------- расчёт ----------
   function isRub(k){ return state.pmode[k] === "rub"; }
-  function P(key){ return MODEL.parameters(state.params, state.pmode, state.rowParams[key] || {}); }
+  function P(key){ var row=state.rowParams[key]||{};return MODEL.parameters(Object.assign({},state.params,{disc:0}),Object.assign({},state.pmode,{disc:"pct"}),{disc:row.disc,partner:row.partner}); }
   function netPrice(price,p){ return MODEL.netPrice(price,p); }
   function targetPrice(cost,p){ return MODEL.targetPrice(cost,p); }
   function fixedOf(price, p){ return price * p.fP + p.fR; }
@@ -8300,9 +8305,9 @@ window.__salesActSetData = function(newData){
     {id:'open',label:'Себестоимость',tip:'Себестоимость здесь — открытая цена партнёра до удержания комиссии. Подтверждённый прайс партнёра имеет приоритет. Если его нет, цена восстановлена из полной выплаты / (1 − комиссия) и помечена «расчёт». Условные ставки не подменяются догадкой.',cols:[['openRub','Цена, ₽','За одну активацию, до удержания комиссии. Под ценой указан источник: прайс партнёра или обратный расчёт.']]},
     {id:'partner',label:'Выплата партнёру',tip:'«В расчёте» — выплата с учётом прогноза активации, именно она вычитается из цены в МП. «За активацию» — полная выплата при использовании сертификата.',cols:[['partnerRub','За активацию, ₽','Выплата партнёру за использованный сертификат. Для набора — выбранный прогноз; для услуги — себестоимость CRM.','exp'],['partnerPct','Доля цены, %','Выплата партнёру / цена со скидкой. Это доля партнёра, а не наша комиссия.'],['partnerForecast','В расчёте, ₽','Выплата за активацию × прогноз активации. Именно эта сумма вычитается из цены при расчёте МП.']]},
     {id:'mp',label:'Маржинальная прибыль',tip:'Цена со скидкой минус прогноз выплаты партнёру с учётом активации. Остальные расходы вычитаются в чистой прибыли.',cols:[['mpRub','МП, ₽','Цена со скидкой минус выплата партнёру в расчёте. Комиссии, налоги, упаковка и логистика вычитаются дальше в ЧП.','mp'],['margin','Маржа, %','Маржинальная прибыль / цена со скидкой.','m']]},
-    {id:'fees',label:'Комиссии и налоги',tip:'Эквайринг и налоги с продажи. Значения наследуются из параметров; правка в строке создаёт исключение.',cols:[['acqPct','Эквайринг, %','Комиссия банка в процентах от цены со скидкой.'],['acqRub','Эквайринг, ₽','Комиссия банка в рублях за продажу.'],['taxPct','Налоги, %','Ставка налога от цены со скидкой, из параметров прайса.'],['taxRub','Налоги, ₽','Налоги на одну продажу в рублях.']]},
-    {id:'pack',label:'Упаковка',tip:'Расход на упаковку каждой продажи, из параметров прайса.',cols:[['packPct','Доля цены, %','Упаковка / цена со скидкой.'],['packRub','На продажу, ₽','Упаковка на одну продажу. Правка суммы фиксирует расход в рублях.']]},
-    {id:'logistics',label:'Логистика',tip:'Доставка каждой продажи. По умолчанию — значение из параметров прайса.',cols:[['logisticsPct','Доля цены, %','Логистика / цена со скидкой.'],['logisticsRub','На продажу, ₽','Доставка на одну продажу. Правка суммы фиксирует расход в рублях.']]},
+    {id:'fees',label:'Комиссии и налоги',tip:'Эквайринг и налоги с продажи по общим параметрам прайса.',cols:[['acqPct','Эквайринг, %','Комиссия банка в процентах от цены со скидкой.'],['acqRub','Эквайринг, ₽','Комиссия банка в рублях за продажу.'],['taxPct','Налоги, %','Ставка налога от цены со скидкой, из параметров прайса.'],['taxRub','Налоги, ₽','Налоги на одну продажу в рублях.']]},
+    {id:'pack',label:'Упаковка',tip:'Расход на упаковку каждой продажи, из общих параметров прайса.',cols:[['packPct','Доля цены, %','Упаковка / цена со скидкой.'],['packRub','На продажу, ₽','Упаковка на одну продажу по общим параметрам.']]},
+    {id:'logistics',label:'Логистика',tip:'Доставка каждой продажи по общим параметрам прайса.',cols:[['logisticsPct','Доля цены, %','Логистика / цена со скидкой.'],['logisticsRub','На продажу, ₽','Доставка на одну продажу по общим параметрам.']]},
     {id:'np',label:'Чистая прибыль',tip:'Маржинальная прибыль минус эквайринг, налоги, упаковка, логистика и постоянные расходы из параметров прайса.',cols:[['npRub','ЧП, ₽','Прибыль после всех расходов строки и доли постоянных расходов.','npRub'],['npPct','ЧП, %','Чистая прибыль / цена со скидкой.','np']]}
   ];
   GROUPS.forEach(function(g){g.cols.forEach(function(c){if(c[0]!=='commissionTerms'&&!c[3])c[3]=c[0];});});
@@ -8334,10 +8339,9 @@ window.__salesActSetData = function(newData){
     var p=r.p, overrides=state.rowParams[ctx.key]||{}, editable=ctx.kind!=='item';
     var structure=r.structure||STRUCTURE.unknown(r.price,'Комиссия не определена');
     function expense(k,mode){
-      var source=overrides[k]||{value:state.params[k],mode:state.pmode[k]||'pct'};
+      var source={value:state.params[k],mode:state.pmode[k]||'pct'};
       var val=mode==='rub'?r.expenses[k]:(source.mode==='pct'?source.value:r.price>0?r.expenses[k]/r.price*100:null);
-      var label={acq:'Эквайринг',tax:'Налоги',pack:'Упаковка',logistics:'Логистика'}[k];
-      return editable?rowInput(ctx,k,mode,val,label+(mode==='pct'?', %':', ₽')+' · '+s.name,!!overrides[k]):mode==='rub'?fmtR(val):fmtP(val===null?null:val/100);
+      return mode==='rub'?fmtR(val):fmtP(val===null?null:val/100);
     }
     function cell(c,g){
       var k=c[0],text='',css='';
@@ -8346,7 +8350,7 @@ window.__salesActSetData = function(newData){
       }else if(k==='proposal'){
         text=editable?'<input class="in'+(s.basePrice!==null&&s.price!==s.basePrice?' changed':'')+'" type="number" min="0" step="10" '+(ctx.kind==='service'?'data-sprice="'+esc(s.sid)+'"':'data-setprice="'+esc(s.id)+'"')+' value="'+decimal(s.price)+'" aria-label="Новая цена · '+esc(s.name)+'">':fmtR(s.price);
       }else if(k==='current'){text=fmtR(s.basePrice)+(ctx.kind==='service'&&s.basePrice===null?'<span class="meta">Нет стоимости со скидкой</span>':'');css='muted';}
-      else if(k==='discount'){var d=overrides.disc||{value:state.params.disc,mode:state.pmode.disc||'pct'};var v=d.mode==='pct'?d.value:s.price>0?r.discount/s.price*100:null;text=editable?rowInput(ctx,'disc','pct',v,'Скидка, % · '+s.name,!!overrides.disc):fmtP(v===null?null:v/100);}
+      else if(k==='discount'){var d=overrides.disc||{value:0,mode:'pct'};var v=d.mode==='pct'?d.value:s.price>0?r.discount/s.price*100:null;text=editable?rowInput(ctx,'disc','pct',v,'Скидка, % · '+s.name,!!overrides.disc):fmtP(v===null?null:v/100);}
       else if(k==='net'){text=fmtR(r.price);css='key';if(state.collapsed.price&&s.basePrice!==null&&r.price!==null&&Math.abs(r.price-s.basePrice)>.01)text+='<span class="meta" title="Табличная цена: '+esc(fmtR(s.basePrice))+'">Изменена в модели</span>';}
       else if(k==='markupRub'){text=fmtR(structure.markup);css=structure.markup<0?'warn':'';}
       else if(k==='markupPct'){text=fmtP(structure.markupShare);}
@@ -8394,7 +8398,7 @@ window.__salesActSetData = function(newData){
     var n=row.activations12m,tip=row.activationPeriod?(row.items?'Активации услуг из этого набора: ':'Все активации услуги: ')+row.activationPeriod:'Нет данных об активациях за период';
     return '<td data-activations-12m title="'+esc(tip)+'">'+(Number.isSafeInteger(n)?fmtN(n):'—')+'</td>';
   }
-  function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" aria-label="Вернуть скидку и расходы строки к параметрам прайса" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
+  function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" aria-label="Сбросить параметры строки" title="Сбросить параметры строки">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
     sets=sortBy(sets,financialGetters(calc,"id"));
@@ -8486,7 +8490,7 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
-    if(k==="target")return;
+    if(k==="target"||k==="disc")return;
     if (k && (t.closest("#prParams")||t.closest("#prModeGroup"))){ var v = parseFloat(t.value); if (isNaN(v)) return; if(k==="act"){v=Math.max(0,Math.min(100,v));t.value=v;} state.params[k] = v; save(); renderKpis(visibleSets()); if (state.view !== "services") renderSets(); else renderServices(); if(t.closest(".pr-param"))t.closest(".pr-param").classList.toggle("changed", isRub(k) || Math.abs(v - FACT[k]) > 1e-9); return; }
     if (t.id === "prQ"){ state.q = t.value; resetServicePage(); save(); if (state.view !== "services") renderSets(); else renderServices(); renderKpis(visibleSets()); return; }
 
@@ -8496,7 +8500,7 @@ window.__salesActSetData = function(newData){
     if(t.hasAttribute("data-service-page-select")){changeServicePage(Number(t.value),t.closest("[data-service-pagination]")===root.querySelector("[data-service-pagination]")?0:1);return;}
     if(t.hasAttribute("data-rp-key")){
       var key=t.getAttribute("data-rp-key"),field=t.getAttribute("data-rp-field"),mode=t.getAttribute("data-rp-mode"),value=rowParameterValue(t.value,field,mode);
-      if(value===null||t.validity&&t.validity.badInput)return;
+      if((field!=="disc"&&field!=="partner")||value===null||t.validity&&t.validity.badInput)return;
       if(field==="partner"&&key.indexOf("service:")===0){
         var sid=key.slice(8),svc=serviceOf(sid);if(!svc)return;
         var price=calcService(svc).price;if(mode==="pct"&&!(price>0))return;
