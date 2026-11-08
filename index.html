@@ -3811,9 +3811,6 @@ window.__salesActSetData = function(newData){
   .pr-table input.in.changed { border-color: var(--s1); font-weight: 650; }
   .pr-table .tag { font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--pr-key-bg); color: var(--s1); margin-left: 6px; vertical-align: 1px; }
   .pr-table .tag.z { background: var(--pr-warn-bg); color: var(--s4); } .pr-table .tag.r { background: var(--pr-bad-bg); color: var(--bad); }
-  .pr-table tbody tr.pr-review-deferred > td,
-  .pr-table tbody tr.pr-review-deferred:hover > td { background: var(--pr-bad-bg); }
-  .pr-table tr.pr-review-deferred > td:first-child { box-shadow: inset 3px 0 var(--bad); }
   .pr-sub > td { padding: 0 0 14px 0 !important; white-space: normal; background: var(--surface-2); }
   .pr-subbox { padding: 12px 16px 6px 28px; }
   .pr-subbox .hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12.5px; }
@@ -7999,7 +7996,7 @@ window.__salesActSetData = function(newData){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
-  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v16-activation-sets-20261107", ACT_KEY = "wowlife-pricing-act-v1";
+  var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v17-tank-payout-20261108", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8372,9 +8369,6 @@ window.__salesActSetData = function(newData){
     }
     return GROUPS.map(function(g){return visibleCols(g).map(function(c,i){var h=cell(c,g);return i===0?h.replace('class="','class="pr-group-start '):h;}).join('');}).join('');
   }
-  // Nikita deferred the payout discrepancy for this specific tariff on 2026-11-06.
-  function deferredReview(sid){return String(sid)==='42675';}
-  function deferredReviewTag(sid){return deferredReview(sid)?'<span class="tag r">Проверка отложена</span>':'';}
   function tableMarkup(html){return html.replace(/\s(?:title|data-tip)="[^"]*"/g,'');}
   function folderIcon(add){return '<svg class="pr-folder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7h18"/>'+(add?'<path d="M12 11v6m-3-3h6"/>':'')+'</svg>';}
   function collectionRow(kind){
@@ -8419,7 +8413,7 @@ window.__salesActSetData = function(newData){
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span>'+'<span class="meta pr-partner">'+(it.partner?esc(it.partner)+' · ':'')+'ID '+esc(it.sid)+'</span>'+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr><td><span class="nm">'+esc(it.name)+'</span>'+'<span class="meta pr-partner">'+(it.partner?esc(it.partner)+' · ':'')+'ID '+esc(it.sid)+'</span>'+'</td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8432,7 +8426,7 @@ window.__salesActSetData = function(newData){
     closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span>'+'<span class="meta pr-partner">'+(s.partner?esc(s.partner)+' · ':'')+'ID '+esc(s.sid)+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+      h+='<tr class="row" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+'</span>'+'<span class="meta pr-partner">'+(s.partner?esc(s.partner)+' · ':'')+'ID '+esc(s.sid)+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
     });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
 
