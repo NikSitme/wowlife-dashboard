@@ -215,17 +215,26 @@ console.log('PASS shared costs: old row overrides ignored and migrated, global c
 // Packaging articles have editable defaults and become shared costs only after applying a complete structure.
 t.state.packaging=null;t.state.packagingLinked=false;t.ensureParams();
 assert.equal(t.state.packaging.label,2);assert.equal(t.state.packaging.tray,12);
-assert.equal(t.state.packaging.box,null);assert.equal(t.state.packaging.chocolate,null);assert.equal(t.state.packaging.inserts,null);
-let parts=t.packagingSummary(t.state.packaging);near(parts.total,14);assert.equal(parts.filled,2);assert.equal(parts.complete,false);near(t.state.params.pack,300);
+assert.equal(t.state.packaging.box,190);assert.equal(t.state.packaging.chocolate,30);assert.equal(t.state.packaging.coloredInsert,3);assert.equal(t.state.packaging.yellowInsert,7);
+let parts=t.packagingSummary(t.state.packaging);near(parts.total,244);assert.equal(parts.filled,6);assert.equal(parts.complete,true);near(t.state.params.pack,300);
 assert(t.packagingMarkup().includes('data-pack-part="label"'));assert(t.packagingMarkup().includes('data-pack-part="tray"'));
-t.state.packaging={box:70,chocolate:20,inserts:8,label:2,tray:12};t.state.packagingLinked=true;
+t.state.packaging={box:70,chocolate:20,coloredInsert:3,yellowInsert:5,label:2,tray:12};t.state.packagingLinked=true;
 parts=t.syncPackaging();assert.equal(parts.complete,true);near(t.state.params.pack,112);assert.equal(t.state.pmode.pack,'rub');
 near(t.calcService(sharedSvc).expenses.pack,112);near(t.calcService(sharedSvc).npAct,4813.5);
 near(t.calcSet(sharedSet).expenses.pack,112);near(t.calcSet(sharedSet).npAct,3044);
 t.state.packaging.label=3;t.syncPackaging();near(t.state.params.pack,113);
 t.state.packaging.label=null;t.syncPackaging();assert.equal(t.state.packagingLinked,false);near(t.state.params.pack,113);
 t.state.params.pack=200;t.state.packaging.label=4;t.syncPackaging();near(t.state.params.pack,200);
-assert.equal(t.packagingSummary({box:0,chocolate:0,inserts:0,label:2,tray:12}).complete,true);
-near(t.packagingSummary({box:.1,chocolate:.2,inserts:0,label:2,tray:12}).total,14.3);
-assert.equal(t.packagingSummary({box:-1,chocolate:NaN,inserts:0,label:2,tray:12}).filled,3);
-console.log('PASS packaging structure: editable 2/12 defaults, incomplete and zero costs, cent rounding, explicit application, linked recalculation, manual cost preserved');
+assert.equal(t.packagingSummary({box:0,chocolate:0,coloredInsert:0,yellowInsert:0,label:2,tray:12}).complete,true);
+near(t.packagingSummary({box:.1,chocolate:.2,coloredInsert:0,yellowInsert:0,label:2,tray:12}).total,14.3);
+assert.equal(t.packagingSummary({box:-1,chocolate:NaN,coloredInsert:0,yellowInsert:0,label:2,tray:12}).filled,4);
+console.log('PASS packaging structure: six editable defaults total 244, incomplete and zero costs, cent rounding, explicit application, linked recalculation, manual cost preserved');
+
+// Upgrade formerly unknown defaults once; preserve entered prices and deliberate blanks afterwards.
+t.state.packagingVersion=0;t.state.packaging={box:null,chocolate:null,label:2,tray:12};t.state.packagingLinked=false;t.ensureParams();
+assert.equal(t.state.packagingVersion,2);near(t.packagingSummary(t.state.packaging).total,244);
+t.state.packaging.box=null;t.ensureParams();assert.equal(t.state.packaging.box,null);
+t.state.packagingVersion=0;t.state.packaging={box:0,chocolate:25,label:4,tray:15};t.ensureParams();
+assert.equal(t.state.packaging.box,0);assert.equal(t.state.packaging.chocolate,25);assert.equal(t.state.packaging.label,4);assert.equal(t.state.packaging.tray,15);
+assert.equal(t.state.packaging.coloredInsert,3);assert.equal(t.state.packaging.yellowInsert,7);
+console.log('PASS packaging defaults migration: old empty prices filled, custom values/zero retained, subsequent empty inputs retained');

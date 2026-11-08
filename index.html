@@ -8009,7 +8009,7 @@ window.__salesActSetData = function(newData){
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v17-tank-payout-20261108", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
-  var state = { params: null, pmode: {}, packaging: null, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var state = { params: null, pmode: {}, packaging: null, packagingVersion: 0, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
@@ -8028,9 +8028,10 @@ window.__salesActSetData = function(newData){
     { k: "fixed", g: "Цель", lbl: "Постоянные расходы", rub: true, max: 90, step: 0.5, hint: "ФОТ, аренда, маркетинг, админ. Учитываются в ЧП и целевой цене покрытия всех расходов" }
   ];
   var PACKAGING_PARTS = [
-    {key:'box',label:'Коробка',value:null},
-    {key:'chocolate',label:'Шоколад',value:null},
-    {key:'inserts',label:'Вкладыши',value:null},
+    {key:'box',label:'Коробка',value:190},
+    {key:'chocolate',label:'Шоколадка',value:30},
+    {key:'coloredInsert',label:'Вкладыш цветной',value:3},
+    {key:'yellowInsert',label:'Вкладыш жёлтый',value:7},
     {key:'label',label:'Наклейка / термоэтикетка',value:2},
     {key:'tray',label:'Ложемент',value:12}
   ];
@@ -8055,8 +8056,8 @@ window.__salesActSetData = function(newData){
   function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
 
   // ---------- хранение ----------
-  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, packaging: state.packaging, packagingLinked: state.packagingLinked, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, packaging: state.packaging, packagingVersion: state.packagingVersion, packagingLinked: state.packagingLinked, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
@@ -8070,6 +8071,10 @@ window.__salesActSetData = function(newData){
     delete state.params.target; delete state.pmode.target;
     delete state.params.disc; delete state.pmode.disc;
     if(!state.packaging||typeof state.packaging!=='object')state.packaging={};
+    if((state.packagingVersion||0)<2){
+      ['box','chocolate'].forEach(function(key){if(state.packaging[key]===null)delete state.packaging[key];});
+      state.packagingVersion=2;
+    }
     PACKAGING_PARTS.forEach(function(part){if(state.packaging[part.key]===undefined)state.packaging[part.key]=part.value;});
     syncPackaging();
     Object.keys(state.rowParams).forEach(function(key){
