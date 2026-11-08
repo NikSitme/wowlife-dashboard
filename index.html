@@ -3973,7 +3973,32 @@ window.__salesActSetData = function(newData){
   .pr-items.pr-financial { border-collapse: separate; }
   .pr-items.pr-financial thead th { position: static; background: var(--pr-header-bg); }
   .pr-items.pr-financial td:first-child { background: var(--surface-1); }
-  .pr-tooltip { position: fixed; z-index: 10000; width: max-content; max-width: min(360px,calc(100vw - 24px)); padding: 14px 18px; border-radius: 12px; color: #fff; background: #263746; box-shadow: 0 8px 28px #0004; font-size: 15px; line-height: 1.5; pointer-events: none; white-space: normal; }
+  .pr { --pr-hover-bg: color-mix(in srgb, var(--s1) 22%, var(--surface-1)); }
+  .pr-table-toolbar { display: flex; padding: 12px 0 18px; }
+  .pr-table-toolbar .pr-search { width: min(560px,100%); }
+  .pr-table tbody > tr.row:hover > td,.pr-items.pr-financial tbody > tr:hover > td { background: var(--pr-hover-bg); }
+  .pr-financial .pr-group-start,.pr-financial .pr-group-head th+th { border-left: 6px solid var(--surface-1); }
+  .pr-financial > thead > tr > th:nth-child(2),.pr-financial > tbody > tr > td:nth-child(2) { border-left: 6px solid var(--surface-1); }
+  .pr-financial thead .pr-group-head th { background: var(--pr-header-bg); }
+  .pr-financial .pr-activation-heading { display: inline-block; min-width: 94px; text-transform: none; }
+  .pr-activation-heading small { display: block; font: inherit; text-transform: none; margin-top: 3px; }
+  .pr-collection-row > td { border-top: 6px solid var(--surface-1); background: var(--pr-header-bg); height: 60px; }
+  .pr-collection-name { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .pr-collection-row > td:first-child { background: var(--pr-header-bg); }
+  .pr-set-name { display: flex; gap: 12px; align-items: flex-start; }
+  .pr-set-name .pr-name-copy { min-width: 0; flex: 1; }
+  .pr-set-name .nm { font-weight: 600; }
+  .pr-folder-icon { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .pr-set-name > .pr-folder-icon { margin-top: 3px; }
+  .pr-folder-add,.pr-menu-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .pr-folder-add:hover,.pr-menu-button:hover,.pr-menu-button[aria-expanded="true"] { background: var(--pr-key-bg); color: var(--s1); }
+  .pr-menu-button { margin-left: auto; font-size: 26px; line-height: 1; }
+  .pr-folder-add:focus-visible,.pr-menu-button:focus-visible,.pr-rowmenu button:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+  .pr-rowmenu { position: fixed; z-index: 10000; min-width: 230px; padding: 8px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); box-shadow: 0 12px 32px #0003; }
+  .pr-rowmenu[hidden] { display: none; }
+  .pr-rowmenu button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 10px 14px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .pr-rowmenu button:hover { background: var(--pr-key-bg); }
+  .pr-rowmenu .pr-delete { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 14px; color: var(--bad); }
 
 </style>
 <div class="pr">
@@ -4000,12 +4025,10 @@ window.__salesActSetData = function(newData){
         <button type="button" data-v="sets" class="active" role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="2" width="11" height="6" rx="1.5"/><rect x="10" y="10" width="11" height="5" rx="1.5"/><rect x="10" y="18" width="11" height="5" rx="1.5"/><path d="M6 8v13h4M6 12.5h4"/></svg>Наборы</button>
         <button type="button" data-v="newsets" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 5V3h8v2M12 10v7M8.5 13.5h7"/></svg>Новые наборы</button>
       </div>
-      <button type="button" class="pr-btn pri" id="prNewSet">+ Новый набор</button>
       <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
     </div>
     <div class="pr-filters">
       <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
-      <label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название или партнёр" aria-label="Поиск по названию или партнёру"></span></label>
     </div>
     <div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div>
     <div class="pr-utilities">
@@ -4031,12 +4054,13 @@ window.__salesActSetData = function(newData){
     <p class="pr-status" id="prCommissionStatus">Структура цены — за одну активацию. Наценка = цена со скидкой − открытая цена; комиссия удерживается из открытой цены. Прогноз использования влияет на МП и ЧП.</p>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav>
     <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. Активируют конкретную услугу. В строке набора показано, сколько активаций услуг пришлось на сертификаты, купленные как этот набор; связь определяется по исходному товару в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; у 10 сертификатов типа «Набор» не заполнен исходный товар, ещё в одной карточке указаны разные наборы — эти 11 карточек не распределены по наборам. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
+    <div class="pr-table-toolbar"><label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label></div>
     <div class="pr-scroll" id="prTableWrap"></div>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг снизу" hidden></nav>
     <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
       <div class="pr-catalog-heading"><div><h2 id="prCatalogName">Добавить услуги</h2><p id="prCatalogCity"></p></div><button type="button" class="pr-btn" id="prCatalogClose" aria-label="Закрыть каталог услуг">Готово ×</button></div>
       <div class="pr-catalog-filters">
-        <label class="catalog-search">Поиск<input type="search" id="prCatalogSearch" data-catalog-filter="q" placeholder="Название услуги или партнёр"></label>
+        <label class="catalog-search">Поиск<input type="search" id="prCatalogSearch" data-catalog-filter="q" placeholder="Название, партнёр или ID"></label>
         <label>Категория<select id="prCatalogCategory" data-catalog-filter="category"></select></label>
         <label>Партнёр<select id="prCatalogPartner" data-catalog-filter="partner"></select></label>
         <label>Цена от, ₽<input type="number" data-catalog-filter="min" min="0" placeholder="Любая"></label>
@@ -4048,7 +4072,7 @@ window.__salesActSetData = function(newData){
       <div class="pr-catalog-results"><table><thead><tr><th>Услуга / категория</th><th>Партнёр</th><th>Цена, ₽</th><th>Партнёру, ₽</th><th>Добавление</th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
       <p class="pr-catalog-hint" id="prCatalogHint"></p>
     </dialog>
-    <div id="prTooltip" class="pr-tooltip" role="tooltip" hidden></div>
+    <div id="prRowMenu" class="pr-rowmenu" role="menu" aria-label="Действия с набором" hidden></div>
     <div class="pr-legend"><span><i style="background:var(--pr-good-bg)"></i>расходы покрыты</span><span><i style="background:var(--pr-warn-bg)"></i>расходы не покрыты</span><span><i style="background:var(--pr-bad-bg)"></i>убыток</span><span><i style="background:var(--pr-key-bg)"></i>главное</span></div>
   </div>
 
@@ -7927,7 +7951,7 @@ window.__salesActSetData = function(newData){
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
-<script src="./scripts/service-catalog.js?v=20261030-cost-coverage"></script>
+<script src="./scripts/service-catalog.js?v=20261108-id-search"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
@@ -8208,7 +8232,7 @@ window.__salesActSetData = function(newData){
   }
   function filtered(list){
     var q = state.q.trim().toLowerCase();
-    return list.filter(function(x){ return (state.city === "all" || x.city === state.city) && (!q || (x.name + " " + (x.partner || "") + " " + (x.items ? x.items.map(function(i){ return i.name + " " + i.partner; }).join(" ") : "")).toLowerCase().indexOf(q) >= 0); });
+    return list.filter(function(x){ return (state.city === "all" || x.city === state.city) && window.WowlifeServiceCatalog.matchesQuery(x,q); });
   }
   function visibleSets(){ return filtered(allSets().filter(function(s){ return state.view === "newsets" ? s.custom : !s.custom; })); }
   function sortBy(list, getters, selected){
@@ -8254,12 +8278,12 @@ window.__salesActSetData = function(newData){
     return [['summary','Итого, ₽',g.tip,key]];
   }
   function colCount(weight){return 4+(weight?1:0)+GROUPS.reduce(function(n,g){return n+visibleCols(g).length;},0);}
-  function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort;return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' data-tip="'+esc(tip+(sort?' Нажмите для сортировки; повторный клик меняет направление.':''))+'" tabindex="0">'+esc(label)+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
+  function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort,caption=label.indexOf('Активации')===0?'<span class="pr-activation-heading">Активации<small>12 мес.</small></span>':esc(label);return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' tabindex="0">'+caption+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
   function pricingHead(kind,weight){
     var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.','name','rowspan="2"',kind==='item');
     h+=headCell(kind==='set'?'Активации услуг из набора, 12 мес.':'Активации, 12 мес.','Количество уникальных активаций за '+(CRM&&CRM.activationPeriod||'период из таблицы')+'. '+(kind==='set'?'Активации конкретных услуг по сертификатам, купленным как этот набор; исходный набор определяется по товару сертификата в CRM.':'Все активации услуги: из любых наборов и отдельных сертификатов. Это не число выборов услуги только в данном наборе.'),'activations12m','rowspan="2"',kind==='item');
     if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.','weight','rowspan="2"',true);
-    GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'" data-tip="'+esc(g.tip)+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
+    GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
     h+=headCell('Целевая цена, ₽','Цена до дополнительной скидки, которая покрывает прогноз выплаты партнёру, переменные и постоянные расходы из блока «Цель». ЧП при этой цене равна нулю. Учитываются выбранный прогноз активаций и расходы строки.','target','rowspan="2" class="key"',kind==='item');
     h+=headCell(kind==='service'?'В наборах':'Проверка',kind==='service'?'Количество наборов, содержащих услугу.':'Число убыточных услуг и услуг без выплаты партнёру.',kind==='item'?null:kind==='service'?'use':'loss','rowspan="2"')+'</tr><tr class="pr-column-head">';
     GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],c[3],i===0?'class="pr-group-start"':'',kind==='item');});});return h+'</tr></thead>';
@@ -8309,32 +8333,51 @@ window.__salesActSetData = function(newData){
   // Nikita deferred the payout discrepancy for this specific tariff on 2026-11-06.
   function deferredReview(sid){return String(sid)==='42675';}
   function deferredReviewTag(sid){return deferredReview(sid)?'<span class="tag r">Проверка отложена</span>':'';}
+  function tableMarkup(html){return html.replace(/\s(?:title|data-tip)="[^"]*"/g,'');}
+  function folderIcon(add){return '<svg class="pr-folder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7h18"/>'+(add?'<path d="M12 11v6m-3-3h6"/>':'')+'</svg>';}
+  function collectionRow(kind){
+    var label=kind==='service'?'Все услуги':state.view==='newsets'?'Новые наборы':'Все наборы';
+    var h='<tr class="pr-collection-row"><td><div class="pr-collection-name"><span>'+label+'</span>'+(kind==='service'?'':'<button type="button" id="prNewSet" class="pr-folder-add" aria-label="Новый набор">'+folderIcon(true)+'</button>')+'</div></td><td></td>';
+    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+='<td'+(i===0?' class="pr-group-start"':'')+'></td>';});});return h+'<td></td><td></td></tr>';
+  }
+  function setName(s){return '<div class="pr-set-name">'+folderIcon(false)+'<span class="pr-name-copy"><span class="nm">'+esc(s.name)+(s.custom?'<span class="tag">мой</span>':s.edited?'<span class="tag">правки</span>':'')+'</span><span class="meta">'+s.city+' · услуг '+s.items.length+' · ID '+esc(s.id)+'</span></span><button type="button" class="pr-menu-button" data-set-menu="'+esc(s.id)+'" aria-label="Действия с набором '+esc(s.name)+'" aria-haspopup="menu" aria-controls="prRowMenu" aria-expanded="false">⋮</button></div>';}
+  var setMenuAnchor=null;
+  function closeSetMenu(restoreFocus){var menu=root.querySelector('#prRowMenu');if(menu)menu.hidden=true;if(setMenuAnchor){setMenuAnchor.setAttribute('aria-expanded','false');if(restoreFocus&&setMenuAnchor.isConnected)setMenuAnchor.focus();}setMenuAnchor=null;}
+  function toggleSetMenu(button){
+    var same=setMenuAnchor===button;closeSetMenu();if(same)return;
+    var id=button.getAttribute('data-set-menu'),set=allSets().find(function(s){return s.id===id;});if(!set)return;
+    var menu=root.querySelector('#prRowMenu');menu.innerHTML='<button type="button" role="menuitem" data-catalog-open="'+esc(id)+'"><span aria-hidden="true">＋</span>Добавить услугу</button><button type="button" role="menuitem" class="pr-delete" '+(set.custom?'data-del':'data-hide')+'="'+esc(id)+'"><span aria-hidden="true">⊘</span>Удалить набор</button>';
+    setMenuAnchor=button;button.setAttribute('aria-expanded','true');menu.hidden=false;
+    var box=button.getBoundingClientRect(),width=menu.offsetWidth,height=menu.offsetHeight;
+    menu.style.left=Math.max(8,Math.min(box.right-width,window.innerWidth-width-8))+'px';menu.style.top=(box.bottom+height+8<=window.innerHeight?box.bottom+6:Math.max(8,box.top-height-6))+'px';menu.querySelector('button').focus({preventScroll:true});
+  }
+  function rowParameterValue(raw,field,mode){if(raw==='')return field==='disc'?0:null;var value=Number(raw);if(!Number.isFinite(value)||value<0)return null;return field==='disc'&&mode==='pct'?Math.min(100,value):value;}
   function activationCell(row){
     var n=row.activations12m,tip=row.activationPeriod?(row.items?'Активации услуг из этого набора: ':'Все активации услуги: ')+row.activationPeriod:'Нет данных об активациях за период';
     return '<td data-activations-12m title="'+esc(tip)+'">'+(Number.isSafeInteger(n)?fmtN(n):'—')+'</td>';
   }
-  function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
+  function rowReset(key){return '<button type="button" class="pr-x" data-resetrow="'+esc(key)+'" aria-label="Вернуть скидку и расходы строки к параметрам прайса" title="Вернуть скидку и расходы строки к параметрам прайса">↺</button>';}
   function renderSets(){
     var sets=visibleSets(),calc={};sets.forEach(function(s){calc[s.id]=calcSet(s);});
     sets=sortBy(sets,financialGetters(calc,"id"));
-    var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>';
-    if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите «+ Новый набор» и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
+    closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('set')+'<tbody>'+collectionRow('set');
+    if(!sets.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(state.view==='newsets'?'Здесь будут новые наборы. Нажмите значок папки с «+» над списком и добавьте услуги.':CRM?'Ничего не найдено':'Загружаю наборы из CRM…')+'</td></tr>';
     sets.forEach(function(s){var r=calc[s.id],key='set:'+s.id,open=!!state.open[s.id];
-      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td><span class="nm">'+esc(s.name)+(s.custom?'<span class="tag">мой</span>':s.edited?'<span class="tag">правки</span>':'')+'</span><span class="meta">'+s.city+' · услуг '+s.items.length+'</span></td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'set'})+targetCell(r)+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
+      h+='<tr class="row set'+(open?' open':'')+'" data-id="'+esc(s.id)+'"><td>'+setName(s)+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'set'})+targetCell(r)+'<td>'+(r.loss?'<span class="tag r">'+r.loss+' убыт.</span>':'')+(r.noCost?'<span class="tag z">'+r.noCost+' без выплаты</span>':'')+rowReset(key)+'</td></tr>';
       if(open)h+='<tr class="pr-sub"><td colspan="'+colCount()+'">'+renderSetItems(s,r)+'</td></tr>';
-    });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
+    });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
   function renderSetItems(s,r){
     var w=r.w,key='set:'+s.id;
     var h='<div class="pr-subbox"><div class="hdr"><b>Состав</b><span class="muted">Расчёт от цены набора со скидкой: '+fmtR(r.price)+' · прогноз выплаты: '+fmtR(r.exp)+'</span>';
     if(s.custom)h+='<input class="in txt" data-setname="'+esc(s.id)+'" value="'+esc(s.name)+'" aria-label="Название нового набора">';
     h+='<span class="muted">'+(s.city==='СПб'?'Петербург':'Москва')+'</span>';
-    h+='<span class="pr-item-actions"><button type="button" class="pr-btn" data-dup="'+esc(s.id)+'">Дублировать</button><button type="button" class="pr-btn quiet" '+(s.custom?'data-del':'data-hide')+'="'+esc(s.id)+'">'+(s.custom?'Удалить':'Скрыть')+'</button></span></div>';
+    h+='<span class="pr-item-actions"><button type="button" class="pr-btn" data-dup="'+esc(s.id)+'">Дублировать</button></span></div>';
     h+='<table class="pr-table pr-items pr-financial">'+pricingHead('item',!!w)+'<tbody>';
     var itemCalc={};s.items.forEach(function(it){itemCalc[it.sid]=calcItem(s,it,r);});
     var itemGetters=financialGetters(itemCalc,'sid',s);itemGetters.weight=function(it){return w?w[it.sid]||0:null;};
     sortBy(s.items,itemGetters,state.itemSort).forEach(function(it){var c=itemCalc[it.sid];
-      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+'</span></td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
+      h+='<tr'+(deferredReview(it.sid)?' class="pr-review-deferred"':'')+'><td><span class="nm">'+esc(it.name)+deferredReviewTag(it.sid)+'</span><span class="meta">'+esc(it.partner||'Партнёр не указан')+' · ID '+esc(it.sid)+'</span></td>'+activationCell(it)+(w?'<td>'+fmtP(w[it.sid]||0)+'</td>':'')+financialCells(s,c,{key:key,kind:'item',sid:it.sid,itemName:it.name})+targetCell(c)+'<td><button type="button" class="pr-x" data-rm="'+esc(s.id)+'" data-sid="'+esc(it.sid)+'" title="Убрать услугу из набора">×</button></td></tr>';
     });
     return h+'</tbody></table><div class="pr-add-catalog"><button type="button" class="pr-btn pri" data-catalog-open="'+esc(s.id)+'">+ Добавить услуги</button><span class="muted">Все услуги города '+(s.city==='СПб'?'Петербург':'Москва')+' · фильтры по цене, категории и партнёру</span></div></div>';
   }
@@ -8344,11 +8387,11 @@ window.__salesActSetData = function(newData){
     if(serviceRevealId){var revealIndex=list.findIndex(function(s){return s.sid===serviceRevealId;});if(revealIndex>=0)servicePage=Math.floor(revealIndex/100)+1;serviceRevealId=null;}
     var page=window.WowlifeServiceCatalog.paginate(list,servicePage,100);servicePage=page.page;list=page.items;
     renderServicePagination(page);
-    var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>';
+    closeSetMenu();var h='<table class="pr-table pr-financial">'+pricingHead('service')+'<tbody>'+collectionRow('service');
     if(!list.length)h+='<tr><td colspan="'+colCount()+'" class="pr-empty">'+(CRM?'Ничего не найдено':'Загружаю услуги из CRM…')+'</td></tr>';
     list.forEach(function(s){var r=calc[s.sid],key='service:'+s.sid;
-      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'</td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
-    });root.querySelector('#prTableWrap').innerHTML=h+'</tbody></table>';
+      h+='<tr class="row'+(deferredReview(s.sid)?' pr-review-deferred':'')+'" data-sid="'+esc(s.sid)+'"><td>'+(s.custom?'<input class="in txt" data-sname="'+esc(s.sid)+'" value="'+esc(s.name)+'" aria-label="Название услуги"><input class="in txt" data-spartner="'+esc(s.sid)+'" value="'+esc(s.partner)+'" aria-label="Партнёр услуги">':'<span class="nm">'+esc(s.name)+deferredReviewTag(s.sid)+'</span><span class="meta">'+esc(s.partner||'Партнёр не указан')+' · '+s.city+(s.manualSource?' · ручные данные':'')+(s.fromComposition?' · из состава набора':'')+(s.basePrice===null?' · нет стоимости со скидкой':'')+'</span>')+'<span class="meta">ID '+esc(s.sid)+'</span></td>'+activationCell(s)+financialCells(s,r,{key:key,kind:'service'})+targetCell(r)+'<td>'+(u[s.sid]||'—')+rowReset(key)+(s.custom?'<button type="button" class="pr-x" data-sdel="'+esc(s.sid)+'" title="Удалить услугу">×</button>':'')+'</td></tr>';
+    });root.querySelector('#prTableWrap').innerHTML=tableMarkup(h+'</tbody></table>');
   }
 
   function renderServicePagination(page){
@@ -8360,7 +8403,7 @@ window.__salesActSetData = function(newData){
     root.querySelectorAll('[data-service-pagination]').forEach(function(nav){nav.hidden=false;nav.innerHTML=h;});
   }
   function changeServicePage(page,position){
-    servicePage=page;hideTip();renderServices();
+    servicePage=page;closeSetMenu();renderServices();
     var wrap=root.querySelector('#prTableWrap');wrap.scrollTop=0;
     var nav=root.querySelector('[data-service-pagination]');
     nav.querySelector('[data-service-page-select]').focus({preventScroll:true});
@@ -8369,7 +8412,7 @@ window.__salesActSetData = function(newData){
   function resetServicePage(){servicePage=1;root.querySelector('#prTableWrap').scrollTop=0;}
 
   function render(){
-    hideTip();
+    closeSetMenu();
     ensureParams();
     renderParams();
     root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-v") === state.view; b.classList.toggle("active", selected); b.setAttribute("aria-selected", String(selected)); b.setAttribute("aria-controls", "prTableWrap"); b.tabIndex = selected ? 0 : -1; });
@@ -8378,7 +8421,6 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var mode=b.getAttribute("data-m"),selected=mode===effectiveMode;b.hidden=services&&mode==="act";b.textContent=mode==="avg"?(services?"По параметрам":"Средняя"):mode==="act"?"По активациям":"Худшая";b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     var activation=root.querySelector("#prActivation");activation.disabled=state.mode==="max";activation.value=state.mode==="max"?100:state.params.act;
     root.querySelector("#prForecastHint").textContent=state.mode==="max"?(services?"100% использования · полная выплата партнёру":"100% использования · максимальная выплата из состава"):(services?"Указанный процент использования · выплата за услугу":"Указанный процент использования · выбранный прогноз выплаты");
-    root.querySelector("#prNewSet").hidden = state.view === "services";
     root.querySelector("#prNewService").hidden = state.view !== "services";
     root.querySelector("#prHowSets").hidden = state.view === "services"; root.querySelector("#prHowServices").hidden = state.view !== "services";
     root.querySelector("#prTitle").textContent = state.view === "newsets" ? "Новые наборы" : state.view === "sets" ? "Наборы" : "Услуги"; root.querySelector("#prTitleSub").textContent = state.view === "newsets" ? "создавайте и сравнивайте новые наборы" : state.view === "sets" ? "конструктор: состав, цена, маржа" : "прайс услуг: цена, выплата партнёру, маржа";
@@ -8415,9 +8457,8 @@ window.__salesActSetData = function(newData){
     var t = e.target, id;
     if(t.hasAttribute("data-service-page-select")){changeServicePage(Number(t.value),t.closest("[data-service-pagination]")===root.querySelector("[data-service-pagination]")?0:1);return;}
     if(t.hasAttribute("data-rp-key")){
-      if(t.value===""||!Number.isFinite(t.valueAsNumber)||t.valueAsNumber<0)return;
-      var key=t.getAttribute("data-rp-key"),field=t.getAttribute("data-rp-field"),mode=t.getAttribute("data-rp-mode"),value=t.valueAsNumber;
-      if(field==="disc"&&mode==="pct")value=Math.min(100,value);
+      var key=t.getAttribute("data-rp-key"),field=t.getAttribute("data-rp-field"),mode=t.getAttribute("data-rp-mode"),value=rowParameterValue(t.value,field,mode);
+      if(value===null||t.validity&&t.validity.badInput)return;
       if(field==="partner"&&key.indexOf("service:")===0){
         var sid=key.slice(8),svc=serviceOf(sid);if(!svc)return;
         var price=calcService(svc).price;if(mode==="pct"&&!(price>0))return;
@@ -8434,6 +8475,8 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("click", function(e){
     var t = e.target, b, id;
+    if((b=t.closest('[data-set-menu]'))){toggleSetMenu(b);return;}
+    if(t.closest('#prRowMenu'))closeSetMenu();
     if((b=t.closest("[data-service-page]"))){if(!b.disabled)changeServicePage(Number(b.getAttribute("data-service-page")),b.closest("[data-service-pagination]")===root.querySelector("[data-service-pagination]")?0:1);return;}
     if((b=t.closest("[data-prgroup]"))){var group=b.getAttribute("data-prgroup");state.collapsed[group]=!state.collapsed[group];save();render();return;}
     if((b=t.closest("[data-resetrow]"))){delete state.rowParams[b.getAttribute("data-resetrow")];save();render();return;}
@@ -8450,7 +8493,7 @@ window.__salesActSetData = function(newData){
     if ((b=t.closest('th[data-item-s]'))){var itemKey=b.getAttribute('data-item-s');if(state.itemSort.k===itemKey)state.itemSort.d=-state.itemSort.d;else state.itemSort={k:itemKey,d:itemKey==='name'?1:-1};save();renderSets();return;}
     if ((b = t.closest("th[data-s]"))){ resetServicePage(); var k = b.getAttribute("data-s"); if (state.sort.k === k) state.sort.d = -state.sort.d; else state.sort = { k: k, d: (k === "name" || k === "partner" || k === "city") ? 1 : -1 }; save(); render(); return; }
     if ((b = t.closest("[data-dup]"))){ id = b.getAttribute("data-dup"); var src = allSets().filter(function(x){ return x.id === id; })[0]; if (!src) return; var d = { id: newId(), name: src.name + " (копия)", city: src.city, price: src.price, items: src.items.map(function(i){ return i.sid; }) }; src.items.forEach(function(i){ if (!state.customServices[i.sid] && !(CRM && CRM.catalog[i.sid])) state.customServices[i.sid] = { sid: i.sid, name: i.name, partner: i.partner, city: src.city, price: i.price, cost: i.cost }; }); if(state.rowParams["set:"+id])state.rowParams["set:"+d.id]=JSON.parse(JSON.stringify(state.rowParams["set:"+id])); state.customSets.unshift(d); state.view = "newsets"; state.city = src.city; state.q = ""; state.open = {}; state.open[d.id] = true; save(); render(); return; }
-    if ((b = t.closest("[data-del]"))){ id = b.getAttribute("data-del"); state.customSets = state.customSets.filter(function(x){ return x.id !== id; }); delete state.open[id]; save(); render(); return; }
+    if ((b = t.closest("[data-del]"))){ id = b.getAttribute("data-del"); state.customSets = state.customSets.filter(function(x){ return x.id !== id; }); delete state.open[id]; delete state.rowParams["set:"+id]; save(); render(); return; }
     if ((b = t.closest("[data-hide]"))){ id = b.getAttribute("data-hide"); ov(id).hidden = true; delete state.open[id]; save(); render(); return; }
     if ((b = t.closest("[data-sdel]"))){ id = b.getAttribute("data-sdel"); delete state.customServices[id]; delete state.sov[id]; state.customSets.forEach(function(s){ s.items = (s.items || []).filter(function(x){ return x !== id; }); }); save(); render(); return; }
     if ((b = t.closest("[data-rm]"))){ id = b.getAttribute("data-rm"); var sid2 = b.getAttribute("data-sid"); var cs4 = findCustomSet(id); if (cs4) cs4.items = cs4.items.filter(function(x){ return x !== sid2; }); else { var o = ov(id); if (o.added && o.added.indexOf(sid2) >= 0) o.added = o.added.filter(function(x){ return x !== sid2; }); else { o.removed = o.removed || {}; o.removed[sid2] = 1; } } save(); render(); return; }
@@ -8503,22 +8546,16 @@ window.__salesActSetData = function(newData){
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
   }
-  var tipTarget=null;
-  function hideTip(){var tip=root.querySelector('#prTooltip');if(tip)tip.hidden=true;if(tipTarget)tipTarget.removeAttribute('aria-describedby');tipTarget=null;}
-  function showTip(target){
-    var th=target.closest('th[data-tip]');if(!th)return;
-    var tip=root.querySelector('#prTooltip');tip.textContent=th.getAttribute('data-tip');tip.hidden=false;
-    if(tipTarget)tipTarget.removeAttribute('aria-describedby');tipTarget=target;target.setAttribute('aria-describedby','prTooltip');
-    var box=th.getBoundingClientRect(),width=tip.offsetWidth,height=tip.offsetHeight;
-    tip.style.left=Math.max(12,Math.min(box.left+(box.width-width)/2,window.innerWidth-width-12))+'px';
-    tip.style.top=(box.bottom+height+12<window.innerHeight?box.bottom+8:Math.max(12,box.top-height-8))+'px';
-  }
-  root.addEventListener('mouseover',function(e){var th=e.target.closest('th[data-tip]');if(th&&(!e.relatedTarget||!th.contains(e.relatedTarget)))showTip(th);});
-  root.addEventListener('mouseout',function(e){var th=e.target.closest('th[data-tip]');if(th&&(!e.relatedTarget||!th.contains(e.relatedTarget)))hideTip();});
-  root.addEventListener('focusin',function(e){if(e.target.closest('th[data-tip]'))showTip(e.target);});
-  root.addEventListener('focusout',hideTip);
-  root.addEventListener('scroll',hideTip,true);
-  root.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();var th=e.target.closest('th[data-s],th[data-item-s]');if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();th.click();}});
+  document.addEventListener('click',function(e){if(!e.target.closest('#prRowMenu,[data-set-menu]'))closeSetMenu();});
+  root.addEventListener('scroll',function(){closeSetMenu();},true);
+  root.addEventListener('keydown',function(e){
+    if(e.key==='Escape')closeSetMenu(true);
+    var input=e.target.closest('input[data-rp-key]');
+    if(input&&e.key==='Enter'){e.preventDefault();input.dispatchEvent(new Event('change',{bubbles:true}));return;}
+    var menu=e.target.closest('#prRowMenu');
+    if(menu&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();var buttons=Array.from(menu.querySelectorAll('button')),index=buttons.indexOf(e.target);buttons[(index+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();return;}
+    var th=e.target.closest('th[data-s],th[data-item-s]');if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();th.click();}
+  });
 
 
 

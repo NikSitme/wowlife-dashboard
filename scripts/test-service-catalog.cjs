@@ -41,3 +41,10 @@ assert.equal((html.match(/<nav class="pr-pagination"/g)||[]).length,2,'Paginatio
 const data=JSON.parse(fs.readFileSync('data/pricing-categories.json','utf8'));
 assert(data.taxonomy.length>300);assert.equal(C.classifier(data.taxonomy)('Аренда катера Regal 2660'),'Водные развлечения');
 console.log('PASS service catalog: city isolation, combined filters, price boundaries, categories, uncapped results, syntax and city selector removal');
+
+const search=require("./service-catalog").matchesQuery;
+assert(search({sid:"30",name:"Example"},"30"));
+assert(search({id:"40",items:[{sid:"30",name:"Example"}]},"ID: 30"));
+assert(!search({sid:"130",name:"30 minutes"},"30"));
+assert(search({sid:"130",name:"30 minutes"},"minutes"));
+assert(search({id:"u123",name:"Custom"},"u123"));

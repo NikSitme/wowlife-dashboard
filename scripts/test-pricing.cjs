@@ -45,10 +45,10 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,ensureParams,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='';
-const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
+const context={Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
@@ -77,7 +77,8 @@ t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,200
 set=t.allSets()[0];calc=t.calcSet(set);
 const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
 assert.equal((cells.match(/<td /g)||[]).length+4,t.colCount());
-assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,39);
+assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,0);
+assert(t.pricingHead('set').includes('Активации<small>12 мес.</small>'));
 t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+4,t.colCount());
 t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
 t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
@@ -172,3 +173,14 @@ assert.equal(t.calcSet(t.allSets()[0]).target,null,'partial set costs cannot pro
 assert.equal(t.calcService(t.serviceOf('unknown')).target,null);
 assert.notEqual(t.calcService(t.serviceOf('known')).target,null,'known payout does not require a known commission to calculate coverage');
 console.log('PASS coverage edge cases: mixed costs, discounts, percent payout, unknown and partial costs, impossible economics');
+
+// Clearing a row discount commits zero even if the inherited discount is nonzero.
+assert.equal(t.rowParameterValue("20","disc","pct"),20);
+assert.equal(t.rowParameterValue("","disc","pct"),0);
+assert.equal(t.rowParameterValue("","pack","rub"),null);
+assert.equal(t.rowParameterValue("-1","disc","pct"),null);
+const discountParams={act:100,acq:0,tax:0,pack:0,logistics:0,disc:50,fixed:0};
+near(model.calculate(5979,1000,model.parameters(discountParams,{}, {disc:{mode:"pct",value:t.rowParameterValue("20","disc","pct")}})).price,4783.2);
+near(model.calculate(5979,1000,model.parameters(discountParams,{}, {disc:{mode:"pct",value:t.rowParameterValue("","disc","pct")}})).price,5979);
+assert(!/title=|data-tip=/.test(t.tableMarkup(t.financialCells(set,calc,{key:"set:x",kind:"set"}))));
+assert.equal((t.collectionRow("set").match(/<td/g)||[]).length,t.colCount());
