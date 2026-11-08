@@ -92,7 +92,7 @@ t.state.rowParams['service:forecast']={partner:{mode:'rub',value:1200}};near(t.c
 t.state.mode='avg';near(t.calcService(svc).partnerForecast,720);near(t.calcService(svc).mpAct,1280);
 t.state.sort.k='m100';t.ensureParams();assert.equal(t.state.sort.k,'m');
 assert(!html.includes("['m100'"));assert(!html.includes('Худший, %'));assert(!html.includes('Маржа при 100% (набор'));
-const modeMarkup=html.slice(html.indexOf('id="prModeGroup"'),html.indexOf('<div class="pr-utilities">'));
+const modeMarkup=html.slice(html.indexOf('id="prModeGroup"'),html.indexOf('<div class="pr-scroll"',html.indexOf('id="prModeGroup"')));
 assert(modeMarkup.includes('id="prActivation"')&&modeMarkup.includes('id="prMode"'),'Activation and forecast must share one control group');
 assert(!html.includes('root.querySelector("#prModeGroup").hidden'),'Forecast is visible in every pricing view');
 console.log('PASS pricing: discounts, expenses, target price, defaults, migration, row inheritance, CRM proposals, forecasts, composition and headers');

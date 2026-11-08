@@ -3974,8 +3974,10 @@ window.__salesActSetData = function(newData){
   .pr-items.pr-financial thead th { position: static; background: var(--pr-header-bg); }
   .pr-items.pr-financial td:first-child { background: var(--surface-1); }
   .pr { --pr-hover-bg: color-mix(in srgb, var(--s1) 22%, var(--surface-1)); }
-  .pr-table-toolbar { display: flex; padding: 12px 0 18px; }
-  .pr-table-toolbar .pr-search { width: min(560px,100%); }
+  .pr-table-controls { display: grid; gap: 18px; margin: 18px 0 16px; }
+  .pr-table-controls .pr-filters { margin: 0; gap: 18px; }
+  .pr-table-controls .pr-calculation { margin: 0; padding: 0; border: 0; }
+  .pr-table-controls .pr-search { width: min(560px,100%); }
   .pr-table tbody > tr.row:hover > td,.pr-items.pr-financial tbody > tr:hover > td { background: var(--pr-hover-bg); }
   .pr-financial .pr-group-start,.pr-financial .pr-group-head th+th { border-left: 6px solid var(--surface-1); }
   .pr-financial > thead > tr > th:nth-child(2),.pr-financial > tbody > tr > td:nth-child(2) { border-left: 6px solid var(--surface-1); }
@@ -4027,10 +4029,6 @@ window.__salesActSetData = function(newData){
       </div>
       <button type="button" class="pr-btn pri" id="prNewService" hidden>+ Новая услуга</button>
     </div>
-    <div class="pr-filters">
-      <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
-    </div>
-    <div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div>
     <div class="pr-utilities">
       <button type="button" class="pr-btn" id="prCrm" title="Заново загрузить состав наборов, автовыгрузку и ручные дополнения из таблицы «Никита»">Обновить данные</button>
       <button type="button" class="pr-btn" id="prCsv">Экспорт CSV</button>
@@ -4038,7 +4036,7 @@ window.__salesActSetData = function(newData){
     </div>
     <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
-      <div><b>Что сделать</b><span>Открыть набор кликом. Проверить состав и сравнить свою цену с целевой ценой покрытия расходов. Собрать новый набор: вкладка «Новые наборы» → «+ Новый набор» → название, услуги из каталога города. В каталоге доступны фильтры по цене, категории и партнёру. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
+      <div><b>Что сделать</b><span>Открыть набор кликом. Проверить состав и сравнить свою цену с целевой ценой покрытия расходов. Собрать новый набор: вкладка «Новые наборы» → значок папки с «+» → название, услуги из каталога города. В каталоге доступны фильтры по цене, категории и партнёру. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
       <div><b>Что получаем</b><span>По каждому набору: выплата партнёру, МП, маржа, чистая прибыль и целевая цена покрытия расходов — только по выбранному прогнозу.</span></div>
       <div><b>Зачем</b><span>Пересобрать наборы и цены так, чтобы каждый набор был маржинальным, даже если сертификат точно используют.</span></div>
       <div><b>Почему так</b><span>Покупатель платит цену набора, какую услугу ни выберут, — поэтому маржа услуги считается от цены набора. Какую выберут, заранее неизвестно — берём среднюю, худшую или по частоте активаций партнёров.</span></div>
@@ -4054,7 +4052,9 @@ window.__salesActSetData = function(newData){
     <p class="pr-status" id="prCommissionStatus">Структура цены — за одну активацию. Наценка = цена со скидкой − открытая цена; комиссия удерживается из открытой цены. Прогноз использования влияет на МП и ЧП.</p>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav>
     <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. Активируют конкретную услугу. В строке набора показано, сколько активаций услуг пришлось на сертификаты, купленные как этот набор; связь определяется по исходному товару в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; у 10 сертификатов типа «Набор» не заполнен исходный товар, ещё в одной карточке указаны разные наборы — эти 11 карточек не распределены по наборам. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
-    <div class="pr-table-toolbar"><label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label></div>
+    <div class="pr-table-controls"><div class="pr-filters">
+      <div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
+    <label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label></div><div class="pr-calculation" id="prModeGroup"><div class="pr-filter-group"><label class="pr-filter-label" for="prActivation">Сколько сертификатов используют</label><div class="pr-activation-field"><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div><div class="pr-filter-group"><span class="pr-filter-label">Прогноз</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру" title="Как прогнозировать выплату партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Худшая</button></div></div><span id="prForecastHint" class="muted"></span></div></div>
     <div class="pr-scroll" id="prTableWrap"></div>
     <nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг снизу" hidden></nav>
     <dialog id="prCatalog" class="pr-catalog" aria-labelledby="prCatalogName">
@@ -8418,7 +8418,7 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prView").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-v") === state.view; b.classList.toggle("active", selected); b.setAttribute("aria-selected", String(selected)); b.setAttribute("aria-controls", "prTableWrap"); b.tabIndex = selected ? 0 : -1; });
     root.querySelector("#prCity").querySelectorAll("button").forEach(function(b){ var selected = b.getAttribute("data-c") === state.city; b.classList.toggle("active", selected); b.setAttribute("aria-pressed", String(selected)); });
     var services=state.view==="services",effectiveMode=services&&state.mode==="act"?"avg":state.mode;
-    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var mode=b.getAttribute("data-m"),selected=mode===effectiveMode;b.hidden=services&&mode==="act";b.textContent=mode==="avg"?(services?"По параметрам":"Средняя"):mode==="act"?"По активациям":"Худшая";b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
+    root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var mode=b.getAttribute("data-m"),selected=mode===effectiveMode;b.hidden=services&&mode==="act";b.title=mode==="max"?(services?"МП и ЧП при 100% использования сертификата.":"100% использования и максимальная выплата по составу."):mode==="act"?"МП и ЧП с учётом частоты активаций и выбранного % использования.":(services?"МП и ЧП с выбранным % использования.":"Средняя выплата по составу и выбранный % использования.");b.textContent=mode==="avg"?(services?"По параметрам":"Средняя"):mode==="act"?"По активациям":"Худшая";b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     var activation=root.querySelector("#prActivation");activation.disabled=state.mode==="max";activation.value=state.mode==="max"?100:state.params.act;
     root.querySelector("#prForecastHint").textContent=state.mode==="max"?(services?"100% использования · полная выплата партнёру":"100% использования · максимальная выплата из состава"):(services?"Указанный процент использования · выплата за услугу":"Указанный процент использования · выбранный прогноз выплаты");
     root.querySelector("#prNewService").hidden = state.view !== "services";
