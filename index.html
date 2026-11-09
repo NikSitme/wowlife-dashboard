@@ -3844,13 +3844,13 @@ window.__salesActSetData = function(newData){
   .pr-catalog-results table { width:100%; border-collapse:separate; border-spacing:0; font-size:15px; }
   .pr-catalog-results th { position:sticky; top:0; background:var(--surface-2); z-index:1; text-align:left; font-size:13px; white-space:nowrap; }
   .pr-catalog-results td,.pr-catalog-results th { padding:13px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
-  .pr-catalog-results td:first-child { width:40%; }
+  .pr-catalog-results td:first-child { width:35%; }
   .pr-catalog-results .meta { display:block; font-size:13px; color:var(--text-muted); margin-top:6px; }
   .pr-catalog-results .num { white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums; }
   .pr-catalog-results button { white-space:nowrap; font-size:14px; min-height:38px; padding:8px 12px; }
   .pr-catalog-results button:disabled { background:var(--pr-good-bg); color:var(--text-secondary); border-color:transparent; cursor:default; }
   .pr-catalog-hint { font-size:13px; line-height:1.4; color:var(--text-muted); margin:14px 0 0; }
-  @media(max-width:700px) { .pr-catalog{padding:18px;max-height:94vh;} .pr-catalog-heading h2{font-size:20px;} .pr-catalog-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;} .pr-catalog-filters .catalog-search{grid-column:1/-1;} .pr-catalog-results table{min-width:680px;} }
+  @media(max-width:700px) { .pr-catalog{padding:18px;max-height:94vh;} .pr-catalog-heading h2{font-size:20px;} .pr-catalog-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;} .pr-catalog-filters .catalog-search{grid-column:1/-1;} .pr-catalog-results table{min-width:780px;} }
   .pr-btn { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
   .pr-btn.pri { background: var(--s1); border-color: var(--s1); color: #fff; }
   .pr-btn.soft { border-color: transparent; background: var(--pr-key-bg); color: var(--s1); }
@@ -4127,7 +4127,7 @@ window.__salesActSetData = function(newData){
         <button type="button" class="pr-btn" id="prCatalogReset">Сбросить фильтры</button>
       </div>
       <p class="pr-catalog-count" id="prCatalogCount" role="status" aria-live="polite"></p>
-      <div class="pr-catalog-results"><table><thead><tr><th>Услуга / категория</th><th>Партнёр</th><th>Цена, ₽</th><th>Партнёру, ₽</th><th>Добавление</th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
+      <div class="pr-catalog-results"><table><thead><tr><th>Услуга / категория</th><th>Партнёр</th><th class="num"><span class="pr-activation-heading">Активации<small>12 мес.</small></span></th><th>Цена, ₽</th><th>Партнёру, ₽</th><th>Добавление</th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
       <p class="pr-catalog-hint" id="prCatalogHint"></p>
     </dialog>
     <div id="prRowMenu" class="pr-rowmenu" role="menu" aria-label="Действия с набором" hidden></div>
@@ -8660,7 +8660,7 @@ window.__salesActSetData = function(newData){
     var set=catalogSet();if(!set)return;var services=catalogServices(),selection=Object.assign({},catalogSelection);if(selection.partner==='__missing__'){services=services.filter(function(s){return !s.partner;});selection.partner='';}
     var list=window.WowlifeServiceCatalog.filter(services,set.city,selection),have={};set.items.forEach(function(i){have[i.sid]=true;});
     root.querySelector('#prCatalogCount').textContent='Найдено: '+list.length+' · в наборе: '+set.items.length;
-    root.querySelector('#prCatalogRows').innerHTML=list.length?list.map(function(s){return '<tr><td><b>'+esc(s.name)+'</b><span class="meta">'+esc(s.category)+'</span></td><td>'+esc(s.partner||'Партнёр не указан')+'</td><td class="num">'+fmtR(s.price)+'</td><td class="num">'+(knownCost(s)?fmtR(s.cost):'—')+'</td><td><button type="button" class="pr-btn '+(have[s.sid]?'':'pri')+'" data-catalog-pick="'+esc(s.sid)+'"'+(have[s.sid]?' disabled':'')+' aria-label="'+esc((have[s.sid]?'Уже в наборе: ':'Добавить: ')+s.name)+'">'+(have[s.sid]?'✓ В наборе':'+ Добавить')+'</button></td></tr>';}).join(''):'<tr><td colspan="5" class="pr-empty">По этим фильтрам услуг нет. Измените условия или сбросьте фильтры.</td></tr>';
+    root.querySelector('#prCatalogRows').innerHTML=list.length?list.map(function(s){return '<tr><td><b>'+esc(s.name)+'</b><span class="meta">'+esc(s.category)+'</span></td><td>'+esc(s.partner||'Партнёр не указан')+'</td><td class="num" data-activations-12m>'+ (Number.isSafeInteger(s.activations12m)?fmtN(s.activations12m):'—')+'</td><td class="num">'+fmtR(s.price)+'</td><td class="num">'+(knownCost(s)?fmtR(s.cost):'—')+'</td><td><button type="button" class="pr-btn '+(have[s.sid]?'':'pri')+'" data-catalog-pick="'+esc(s.sid)+'"'+(have[s.sid]?' disabled':'')+' aria-label="'+esc((have[s.sid]?'Уже в наборе: ':'Добавить: ')+s.name)+'">'+(have[s.sid]?'✓ В наборе':'+ Добавить')+'</button></td></tr>';}).join(''):'<tr><td colspan="6" class="pr-empty">По этим фильтрам услуг нет. Измените условия или сбросьте фильтры.</td></tr>';
   }
   async function openCatalog(id){
     if(catalogSelection.id!==id)catalogSelection={id:id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};
