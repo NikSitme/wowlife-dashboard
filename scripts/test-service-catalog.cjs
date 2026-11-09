@@ -32,6 +32,35 @@ assert.deepEqual(C.paginate([],9),{items:[],page:1,pages:1,total:0,from:0,to:0})
 const missingPrice=[{sid:'unknown',name:'Без цены',city:'Мск',price:null},{sid:'known',name:'С ценой',city:'Мск',price:100}];
 assert.deepEqual(C.filter(missingPrice,'Мск',{sort:'price-asc'}).map(s=>s.sid),['known','unknown']);
 assert.deepEqual(C.filter(missingPrice,'Мск',{max:200}).map(s=>s.sid),['known']);
+// All picker columns sort the complete filtered catalog; zero is data, not missing.
+const sortRows=[
+  {sid:'10',city:'Мск',name:'Услуга 10',category:'Яхты',partner:'Я 10',activations12m:10,price:100,cost:80,inSet:true},
+  {sid:'2',city:'Мск',name:'Услуга 2',category:'Арт 10',partner:'А 10',activations12m:2,price:20,cost:10,inSet:false},
+  {sid:'1',city:'Мск',name:'Услуга 1',category:'Арт 2',partner:'А 2',activations12m:0,price:0,cost:0,costKnown:true,inSet:false},
+  {sid:'missing',city:'Мск',name:'Пропуск',category:'',partner:'',activations12m:null,price:null,cost:0,costKnown:false,inSet:false},
+  {sid:'other-city',city:'СПб',name:'А',category:'А',partner:'А',activations12m:999,price:999,cost:999,inSet:true}
+];
+sortRows.forEach(Object.freeze);Object.freeze(sortRows);
+const sortExpectations={
+  name:{asc:['missing','1','2','10'],desc:['10','2','1','missing']},
+  category:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  partner:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  activations:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  price:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  cost:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  inSet:{asc:['missing','1','2','10'],desc:['10','missing','1','2']}
+};
+for(const [key,directions] of Object.entries(sortExpectations))for(const [dir,expected] of Object.entries(directions)){
+  assert.deepEqual(C.filter(sortRows,'Мск',{sort:key+'-'+dir}).map(s=>s.sid),expected,key+' '+dir);
+}
+assert.deepEqual(C.filter(sortRows,'Мск',{sort:'activations-desc',min:0,max:20,q:'услуга'}).map(s=>s.sid),['2','1'],'Sorting respects the combined city, query and price filters');
+assert.deepEqual(C.filter(sortRows,'Мск',{sort:'cost-desc',category:'Арт 2',partner:'А 2'}).map(s=>s.sid),['1']);
+const ties=[{sid:'10',city:'Мск',name:'Услуга',price:10},{sid:'2',city:'Мск',name:'Услуга',price:10}];
+for(const dir of ['asc','desc'])assert.deepEqual(C.filter(ties,'Мск',{sort:'price-'+dir}).map(s=>s.sid),['2','10'],'Stable numeric ID tie-break in either direction');
+assert.deepEqual(C.sortSpec('name'),{key:'name',dir:'asc'});
+assert.deepEqual(C.sortSpec('activations-desc'),{key:'activations',dir:'desc'});
+assert.deepEqual(C.sortSpec('invalid'),{key:'name',dir:'asc'});
+assert.deepEqual(sortRows.map(s=>s.sid),['10','2','1','missing','other-city'],'Sorting never mutates the source array or records');
 const fs=require('node:fs'),vm=require('node:vm'),html=fs.readFileSync('index.html','utf8');
 for(const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)){if(m[1].includes('application/json'))JSON.parse(m[2]);else if(m[2].trim())new vm.Script(m[2]);}
 assert(!html.includes('data-setcity='),'No second city selector inside set');
@@ -53,7 +82,7 @@ for(const [sid,city,category] of [['21514','Мск','СПА, массаж, ба�
   assert.equal(figmaClassify({sid,city}),category,sid);
 }
 assert(!data.categories.some(c=>['Прочее','Романтические впечатления','Семейный отдых','Без категории','Наборы и сертификат на сумму'].includes(c)),'Only the 12 service categories from the Figma board');
-console.log('PASS service catalog: city isolation, combined filters, price boundaries, categories, uncapped results, syntax and city selector removal');
+console.log('PASS service catalog: all 7 sort keys in both directions, missing/zero values, stable ties, city isolation, combined filters, Figma categories, uncapped results and inline syntax');
 
 const search=require("./service-catalog").matchesQuery;
 assert(search({sid:"30",name:"Example"},"30"));

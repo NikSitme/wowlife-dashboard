@@ -3853,6 +3853,11 @@ window.__salesActSetData = function(newData){
   .pr-catalog-results .num { white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums; }
   .pr-catalog-results button { white-space:nowrap; font-size:14px; min-height:38px; padding:8px 12px; }
   .pr-catalog-results button:disabled { background:var(--pr-good-bg); color:var(--text-secondary); border-color:transparent; cursor:default; }
+  .pr-catalog-results .pr-catalog-sort { display:inline-flex; align-items:center; gap:5px; border:0; border-radius:4px; background:transparent; color:inherit; font:inherit; letter-spacing:inherit; text-transform:inherit; min-height:30px; padding:0; cursor:pointer; }
+  .pr-catalog-results .pr-catalog-sort:hover,.pr-catalog-results .pr-catalog-sort.is-active { color:var(--s1); }
+  .pr-catalog-results .pr-catalog-sort:focus-visible { outline:2px solid var(--s1); outline-offset:3px; }
+  .pr-catalog-sort-arrow { font-size:12px; opacity:.65; }
+  .pr-catalog-sort.is-active .pr-catalog-sort-arrow { opacity:1; }
   .pr-catalog-hint { font-size:13px; line-height:1.4; color:var(--text-muted); margin:14px 0 0; }
   @media(max-width:700px) { .pr-catalog{padding:18px;max-height:94vh;} .pr-catalog-heading h2{font-size:20px;} .pr-catalog-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;} .pr-catalog-filters .catalog-search{grid-column:1/-1;} .pr-catalog-results table{min-width:780px;} }
   .pr-btn { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
@@ -4127,11 +4132,11 @@ window.__salesActSetData = function(newData){
         <label>Партнёр<select id="prCatalogPartner" data-catalog-filter="partner"></select></label>
         <label>Цена от, ₽<input type="number" data-catalog-filter="min" min="0" placeholder="Любая"></label>
         <label>Цена до, ₽<input type="number" data-catalog-filter="max" min="0" placeholder="Любая"></label>
-        <label>Порядок<select data-catalog-filter="sort"><option value="name">По названию</option><option value="price-asc">Сначала дешевле</option><option value="price-desc">Сначала дороже</option></select></label>
+        <label>Порядок<select id="prCatalogSort" data-catalog-filter="sort"><option value="name">Услуга: А → Я</option><option value="name-desc">Услуга: Я → А</option><option value="category-asc">Категория: А → Я</option><option value="category-desc">Категория: Я → А</option><option value="partner-asc">Партнёр: А → Я</option><option value="partner-desc">Партнёр: Я → А</option><option value="activations-desc">Активации: сначала больше</option><option value="activations-asc">Активации: сначала меньше</option><option value="price-asc">Цена: сначала дешевле</option><option value="price-desc">Цена: сначала дороже</option><option value="cost-asc">Партнёру: сначала меньше</option><option value="cost-desc">Партнёру: сначала больше</option><option value="inSet-desc">Сначала в наборе</option><option value="inSet-asc">Сначала доступные для добавления</option></select></label>
         <button type="button" class="pr-btn" id="prCatalogReset">Сбросить фильтры</button>
       </div>
       <p class="pr-catalog-count" id="prCatalogCount" role="status" aria-live="polite"></p>
-      <div class="pr-catalog-results"><table><thead><tr><th>Услуга / категория</th><th>Партнёр</th><th class="num"><span class="pr-activation-heading">Активации<small>12 мес.</small></span></th><th>Цена, ₽</th><th>Партнёру, ₽</th><th>Добавление</th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
+      <div class="pr-catalog-results"><table><thead><tr><th scope="col" aria-sort="none"><button type="button" class="pr-catalog-sort" data-catalog-sort="name">Услуга<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button> / <button type="button" class="pr-catalog-sort" data-catalog-sort="category">категория<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="pr-catalog-sort" data-catalog-sort="partner">Партнёр<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none" class="num"><button type="button" class="pr-catalog-sort" data-catalog-sort="activations"><span class="pr-activation-heading">Активации<small>12 мес.</small></span><span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="pr-catalog-sort" data-catalog-sort="price">Цена, ₽<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="pr-catalog-sort" data-catalog-sort="cost">Партнёру, ₽<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="pr-catalog-sort" data-catalog-sort="inSet">Добавление<span class="pr-catalog-sort-arrow" aria-hidden="true">↕</span></button></th></tr></thead><tbody id="prCatalogRows"></tbody></table></div>
       <p class="pr-catalog-hint" id="prCatalogHint"></p>
     </dialog>
     <div id="prRowMenu" class="pr-rowmenu" role="menu" aria-label="Действия с набором" hidden></div>
@@ -8017,7 +8022,7 @@ window.__salesActSetData = function(newData){
 
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
-<script src="./scripts/service-catalog.js?v=20261108-figma-categories"></script>
+<script src="./scripts/service-catalog.js?v=picker-sorting-20261109"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
@@ -8660,9 +8665,21 @@ window.__salesActSetData = function(newData){
     root.querySelector('#prCatalogCity').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · '+services.length+' услуг в каталоге';
     root.querySelector('#prCatalogHint').textContent=!catalogClassify?'Загружаю категории…':catalogCategoryOrder.length?'Категории — по структуре Figma.':'Категории недоступны. Доступен поиск по названию, партнёру и ID.';
   }
+  function catalogSortUpdate(){
+    var spec=window.WowlifeServiceCatalog.sortSpec(catalogSelection.sort),labels={name:'Услуга',category:'Категория',partner:'Партнёр',activations:'Активации',price:'Цена',cost:'Партнёру',inSet:'Добавление'};
+    root.querySelector('#prCatalogSort').value=spec.key==='name'&&spec.dir==='asc'?'name':spec.key+'-'+spec.dir;
+    root.querySelectorAll('#prCatalog th').forEach(function(th){th.setAttribute('aria-sort','none');});
+    root.querySelectorAll('[data-catalog-sort]').forEach(function(button){
+      var key=button.getAttribute('data-catalog-sort'),active=key===spec.key,next=active?(spec.dir==='asc'?'desc':'asc'):(['name','category','partner'].indexOf(key)>=0?'asc':'desc');
+      button.classList.toggle('is-active',active);button.querySelector('.pr-catalog-sort-arrow').textContent=active?(spec.dir==='asc'?'↑':'↓'):'↕';
+      button.setAttribute('aria-label',labels[key]+': сортировать '+(next==='asc'?'по возрастанию':'по убыванию'));
+      if(active)button.closest('th').setAttribute('aria-sort',spec.dir==='asc'?'ascending':'descending');
+    });
+  }
   function catalogResults(){
-    var set=catalogSet();if(!set)return;var services=catalogServices(),selection=Object.assign({},catalogSelection);if(selection.partner==='__missing__'){services=services.filter(function(s){return !s.partner;});selection.partner='';}
-    var list=window.WowlifeServiceCatalog.filter(services,set.city,selection),have={};set.items.forEach(function(i){have[i.sid]=true;});
+    var set=catalogSet();if(!set)return;var have={};set.items.forEach(function(i){have[i.sid]=true;});
+    var services=catalogServices().map(function(s){return Object.assign({},s,{inSet:!!have[s.sid]});}),selection=Object.assign({},catalogSelection);if(selection.partner==='__missing__'){services=services.filter(function(s){return !s.partner;});selection.partner='';}
+    var list=window.WowlifeServiceCatalog.filter(services,set.city,selection);catalogSortUpdate();
     root.querySelector('#prCatalogCount').textContent='Найдено: '+list.length+' · в наборе: '+set.items.length;
     root.querySelector('#prCatalogRows').innerHTML=list.length?list.map(function(s){return '<tr><td><b>'+esc(s.name)+'</b><span class="meta">'+esc(s.category)+'</span></td><td>'+esc(s.partner||'Партнёр не указан')+'</td><td class="num" data-activations-12m>'+ (Number.isSafeInteger(s.activations12m)?fmtN(s.activations12m):'—')+'</td><td class="num">'+fmtR(s.price)+'</td><td class="num">'+(knownCost(s)?fmtR(s.cost):'—')+'</td><td><button type="button" class="pr-btn '+(have[s.sid]?'':'pri')+'" data-catalog-pick="'+esc(s.sid)+'"'+(have[s.sid]?' disabled':'')+' aria-label="'+esc((have[s.sid]?'Уже в наборе: ':'Добавить: ')+s.name)+'">'+(have[s.sid]?'✓ В наборе':'+ Добавить')+'</button></td></tr>';}).join(''):'<tr><td colspan="6" class="pr-empty">По этим фильтрам услуг нет. Измените условия или сбросьте фильтры.</td></tr>';
   }
@@ -8678,7 +8695,7 @@ window.__salesActSetData = function(newData){
   }
   root.addEventListener('input',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
   root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
-  root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
+  root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-sort]');if(button){var key=button.getAttribute('data-catalog-sort'),spec=window.WowlifeServiceCatalog.sortSpec(catalogSelection.sort),dir=spec.key===key?(spec.dir==='asc'?'desc':'asc'):(['name','category','partner'].indexOf(key)>=0?'asc':'desc');catalogSelection.sort=key==='name'&&dir==='asc'?'name':key+'-'+dir;catalogResults();root.querySelector('.pr-catalog-results').scrollTop=0;return;}button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
     var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽','Активации услуги за 12 мес.','Период активаций']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
