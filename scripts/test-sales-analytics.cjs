@@ -194,3 +194,44 @@ assert.equal(octSite.types['Физический'].quantity,300);
 assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,{...oct,cities:['Москва','Санкт-Петербург']})).quantity,727);
 assert.equal(Object.values(salesAct.revenueByTypeMonth['2026-10']).reduce((n,r)=>n+r.count,0),730,'OPiU includes unknown-city certificates too');
 console.log('Sales analytics: certificate quantities, zero-sum deals, baskets, category/source/city/timeline consistency, caches and financial reconciliation passed.');
+
+// The service category chart must not present sets, nominal certificates or
+// ancillary goods as services, even when their source category is generic.
+const serviceFixture=[
+  {group:'Мастер классы и обучение',item:'Мастер-класс',revenue:100,count:0},
+  {group:'Мастер классы и обучение',item:'Мастер-класс',revenue:0,count:3},
+  {group:'Прочее',item:'Кофейный мастер-класс',revenue:20,count:1},
+  {group:'Катание и управление',item:'Конная прогулка: Полный пакет',revenue:30,count:2},
+  {group:'Наборы впечатлений',item:'Мужские радости',revenue:999,count:10},
+  {group:'Не классифицировано',item:'Мужские радости, Москва',revenue:999,count:10},
+  {group:'Номинальный сертификат',item:'Сертификат',revenue:999,count:10},
+  {group:'Прочее',item:'Номинальный подарочный сертификат',revenue:999,count:10},
+  {group:'Прочее',item:'Упаковочная бумага (Премиум, цветы)',revenue:999,count:10},
+  {group:'Доплата/не определено',item:'Доплата',revenue:999,count:0},
+  {group:'Доп услуги',item:'Открытка',revenue:999,count:10},
+  {group:'Прочее',item:'Открытка (Елка)(Add)',revenue:999,count:10},
+  {group:'Прочее',item:'Мужские(Box)',revenue:999,count:10},
+  {group:'Прочее',item:'Тест',revenue:0,count:10},
+];
+const fixtureBefore=JSON.stringify(serviceFixture);
+assert.deepEqual(model.sum(model.serviceCategoryRows(serviceFixture)),{revenue:150,count:6},'service quantities include zero-price certificates; money is not multiplied by quantity');
+assert.equal(JSON.stringify(serviceFixture),fixtureBefore,'the chart scope must not mutate overall totals or detail rows');
+const serviceRows=model.serviceCategoryRows(sales.rows);
+const categories=new Set(serviceRows.map(r=>r.group));
+assert(categories.size>10,'the real service chart needs every category beyond the former top ten');
+assert(!categories.has('Наборы впечатлений')&&!categories.has('Номинальный сертификат')&&!categories.has('Не классифицировано'));
+assert(!serviceRows.some(r=>/^Упаковоч/i.test(r.item)));
+const chartContext={state:{view:'sales',metricCat:'count'},window:{SalesAnalytics:model},PROFILE:{catNounPlural:'категорий',catTopLabel:'Категории первого уровня'},document:{getElementById(){return {textContent:''};}},metricNoun(){return 'количеству сертификатов';},renderBarPanel(...args){chartContext.rendered=args;}};
+const chartBody=html.match(/  function renderChart\(tree, rows\)\{[\s\S]*?\n  \}/)[0];
+const aggBody=html.match(/  function flatAgg\(rows, keyFn\)\{[\s\S]*?\n  \}/)[0];
+vm.runInNewContext(aggBody+'\n'+chartBody,chartContext);
+chartContext.renderChart({},sales.rows);
+assert.equal(chartContext.rendered[3].length,categories.size,'render every service category individually');
+assert.equal(chartContext.rendered[4].foldTop10,false,'do not create a synthetic Other categories bar');
+assert.equal(chartContext.rendered[4].metric,'count');
+chartContext.state.metricCat='revenue';chartContext.renderChart({},sales.rows);
+assert.equal(chartContext.rendered[4].metric,'revenue');
+chartContext.state.view='activations';chartContext.renderChart({'Наборы впечатлений':{revenue:1,count:2}},sales.rows);
+assert.equal(chartContext.rendered[3][0][0],'Наборы впечатлений','the activation chart retains its own original scope');
+assert.equal(chartContext.rendered[4].foldTop10,true);
+console.log('Service category chart: all categories, service-only scope, both metrics, zero-price certificates and unchanged detail/activation scopes passed.');

@@ -24,7 +24,8 @@ function points(step,sources=['site','ozon','wb','b2b'],city='all',from='2026-01
   return model.series(data,{step,sources,city,from,to});
 }
 const month=points('month')[0];
-assert.equal(month.current,212);assert.equal(month.previous,55,'Each source compared only through its own available date');
+assert.equal(month.current,212);assert.equal(month.previous,255,'Previous line covers the whole selected month');
+assert.equal(month.comparablePrevious,55,'Percentage still compares each source through its own available date');
 assert.equal(month.partial,true);
 for(const step of ['day','week','year'])assert.equal(points(step).reduce((s,p)=>s+(p.current||0),0),212,'Aggregation must preserve receipts: '+step);
 assert.equal(points('month',['site'])[0].current,120);
@@ -61,3 +62,19 @@ assert(model.sources.find(s=>s[0]==='site')[1].includes('без B2B'));
 assert.equal(points('month',['b2b'])[0].current,40);
 assert.equal(points('month',['site','b2b'])[0].current,points('month',['site'])[0].current+points('month',['b2b'])[0].current,'B2B is separate and never double-counted in website revenue');
 console.log('Revenue source separation: site excludes B2B, standalone B2B and combined totals reconcile.');
+
+const fullPriorYear={version:1,asOf:'2026-11-08',coverage:{siteMsk:{from:'2025-01-01',to:'2026-11-08'},siteSpb:{from:'2025-01-01',to:'2026-11-08'}},days:{'2025-11-01':{siteMsk:20},'2025-11-20':{siteMsk:280},'2025-12-20':{siteMsk:500},'2026-11-01':{siteMsk:10}}};
+const fullOptions={sources:['site'],city:'all',step:'month',from:'2026-11-01',to:'2026-12-31'};
+const fullPrior=model.series(fullPriorYear,fullOptions);
+assert.deepEqual(fullPrior.map(p=>p.current),[10,null],'No invented December current-year zero');
+assert.deepEqual(fullPrior.map(p=>p.previous),[300,500],'November and December prior-year totals follow the selected dates');
+assert.equal(fullPrior[0].comparablePrevious,20,'The percentage denominator remains the matching current coverage');
+assert.equal(fullPrior[1].previousThrough,'2025-12-31');
+assert.equal(model.series(fullPriorYear,{...fullOptions,to:'2026-12-15'})[1].previous,0,'Custom end date clips the prior year rather than expanding to a whole month');
+assert.equal(model.series(fullPriorYear,{...fullOptions,from:'2026-12-16',to:'2026-12-31'})[0].previous,500,'Prior year is still available without any current-year data');
+for(const step of ['day','week','month','year']){
+ const result=model.series(fullPriorYear,{...fullOptions,step});
+ assert.equal(result.reduce((n,p)=>n+(p.previous||0),0),800,'Full previous range in every step: '+step);
+ assert.equal(result.reduce((n,p)=>n+(p.current||0),0),10,'Current receipts unchanged: '+step);
+}
+console.log('Revenue previous-year range: full months/year, future-current gaps, custom endpoints, prior-only buckets and matching-date percentage passed.');

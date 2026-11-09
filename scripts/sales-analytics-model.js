@@ -31,6 +31,16 @@
   function selected(list,value){return list==='all'||!list||Array.isArray(list)&&list.includes(value)||list===value;}
   function rowSource(r){return r.platform==='B2B'?'B2B':r.channel==='Маркетплейсы'?source(r.platform):r.channel==='Сайт'?'Сайт':'Активация';}
   function filter(rows,selection){var s=selection;return rows.filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,city(r.city))&&(r.channel==='Активация'||selected(s.sources,rowSource(r)));});}
+  // Only this category chart uses the service scope. Unknown categories may
+  // contain sets and cannot safely be presented as confirmed service sales.
+  function serviceCategoryRows(rows){
+    return rows.filter(function(r){
+      var group=String(r.group||'').trim().toLowerCase().replace(/ё/g,'е');
+      if(!group||/^(?:наборы(?:\s|$)|номинальн|доплат|доп[ ._-]*услуг|не классифицировано|без категории|не определено|—$)/.test(group))return false;
+      var name=String(r.item||'').trim();
+      return !/\((?:Add|Box)\)/i.test(name)&&!/^(?:подарочн(?:ый|ые)\s+набор|п\/н(?:\s|$)|набор(?:ы)?\s+впечатлен|номинальн|услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата|тест(?:\s|$))/i.test(name);
+    });
+  }
   function sum(rows){return rows.reduce(function(a,r){a.revenue+=number(r.revenue);a.count+=number(r.count);return a;},{revenue:0,count:0});}
   // Activation is the certificate selection event, not the later visit or settlement.
   // A subsequent CRM stage must not erase an event that already has a valid date.
@@ -98,5 +108,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,sum:sum,successful:successful,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,sum:sum,successful:successful,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
 });

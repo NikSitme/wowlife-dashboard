@@ -85,23 +85,33 @@
   function series(data,options){
     var keys = keysFor(options.sources,options.city), step = options.step;
     return buckets(options.from,options.to,step).map(function(b){
-      var current = 0, previous = 0, defined = false, prevMissing = false, partial = false, ends = [], previousEnds = [];
+      var current = 0, previous = 0, comparable = 0, defined = false, previousDefined = false;
+      var prevMissing = false, comparableMissing = false, partial = false, previousPartial = false, ends = [], previousEnds = [];
       keys.forEach(function(key){
-        var c = data.coverage[key];
-        if (!c || b.from < c.from){ prevMissing = true; return; }
+        var c = data.coverage[key], leapDay = step === 'day' && b.from.slice(5) === '02-29';
+        if (!c){ prevMissing = comparableMissing = true; return; }
+        // The dotted line follows the whole selected range, independently of
+        // current-year coverage. Missing current dates remain gaps.
+        var pf = shiftYear(b.from), pt = shiftYear(b.to);
+        if (step === 'month' && b.to === monthEnd(b.to)) pt = monthEnd(pt);
+        if (leapDay || pf < c.from || pf > c.to) prevMissing = true;
+        else {
+          var previousEnd = pt < c.to ? pt : c.to;
+          previousDefined = true; previousPartial = previousPartial || previousEnd < pt;
+          previousEnds.push(previousEnd); previous += sumRange(data,key,pf,previousEnd);
+        }
+        if (b.from < c.from){ comparableMissing = true; return; }
         if (b.from > c.to) return;
         var end = b.to < c.to ? b.to : c.to;
         defined = true; partial = partial || end < b.to; ends.push(end);
         current += sumRange(data,key,b.from,end);
-        // Feb 29 has no matching date in a non-leap previous year; never double-count Feb 28.
-        if (step === 'day' && b.from.slice(5) === '02-29'){ prevMissing = true; return; }
-        var pf = shiftYear(b.from), pt = shiftYear(end);
-        if (step === 'month' && end === monthEnd(end)) pt = monthEnd(pt);
-        previousEnds.push(pt);
-        if (pf < c.from){ prevMissing = true; return; }
-        previous += sumRange(data,key,pf,pt);
+        // Keep percentage comparisons on matching available dates per source.
+        if (leapDay || pf < c.from){ comparableMissing = true; return; }
+        var comparableEnd = shiftYear(end);
+        if (step === 'month' && end === monthEnd(end)) comparableEnd = monthEnd(comparableEnd);
+        comparable += sumRange(data,key,pf,comparableEnd);
       });
-      return {from:b.from,to:b.to,current:defined ? Math.round(current*100)/100 : null,previous:defined && !prevMissing ? Math.round(previous*100)/100 : null,partial:partial,through:ends.sort().pop() || null,previousFrom:shiftYear(b.from),previousThrough:previousEnds.sort().pop() || null};
+      return {from:b.from,to:b.to,current:defined ? Math.round(current*100)/100 : null,previous:previousDefined && !prevMissing ? Math.round(previous*100)/100 : null,comparablePrevious:defined && !comparableMissing ? Math.round(comparable*100)/100 : null,partial:partial,previousPartial:previousPartial,through:ends.sort().pop() || null,previousFrom:shiftYear(b.from),previousThrough:previousEnds.sort().pop() || null};
     });
   }
   function shortDate(s){ return +s.slice(8,10)+' '+MONTHS[+s.slice(5,7)-1]; }
@@ -183,19 +193,19 @@
       card.querySelector('#yearFromDate').value=state.from; card.querySelector('#yearToDate').value=state.to;
       if(window.WowlifeDatePicker)window.WowlifeDatePicker.refresh();
       var selected=keysFor(state.sources,state.city), points=series(data,state), defined=points.filter(function(p){return p.current!==null;});
-      var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.previous!==null;}) ? defined.reduce(function(a,p){return a+p.previous;},0) : null;
+      var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.comparablePrevious!==null;}) ? defined.reduce(function(a,p){return a+p.comparablePrevious;},0) : null;
       var names=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];}).join(' + ');
-      card.querySelector('#rdTotal').textContent=selected.length ? money(current) : 'Выберите источники';
-      card.querySelector('#rdDelta').textContent=prev===null || !defined.length ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к прошлому году');
+      card.querySelector('#rdTotal').textContent=selected.length ? (defined.length ? money(current) : 'Нет данных текущего периода') : 'Выберите источники';
+      card.querySelector('#rdDelta').textContent=prev===null || !defined.length ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к сопоставимым дням прошлого года');
       var captions=[];
       if(state.sources.includes('site')) captions.push('Сайт без B2B — по '+shortDate(data.coverage.siteMsk.to));
       if(state.sources.includes('b2b')) captions.push('B2B — по '+shortDate(data.coverage.b2bAll.to));
       if(state.sources.some(function(s){return ['ozon','wb','ym','flowwow'].includes(s);})) captions.push('Маркеты — по '+shortDate(data.coverage.ozonMsk.to));
-      card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — те же даты прошлого года; неполные периоды сравниваются по доступным дням каждого источника';
+      card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — весь выбранный диапазон годом ранее; процент — по сопоставимым доступным дням';
       card.querySelector('#rdCurrentLegend').textContent='Текущий период: '+shortDate(state.from)+' '+state.from.slice(0,4)+' — '+shortDate(state.to)+' '+state.to.slice(0,4);
       card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(shiftYear(state.to))+' '+shiftYear(state.to).slice(0,4);
       hideHover();
-      if(!selected.length || !defined.length){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
+      if(!selected.length || !points.some(function(p){return p.current!==null || p.previous!==null;})){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
       var width=Math.max(560,wrap.clientWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
       var height=285,left=18,right=86,top=24,bottom=45,pw=width-left-right,ph=height-top-bottom;
       var vals=[0]; points.forEach(function(p){if(p.current!==null)vals.push(p.current);if(p.previous!==null)vals.push(p.previous);});
@@ -217,9 +227,9 @@
           var label=state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from);
           svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label" data-i="'+i+'">'+esc(label)+'</text>');
         }
-        if(p.current!==null){
+        if(p.current!==null || p.previous!==null){
           var half=points.length===1?pw/2:pw/(points.length-1)/2;
-          svg.push('<rect class="rd-hover" data-i="'+i+'" tabindex="0" role="img" aria-describedby="rdRevenueTooltip" aria-label="'+esc(shortDate(p.from)+': '+money(p.current)+(p.previous===null?'':', прошлый год '+money(p.previous)))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
+          svg.push('<rect class="rd-hover" data-i="'+i+'" tabindex="0" role="img" aria-describedby="rdRevenueTooltip" aria-label="'+esc(shortDate(p.from)+': '+(p.current===null?'нет данных текущего периода':money(p.current))+(p.previous===null?'':', прошлый год '+money(p.previous)))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
         }
       });
       svg.push('<g class="rd-crosshair" visibility="hidden" pointer-events="none"><line class="rd-guide" y1="'+top+'" y2="'+(top+ph)+'"/><circle class="rd-active-halo" r="11"/><circle class="rd-active-current" r="5"/><circle class="rd-active-previous" r="4.5"/></g>');
@@ -238,17 +248,17 @@
           var i=+zone.dataset.i,p=points[i],cx=x(i);
           crosshair.setAttribute('visibility','visible');
           var guide=crosshair.querySelector('.rd-guide');guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);
-          ['.rd-active-halo','.rd-active-current'].forEach(function(sel){var c=crosshair.querySelector(sel);c.setAttribute('cx',cx);c.setAttribute('cy',y(p.current));});
+          ['.rd-active-halo','.rd-active-current'].forEach(function(sel){var c=crosshair.querySelector(sel);c.setAttribute('visibility',p.current===null?'hidden':'visible');if(p.current!==null){c.setAttribute('cx',cx);c.setAttribute('cy',y(p.current));}});
           var prevDot=crosshair.querySelector('.rd-active-previous');prevDot.setAttribute('visibility',p.previous===null?'hidden':'visible');
           if(p.previous!==null){prevDot.setAttribute('cx',cx);prevDot.setAttribute('cy',y(p.previous));}
           svgEl.querySelectorAll('.rd-period-label').forEach(function(label){label.classList.toggle('is-active',+label.dataset.i===i);});
-          var change=p.previous!==null && p.previous!==0 ? (p.current-p.previous)/Math.abs(p.previous)*100 : null;
+          var change=p.current!==null && !p.partial && !p.previousPartial && p.previous!==null && p.previous!==0 ? (p.current-p.previous)/Math.abs(p.previous)*100 : null;
           var delta=change===null?'':'<span class="rd-tip-delta '+(change>=0?'up':'down')+'">'+(change>0?'+':'')+change.toLocaleString('ru-RU',{maximumFractionDigits:1})+'%</span>';
           tip.innerHTML='<div class="rd-tip-heading"><span>Период</span><span>Выручка</span></div>'+
-            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(periodLabel(p.from,p.through))+'</span></div><strong>'+money(p.current)+'</strong></div>'+
-            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.through)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(periodLabel(p.from,p.through || p.to))+'</span></div><strong>'+(p.current===null?'нет данных':money(p.current))+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
             (delta?'<div class="rd-tip-change"><span>К прошлому году</span>'+delta+'</div>':'')+
-            (p.partial?'<div class="rd-tip-note">Неполный период · по доступным дням каждого источника</div>':'');
+            (p.partial?'<div class="rd-tip-note">Текущий период: неполные данные по источникам</div>':'');
           tip.hidden=false;
           var cr=card.getBoundingClientRect(),sr=svgEl.getBoundingClientRect(),anchorX=sr.left+cx*sr.width/width-cr.left;
           var left=Math.max(12,Math.min(cr.width-tip.offsetWidth-12,anchorX-tip.offsetWidth/2));
