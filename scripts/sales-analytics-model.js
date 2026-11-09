@@ -42,6 +42,45 @@
     });
   }
   function sum(rows){return rows.reduce(function(a,r){a.revenue+=number(r.revenue);a.count+=number(r.count);return a;},{revenue:0,count:0});}
+  function serviceCategories(rows){
+    var groups=new Map();
+    serviceCategoryRows(rows).forEach(function(r){
+      var name=String(r.group).trim(),item=String(r.item||'').trim()||'Услуга без названия';
+      if(!groups.has(name))groups.set(name,{name:name,revenue:0,count:0,services:new Map()});
+      var group=groups.get(name);
+      if(!group.services.has(item))group.services.set(item,{name:item,revenue:0,count:0});
+      [group,group.services.get(item)].forEach(function(v){v.revenue+=number(r.revenue);v.count+=number(r.count);});
+    });
+    return Array.from(groups.values()).map(function(g){return {name:g.name,revenue:g.revenue,count:g.count,services:Array.from(g.services.values())};});
+  }
+  function comparisonKey(value){return String(value||'').normalize('NFKC').trim().toLowerCase().replace(/ё/g,'е').replace(/^(?:подарочный\s+набор|п\/н)\s*/,'').replace(/[«»„“”"']/g,'').replace(/\s+/g,' ').trim();}
+  function namedComparisonItem(name){return !!String(name||'').trim()&&!/^(?:без названия(?:\s|$)|не указано$|не определ[её]н(?:о)?$|—$)/i.test(String(name).trim());}
+  // IDs find existing named series; they do not pretend that category-level
+  // financial data contains a separate time series for each tariff or city.
+  function comparisonIdIndex(names,products){
+    var exact=new Map(),out=new Map();
+    names.forEach(function(name){var key=comparisonKey(name);if(!exact.has(key))exact.set(key,[]);exact.get(key).push(name);});
+    (products||[]).forEach(function(product){
+      var aliases=[product.name].concat(product.aliases||[]),matches=new Set();
+      var key=comparisonKey(product.name);
+      (exact.get(key)||[]).forEach(function(n){matches.add(n);});
+      if(!matches.size)aliases.forEach(function(alias){
+        var full=comparisonKey(alias),base=full.split(':')[0].replace(/(?:,?\s+(?:в\s+)?(?:москве|москва|санкт-петербурге|санкт-петербург|спб|мск))$/,'').trim();
+        (exact.get(full)||exact.get(base)||[]).forEach(function(n){matches.add(n);});
+      });
+      if(matches.size)out.set(String(product.id),{product:product,names:Array.from(matches)});
+    });
+    return out;
+  }
+  function comparisonSearch(names,index,query){
+    var q=String(query||'').trim().toLowerCase(),idQuery=q.match(/^(?:id\s*[:#]?\s*|#)?(\d+)$/i),found=new Map();
+    if(idQuery){
+      var id=idQuery[1],entries=index.has(id)?[index.get(id)]:Array.from(index.values()).filter(function(e){return String(e.product.id).startsWith(id);});
+      entries.forEach(function(e){e.names.forEach(function(name){if(!found.has(name))found.set(name,[]);found.get(name).push(e.product);});});
+      return names.filter(function(name){return found.has(name);}).map(function(name){return {name:name,products:found.get(name)};});
+    }
+    return names.filter(function(name){return !q||comparisonKey(name).includes(comparisonKey(q));}).map(function(name){return {name:name,products:[]};});
+  }
   // Activation is the certificate selection event, not the later visit or settlement.
   // A subsequent CRM stage must not erase an event that already has a valid date.
   function activations(rows){
@@ -66,6 +105,9 @@
       var key=JSON.stringify([r.date,r.city,r.source,r.type,r.lead]),g=groups.get(key);if(!g){g={date:r.date,city:r.city,source:r.source,type:r.type,lead:r.lead,revenue:0,orders:0,quantity:0};groups.set(key,g);}g.revenue+=r.revenue;g.orders++;g.quantity+=r.quantity;});
     return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
   function purchases(rows,s){return(rows||[]).filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,r.city)&&selected(s.sources,r.source);});}
+  // Certificate delivery types always describe the Site channel. Only period
+  // and cities come from the common filters; marketplace selections do not apply.
+  function sitePurchases(rows,s){return purchases(rows,{start:s.start,end:s.end,cities:s.cities,sources:['Сайт']});}
   function purchaseStats(rows){function empty(){return{revenue:0,orders:0,quantity:0};}var out=empty();out.lead=empty();out.direct=empty();out.types={'Электронный':empty(),'Физический':empty(),'Не указан':empty()};rows.forEach(function(r){[out,out[r.lead?'lead':'direct'],out.types[r.type]||out.types['Не указан']].forEach(function(g){g.revenue+=r.revenue;g.orders+=r.orders;g.quantity+=r.quantity;});});out.avg=out.quantity?out.revenue/out.quantity:null;return out;}
   function certificateLines(description){
     var parts=String(description||'').split(/[;\n]/),items=[],parsed=0;
@@ -108,5 +150,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,sum:sum,successful:successful,crm:crm,purchases:purchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
 });

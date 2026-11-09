@@ -221,17 +221,126 @@ const categories=new Set(serviceRows.map(r=>r.group));
 assert(categories.size>10,'the real service chart needs every category beyond the former top ten');
 assert(!categories.has('Наборы впечатлений')&&!categories.has('Номинальный сертификат')&&!categories.has('Не классифицировано'));
 assert(!serviceRows.some(r=>/^Упаковоч/i.test(r.item)));
-const chartContext={state:{view:'sales',metricCat:'count'},window:{SalesAnalytics:model},PROFILE:{catNounPlural:'категорий',catTopLabel:'Категории первого уровня'},document:{getElementById(){return {textContent:''};}},metricNoun(){return 'количеству сертификатов';},renderBarPanel(...args){chartContext.rendered=args;}};
+const chartContext={state:{view:'sales',metricCat:'count'},PROFILE:{catNounPlural:'категорий',catTopLabel:'Категории первого уровня'},renderServiceCategories(rows){chartContext.services=rows;},renderBarPanel(...args){chartContext.rendered=args;}};
 const chartBody=html.match(/  function renderChart\(tree, rows\)\{[\s\S]*?\n  \}/)[0];
 const aggBody=html.match(/  function flatAgg\(rows, keyFn\)\{[\s\S]*?\n  \}/)[0];
 vm.runInNewContext(aggBody+'\n'+chartBody,chartContext);
 chartContext.renderChart({},sales.rows);
-assert.equal(chartContext.rendered[3].length,categories.size,'render every service category individually');
-assert.equal(chartContext.rendered[4].foldTop10,false,'do not create a synthetic Other categories bar');
-assert.equal(chartContext.rendered[4].metric,'count');
+assert.equal(chartContext.services,sales.rows,'sales use the expandable service categories');
 chartContext.state.metricCat='revenue';chartContext.renderChart({},sales.rows);
-assert.equal(chartContext.rendered[4].metric,'revenue');
+assert.equal(chartContext.services,sales.rows);
 chartContext.state.view='activations';chartContext.renderChart({'Наборы впечатлений':{revenue:1,count:2}},sales.rows);
 assert.equal(chartContext.rendered[3][0][0],'Наборы впечатлений','the activation chart retains its own original scope');
 assert.equal(chartContext.rendered[4].foldTop10,true);
 console.log('Service category chart: all categories, service-only scope, both metrics, zero-price certificates and unchanged detail/activation scopes passed.');
+
+// Parent bars and their concrete services share exactly the same filtered rows.
+const detailed=model.serviceCategories(serviceFixture);
+assert.equal(detailed.length,3);
+assert.deepEqual(detailed.find(c=>c.name==='Мастер классы и обучение').services,[{name:'Мастер-класс',revenue:100,count:3}]);
+assert.equal(JSON.stringify(serviceFixture),fixtureBefore);
+const groupingFixture=[
+  {group:'A',item:'Одинаковое название',revenue:100,count:2},
+  {group:'B',item:'Одинаковое название',revenue:60,count:1},
+  {group:'A',item:'',revenue:10,count:0},
+  {group:'A',item:'Бесплатная услуга',revenue:0,count:1},
+];
+assert.equal(model.serviceCategories(groupingFixture)[0].services.length,3,'retain unnamed and zero-revenue rows without merging names across categories');
+let reconciled=0;
+for(const period of [{start:'2026-10-01',end:'2026-10-31'},{start:'2025-01-01',end:'2026-11-09'}]){
+  for(const cities of ['all',...model.CITIES.map(c=>[c])])for(const sources of ['all',...model.SOURCES.map(s=>[s])]){
+    const rows=model.filter(sales.rows,{...period,cities,sources});
+    const groups=model.serviceCategories(rows);
+    const grouped=model.sum(groups),raw=model.sum(model.serviceCategoryRows(rows));
+    assert(Math.abs(grouped.revenue-raw.revenue)<0.000001);
+    assert.equal(grouped.count,raw.count);
+    for(const g of groups){
+      const totals=model.sum(g.services);
+      assert(Math.abs(totals.revenue-g.revenue)<0.01);
+      assert.equal(totals.count,g.count);reconciled++;
+    }
+  }
+}
+
+// Real renderer: escaping, metric sorting, totals and remembered disclosure state.
+const nodes={},listeners=[];
+const uiContext={window:{SalesAnalytics:model},state:{metricCat:'revenue',expandedServiceCategories:new Set(['A'])},
+ document:{getElementById(id){return nodes[id]||(nodes[id]={innerHTML:'',textContent:'',querySelectorAll(){return listeners;}});}},
+ metricFmt(m){return v=>String(v)+(m==='revenue'?' ₽':' шт');},metricNoun(){return 'выручке';},fmtMoney(v){return String(v)+' ₽';},fmtInt(v){return String(v);},
+ escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}};
+vm.runInNewContext(html.match(/  function renderServiceCategories\(rows\)\{[\s\S]*?\n  \}/)[0],uiContext);
+const uiRows=[{group:'A',item:'<Услуга> "один"',revenue:100,count:1},{group:'A',item:'Услуга два',revenue:50,count:3}];
+const element={isConnected:true,open:false,dataset:{category:'A'},addEventListener(type,fn){this.toggle=fn;}};
+listeners.push(element);
+uiContext.renderServiceCategories(uiRows);
+assert(nodes['ws-barchart'].innerHTML.includes('data-category="A" open'));
+assert(nodes['ws-barchart'].innerHTML.includes('&lt;Услуга&gt; &quot;один&quot;'));
+assert(nodes['ws-barchart'].innerHTML.includes('<td class="num">150 ₽</td><td class="num">4</td>'));
+assert(nodes['ws-barchart'].innerHTML.indexOf('&lt;Услуга&gt;')<nodes['ws-barchart'].innerHTML.indexOf('Услуга два'));
+uiContext.state.metricCat='count';uiContext.renderServiceCategories(uiRows);
+assert(nodes['ws-barchart'].innerHTML.indexOf('Услуга два')<nodes['ws-barchart'].innerHTML.indexOf('&lt;Услуга&gt;'));
+assert(nodes['ws-barchart'].innerHTML.includes('data-category="A" open'),'metric switch keeps disclosure open');
+element.toggle();assert(!uiContext.state.expandedServiceCategories.has('A'));
+element.open=true;element.toggle();assert(uiContext.state.expandedServiceCategories.has('A'));
+element.isConnected=false;element.open=false;element.toggle();assert(uiContext.state.expandedServiceCategories.has('A'),'discarded DOM cannot erase new disclosure state');
+uiContext.renderServiceCategories([]);assert(nodes['ws-barchart'].innerHTML.includes('Нет услуг'));
+
+// Site-only panel must ignore the global source selection, not period or cities.
+for(const sources of ['all',[],['Сайт'],['Ozon'],['B2B'],model.SOURCES]){
+  const selection={...oct,sources},before=JSON.stringify(selection);
+  const stats=model.purchaseStats(model.sitePurchases(salesAct.purchaseRows,selection));
+  assert.equal(stats.quantity,730);assert.equal(stats.types['Электронный'].quantity,430);assert.equal(stats.types['Физический'].quantity,300);
+  assert.equal(JSON.stringify(selection),before);
+}
+assert.equal(model.purchaseStats(model.sitePurchases(salesAct.purchaseRows,{...oct,sources:['Ozon'],cities:['Москва','Санкт-Петербург']})).quantity,727);
+assert.equal(model.sitePurchases(salesAct.purchaseRows,{...oct,start:'2099-01-01',end:'2099-01-31'}).length,0);
+const panels={},panelContext={window:{__wowSalesSelection:{...oct,view:'sales',sources:['Ozon']},__salesActData:salesAct},model,
+ document:{getElementById(id){return panels[id]||(panels[id]={});}},renderPackagingPanel(){},money(v){return String(v);}};
+vm.runInNewContext(html.match(/  function card\(label,value,total\)\{[^\n]+/)[0]+'\n'+html.match(/  function renderPurchasePanels\(\)\{[\s\S]*?\n  \}/)[0],panelContext);
+panelContext.renderPurchasePanels();
+assert(panels['ws-cert-stat'].innerHTML.includes('Всего по сайту: 730'));
+assert(panels['ws-lead-stat'].innerHTML.includes('Нет сертификатов сайта'),'unrelated panels still respect global source selection');
+console.log(`Service disclosures: ${reconciled} category totals reconciled; service sorting, state, escaping and site-only certificate panel with period/city filters passed.`);
+
+// Catalog ID search selects the existing named series, with exact tariff priority.
+const comparisonNames=['Без названия товара','п/н «Релакс»','Массаж','Массаж: 60 минут','Массаж спины','Полёт'];
+const comparisonProducts=[
+  {id:'16139',name:'Подарочный набор «Релакс»',city:'СПб',aliases:[]},
+  {id:'30671',name:'Массаж: 60 минут',city:'СПб',aliases:['Массаж']},
+  {id:'30672',name:'Массаж, Москва: 90 минут',city:'Москва',aliases:[]},
+  {id:'30673',name:'Полёт: 10 минут',city:'Москва',aliases:[]},
+  {id:'8',name:'Массаж стоп: 20 минут',city:'СПб',aliases:[]},
+];
+const idIndex=model.comparisonIdIndex(comparisonNames,comparisonProducts);
+for(const query of ['16139','ID 16139','#16139','id:16139'])assert.deepEqual(model.comparisonSearch(comparisonNames,idIndex,query).map(r=>r.name),['п/н «Релакс»']);
+assert.deepEqual(model.comparisonSearch(comparisonNames,idIndex,'30671').map(r=>r.name),['Массаж: 60 минут'],'exact tariff wins over broad parent alias');
+assert.deepEqual(model.comparisonSearch(comparisonNames,idIndex,'30672').map(r=>r.name),['Массаж'],'unaggregated tariff can find its existing parent series');
+assert.equal(model.comparisonSearch(comparisonNames,idIndex,'3067').length,3,'partial ID can find several services');
+assert.equal(model.comparisonSearch(comparisonNames,idIndex,'8').length,0,'no fuzzy matching of unrelated services');
+assert.equal(model.comparisonSearch(comparisonNames,idIndex,'999999999').length,0);
+assert.deepEqual(model.comparisonSearch(comparisonNames,idIndex,'  Подарочный набор РЕЛАКС ').map(r=>r.name),['п/н «Релакс»']);
+assert.equal(model.comparisonSearch(comparisonNames,idIndex,'без названия').length,1,'unnamed rows remain manually searchable');
+const defaultsContext={window:{SalesAnalytics:model},itemUniverse:()=>comparisonNames};
+vm.runInNewContext(html.match(/  function defaultTrendItems\(\)\{[\s\S]*?\n  \}/)[0],defaultsContext);
+assert.equal(JSON.stringify(defaultsContext.defaultTrendItems()),JSON.stringify(comparisonNames.slice(1,4).map((name,colorIdx)=>({name,colorIdx}))));
+
+const idCatalog=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/comparison-products.json'),'utf8'));
+assert.equal(new Set(idCatalog.products.map(p=>p.id)).size,idCatalog.products.length);
+assert(idCatalog.products.every(p=>Object.keys(p).every(k=>['id','name','city','aliases'].includes(k))),'public lookup contains only catalog IDs and names');
+const actualNames=[...new Set(sales.rows.map(r=>r.item).filter(Boolean))],actualIndex=model.comparisonIdIndex(actualNames,idCatalog.products);
+assert(model.comparisonSearch(actualNames,actualIndex,'30671').some(r=>r.name==='RF-лифтинг лица: Лицо + зона декольте'));
+assert(model.comparisonSearch(actualNames,actualIndex,'16139').some(r=>r.name==='Подарочный набор «Релакс»'));
+
+const pickerNodes={'ws-trend-search':{value:'30671'},'ws-trend-options':{innerHTML:'',querySelectorAll(){return [];}}};
+const pickerContext={window:{SalesAnalytics:model},state:{trendItems:[]},document:{getElementById:id=>pickerNodes[id]},
+  itemUniverse:()=>comparisonNames,comparisonIds:()=>idIndex,comparisonProductsLoaded:true,comparisonProductsLoading:null,
+  escapeHtml:uiContext.escapeHtml,shortItem:s=>s};
+vm.runInNewContext(html.match(/  function renderTrendPicker\(\)\{[\s\S]*?\n  \}/)[0],pickerContext);
+pickerContext.renderTrendPicker();
+assert(pickerNodes['ws-trend-options'].innerHTML.includes('data-name="Массаж: 60 минут"'));
+assert(pickerNodes['ws-trend-options'].innerHTML.includes('ID 30671'));
+pickerNodes['ws-trend-search'].value='999999';pickerContext.renderTrendPicker();
+assert(pickerNodes['ws-trend-options'].innerHTML.includes('Ничего не найдено'));
+pickerContext.comparisonProductsLoaded=false;pickerContext.comparisonProductsLoading=true;pickerContext.renderTrendPicker();
+assert(pickerNodes['ws-trend-options'].innerHTML.includes('Загружаю справочник ID'));
+console.log(`Cross comparison: ${idCatalog.products.length} catalog IDs, exact and prefix lookup, tariff priority, real ID matches, defaults and picker passed.`);
