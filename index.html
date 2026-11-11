@@ -542,8 +542,8 @@
         <li><b>Строки ищутся по названию</b> в колонках A и B сборки, а не по номеру строки. Если строку в Адеске переименуют, обновление ОПиУ остановится с сообщением «не найдена строка …», прошлые данные останутся.</li>
         <li><b>Сверка</b>: сумма статей каждого раздела (выручка, прямые, персонал, косвенные, административные, создание продукта, налоги) должна совпадать с официальным итогом раздела в Адеске. При расхождении больше 1 ₽ снимок отклоняется.</li>
         <li><b>Защита от полупустого снимка</b>: если по уже известному месяцу выручка вдруг меньше половины прежней, снимок считается битым (IMPORTRANGE ещё пересчитывается) и не применяется.</li>
-        <li><b>Два вида P&amp;L.</b> По умолчанию «Как в Адеске» сохраняет исходные строки, знаки и итоги до копеек. «Управленческая структура» перегруппирует статьи по принятым правилам. В этом виде расходы показываются положительными; положительные записи исходника уменьшают расходы. Упаковка за 2025 год имеет положительные знаки в источнике — показано предупреждение для сверки.</li>
-        <li><b>«Сервисы разработки»</b> (включая «Сервер») физически лежат в разделе «Косвенные расходы», но в официальный итог Адеска не входят. Карточки и управленческий вид учитывают их отдельно, поэтому EBITDA и чистая прибыль в этих расчётах ниже адесковских на эту сумму. Вид «Как в Адеске» показывает исходные итоги без этой корректировки.</li>
+        <li><b>Управленческая структура ОПиУ</b> группирует статьи по принятым правилам. Расходы показываются положительными; положительные записи исходника уменьшают расходы. Упаковка за 2025 год имеет положительные знаки в источнике — показано предупреждение для сверки.</li>
+        <li><b>«Сервисы разработки»</b> (включая «Сервер») физически лежат в разделе «Косвенные расходы», но в официальный итог Адеска не входят. Карточки и таблица ОПиУ учитывают их отдельно, поэтому EBITDA и чистая прибыль в этих расчётах ниже адесковских на эту сумму.</li>
         <li><b>«Директолог»</b> — подстатья «ФОТ Маркетинга», отдельно не считается, иначе задвоение.</li>
       </ul>
 
@@ -664,7 +664,7 @@
   </div>
 
   <div class="kpis" id="kpis"></div>
-  <p class="cap">Карточки показывают управленческий расчёт с учётом сервисов разработки. Исходные строки и итоги P&amp;L доступны ниже в виде «Как в Адеске».</p>
+  <p class="cap">Карточки и таблица ОПиУ показывают управленческий расчёт с учётом сервисов разработки.</p>
 
   <div class="card">
     <div class="rev-lbl">ВЫРУЧКА ЗА ПЕРИОД</div>
@@ -747,15 +747,11 @@
 
 
   <div class="card">
-    <h2 id="opiuTableTitle">P&amp;L — как в Адеске</h2>
+    <h2 id="opiuTableTitle">ОПиУ — управленческая структура</h2>
     <p class="cap" id="opiuTableCaption"></p>
     <p class="cap" id="opiuSourceStatus" aria-live="polite"></p>
     <p class="cap" id="opiuSourceWarning" style="color:var(--bad);" hidden></p>
-    <div class="segmented" id="opiuTableModes" style="margin:18px 0;">
-      <button type="button" class="chip active" data-mode="source" aria-pressed="true">Как в Адеске</button>
-      <button type="button" class="chip" data-mode="management" aria-pressed="false">Управленческая структура</button>
-    </div>
-    <div class="opiu-struct-tools" id="opiuManagementTools" hidden>
+    <div class="opiu-struct-tools" id="opiuManagementTools">
       <button type="button" class="chip" id="opiuStructExpandAll">Раскрыть всё</button><button type="button" class="chip" id="opiuStructCollapseAll">Свернуть всё</button>
       <div class="opiu-struct-legend">
         <span class="os-chip legend" style="--os-accent:var(--s1)">выручка</span>
@@ -5309,7 +5305,6 @@ window.__salesActSetData = function(newData){
       osG("Тело кредита и дивиденды", ["Тело кредита","Вывод дивидендов"], { neg: true })
     ]}
   ];
-  var opiuTableMode = "source";
   var osExpanded = {};   // ключ строки → раскрыта ли
   var osAllExpanded = false;
   function osRowVal(m, label){ return (m.rows && m.rows[label]) || 0; }
@@ -5354,11 +5349,8 @@ window.__salesActSetData = function(newData){
     if (!head || !body) return;
     var table = head.closest("table"), wrap = table.parentElement;
     var savedScroll = wrap.scrollLeft;
-    if(opiuTableMode === "source") renderSourcePl(head,body); else osFillTable(head, body);
-    document.getElementById("opiuTableTitle").textContent = opiuTableMode === "source" ? "P&L — как в Адеске" : "ОПиУ — управленческая структура";
-    document.getElementById("opiuTableCaption").textContent = opiuTableMode === "source" ? "Факт по месяцам из актуальной вкладки «сборка ОПиУ_2»: исходные строки, знаки и итоги. Нулевые строки скрыты. Накопленный итог — сумма месяцев, для рентабельности не суммируется." : "ФОТ включает зарплаты маркетплейсов, фиксированную и переменную части по отделам. Маржинальная прибыль показана до всего ФОТ. Сервисы разработки включены в расходы. Итоги этого вида могут отличаться от исходного P&L.";
-    document.getElementById("opiuManagementTools").hidden = opiuTableMode !== "management";
-    document.querySelectorAll("#opiuTableModes button").forEach(function(b){var active=b.dataset.mode===opiuTableMode;b.classList.toggle("active",active);b.setAttribute("aria-pressed",active);});
+    osFillTable(head, body);
+    document.getElementById("opiuTableCaption").textContent = "ФОТ включает зарплаты маркетплейсов, фиксированную и переменную части по отделам. Маржинальная прибыль показана до всего ФОТ. Сервисы разработки включены в расходы. Итоги этого вида могут отличаться от исходного P&L.";
     var sourceStatus=document.getElementById("opiuSourceStatus"),stamp=DATA[0]&&DATA[0].source_fetched_at;
     sourceStatus.textContent="Источник: выгрузка Адеска → сборка ОПиУ_2 · автоматическое обновление при открытии и по кнопке «Обновить данные»"+(stamp?" · данные получены "+new Date(stamp).toLocaleString("ru-RU",{timeZone:"Europe/Moscow",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"");
     var warned=DATA.filter(function(m){return (m.source_warnings || []).length;});
@@ -5367,20 +5359,6 @@ window.__salesActSetData = function(newData){
     // по умолчанию таблица прокручена к текущему (последнему) месяцу, чтобы не листать вправо
     wrap.scrollLeft = keepScroll ? savedScroll : wrap.scrollWidth;
   }
-  function renderSourcePl(head,body){
-    var first=DATA[0],rows=first&&first.source_pl;
-    head.innerHTML='<th>Статья</th>'+DATA.map(function(m){return '<th class="num">'+monthLabel(m)+'</th>';}).join('')+'<th class="num os-cum">Накопленный итог</th>';
-    if(!rows){body.innerHTML='<tr><td colspan="'+(DATA.length+2)+'">Исходный P&L появится после обновления данных.</td></tr>';return;}
-    body.innerHTML=rows.filter(function(r){return DATA.some(function(m){var item=(m.source_pl || []).filter(function(x){return x.key===r.key;})[0];return item&&Math.abs(sourcePlNumber(item.raw))>=0.005;});}).map(function(r){
-      var vals=DATA.map(function(m){var item=(m.source_pl || []).filter(function(x){return x.key===r.key;})[0];return item?item.raw:'';});
-      var cells=vals.map(function(raw){return r.rate?'<td class="num">'+(raw?escapeHtml(String(raw)):'—')+'</td>':osMoneyCellExact(sourcePlNumber(raw));}).join('');
-      var total=r.rate?'<td class="num os-cum">—</td>':osMoneyCellExact(vals.reduce(function(a,raw){return a+sourcePlNumber(raw);},0),' os-cum');
-      return '<tr class="'+(r.rate?'os-pct':r.heading?'os-header':'os-source-leaf')+'"><td>'+escapeHtml(r.label)+'</td>'+cells+total+'</tr>';
-    }).join('');
-  }
-  function sourcePlNumber(raw){return parseFloat(String(raw||'0').replace(/\s/g,'').replace(',','.'))||0;}
-  function osMoneyCellExact(v,extra){return '<td class="num'+(v<0?' os-neg':'')+(extra||'')+'">'+(v===0?'—':v.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽')+'</td>';}
-  document.querySelectorAll('#opiuTableModes button').forEach(function(b){b.addEventListener('click',function(){opiuTableMode=b.dataset.mode;renderOpiuFullTable(true);});});
   function osFillTable(head, body){
     var cumLabel = DATA.length ? "Накопленный итог<br><span class=\"os-note\" style=\"margin:0\">" + monthLabel(DATA[0]) + " – " + monthLabel(DATA[DATA.length - 1]) + "</span>" : "Накопленный итог";
     head.innerHTML = '<th>Статья</th>' + DATA.map(function(m){ return '<th class="num">' + monthLabel(m) + '</th>'; }).join("") + '<th class="num os-cum">' + cumLabel + '</th>';
