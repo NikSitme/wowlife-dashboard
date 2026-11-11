@@ -257,7 +257,7 @@
       points.forEach(function(p,i){
         if(p.previous!==null && prevPts.filter(Boolean).length<3) svg.push('<circle cx="'+x(i)+'" cy="'+y(p.previous)+'" r="4" fill="var(--surface-1)" stroke="var(--rd-previous)" stroke-width="2"/>');
         if(p.current!==null) svg.push('<circle class="rd-point" cx="'+x(i)+'" cy="'+y(p.current)+'" r="'+(points.length>60?2.5:4.5)+'"/>');
-        if(i%labelEvery===0 || i===points.length-1){
+        if(i===points.length-1 || i%labelEvery===0 && (state.step!=='day' || i===0 || x(points.length-1)-x(i)>=65)){
           var label=p.label||(state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from));
           svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label'+(state.step==='month'?' rd-month-target':'')+'" data-i="'+i+'"'+(state.step==='month'?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+'>'+esc(label)+'</text>');
         }
