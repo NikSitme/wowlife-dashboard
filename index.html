@@ -434,6 +434,12 @@
 .rd-summary{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
 .rd-summary strong{font-size:29px;letter-spacing:-.8px;}
 .rd-summary span{color:var(--text-secondary);font-size:13px;}
+.rd-month-navigation{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 16px;}
+.rd-month-navigation[hidden],.rd-month-back[hidden]{display:none;}
+.rd-month-navigation .cap{margin:0;}
+.rd-month-back{font:inherit;font-size:14px;color:var(--s1);background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:8px 12px;cursor:pointer;}
+.rd-month-back:hover{background:var(--surface-2);}
+.rd-month-back:focus-visible{outline:2px solid var(--s1);outline-offset:3px;}
 #revYearWrap{overflow-x:auto;min-height:285px;}
 #revYearWrap svg{display:block;}
 .rd-grid{stroke:var(--border);stroke-dasharray:2 6;}
@@ -442,6 +448,8 @@
 .rd-current{stroke:var(--rd-current);}.rd-previous{stroke:var(--rd-previous);stroke-dasharray:5 6;}
 .rd-point{fill:var(--surface-1);stroke:var(--rd-current);stroke-width:2.5;}
 .rd-hover{fill:transparent;cursor:crosshair;}.rd-hover:focus{outline:none;}
+.rd-month-target{cursor:pointer;}.rd-period-label.rd-month-target:hover{fill:var(--s1);text-decoration:underline;}
+.rd-hover.rd-month-target:focus-visible{stroke:var(--s1);stroke-width:1;stroke-dasharray:4 4;}
 .rd-guide{stroke:#7893ae;stroke-width:1;opacity:.55;}
 .rd-active-halo{fill:var(--rd-current);opacity:.14;}
 .rd-active-current{fill:var(--rd-current);stroke:var(--surface-1);stroke-width:2;}
@@ -680,6 +688,7 @@
       </div>
     </div>
     <div class="rd-summary"><strong id="rdTotal"></strong><span id="rdDelta"></span></div>
+    <div class="rd-month-navigation" id="rdMonthNavigation" hidden><button type="button" class="rd-month-back" id="rdMonthBack" hidden>← К месяцам</button><p class="cap" id="rdMonthView" aria-live="polite"></p></div>
     <div class="chart-wrap" id="revYearWrap"></div>
     <div class="rd-legend"><span><i class="rd-key"></i><span id="rdCurrentLegend">Текущий период</span></span><span><i class="rd-key previous"></i><span id="rdPreviousLegend">Прошлый год</span></span></div>
     <p class="cap" id="rdCaption">Пунктир — показатели за прошлый год. Можно выбрать несколько источников.</p>
@@ -4567,7 +4576,7 @@ window.__salesActSetData = function(newData){
 </div>
 </div>
 
-<script src="scripts/revenue-dynamics.js?v=full-previous-range-20261109"></script>
+<script src="scripts/revenue-dynamics.js?v=month-drilldown-20261111"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){

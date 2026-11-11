@@ -6,6 +6,7 @@
   'use strict';
   var SOURCES = [['site','Сайт (без B2B)'],['ozon','Ozon'],['wb','Wildberries'],['ym','Яндекс Маркет'],['flowwow','Flowwow'],['b2b','B2B']];
   var MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  var MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
   function isoDate(value){
     var s = String(value || '').trim(), m = s.match(/^(\d{4})-(\d{2})-(\d{2})/) || s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
     if (!m) return null;
@@ -19,6 +20,10 @@
   function shiftYear(s){
     var year = +s.slice(0,4)-1, prefix = year+s.slice(4,8);
     return prefix+String(Math.min(+s.slice(8,10),+monthEnd(prefix+'01').slice(8,10))).padStart(2,'0');
+  }
+  function monthRange(value){
+    var date=isoDate(value);if(!date)return null;
+    return {from:date.slice(0,7)+'-01',to:monthEnd(date)};
   }
   function fromRows(siteRows, mpRows, today){
     var h = siteRows[0] || [], dateCol = h.indexOf('Дата зачисления'), amountCol = h.indexOf('Сумма операции'), articleCol = h.indexOf('Статья');
@@ -115,6 +120,19 @@
     });
   }
   function shortDate(s){ return +s.slice(8,10)+' '+MONTHS[+s.slice(5,7)-1]; }
+  function monthSeries(data,options){
+    var range=monthRange(options.from),previousEnd=monthEnd(shiftYear(range.from));
+    var points=series(data,Object.assign({},options,range,{step:'day'}));
+    if(range.to.slice(8)>previousEnd.slice(8))points[points.length-1].noPreviousDay=true;
+    // A leap day in the prior year gets its own position, without inventing a
+    // current-year date or counting February 28 twice.
+    if(previousEnd.slice(8)>range.to.slice(8)){
+      var prior=series(data,Object.assign({},options,{step:'day',from:previousEnd,to:previousEnd}))[0];
+      var covered=keysFor(options.sources,options.city).every(function(key){var c=data.coverage[key];return c&&c.from<=previousEnd&&c.to>=previousEnd;});
+      points.push({from:null,to:null,current:null,previous:covered?prior.current:null,comparablePrevious:null,partial:false,previousPartial:false,through:null,previousFrom:previousEnd,previousThrough:prior.through,noCurrentDay:true,label:shortDate(previousEnd)});
+    }
+    return points;
+  }
   function money(n){ return Math.round(n).toLocaleString('ru-RU')+' ₽'; }
   function axis(n){ return Math.abs(n)>=1e6 ? (n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' млн' : Math.abs(n)>=1000 ? (n/1000).toLocaleString('ru-RU',{maximumFractionDigits:0})+' тыс' : Math.round(n).toLocaleString('ru-RU'); }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -134,10 +152,22 @@
     return chunks.join(' ');
   }
   function mount(card){
-    var data = null, updated = false;
+    var data = null, updated = false, detailParent = null;
     var state = {sources:SOURCES.map(function(s){return s[0];}),city:'all',step:'month',preset:'year',from:'',to:''};
     var wrap=card.querySelector('#revYearWrap'), tip=card.querySelector('.rd-tooltip');
+    var navigation=card.querySelector('#rdMonthNavigation'),backButton=card.querySelector('#rdMonthBack'),viewLabel=card.querySelector('#rdMonthView');
     var hideHover=function(){tip.hidden=true;};
+    function openMonth(value){
+      var range=monthRange(value);if(!range||state.step!=='month')return;
+      detailParent={from:state.from,to:state.to,step:state.step,preset:state.preset,month:range.from};
+      state.from=range.from;state.to=range.to;state.step='day';state.preset='custom';render();
+      backButton.focus({preventScroll:true});
+    }
+    backButton.addEventListener('click',function(){
+      if(!detailParent)return;var parent=detailParent;detailParent=null;
+      state.from=parent.from;state.to=parent.to;state.step=parent.step;state.preset=parent.preset;render();
+      var target=wrap.querySelector('.rd-hover[data-rd-month="'+parent.month+'"]');if(target)target.focus({preventScroll:true});
+    });
     function setPreset(preset){
       state.preset=preset;
       if(!data)return;
@@ -168,11 +198,12 @@
     picker.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();picker.open=false;picker.querySelector('summary').focus();}});
     card.querySelector('#yearCityPresets').addEventListener('change',function(e){state.city=e.target.value;render();});
     card.querySelector('#yearStepPresets').addEventListener('change',function(e){
-      state.step=e.target.value;
+      detailParent=null;state.step=e.target.value;
       if(state.preset!=='custom')setPreset(state.step==='day'?'30':state.step==='week'?'90':state.step==='year'?'all':'year');
       render();
     });
     card.querySelector('#yearRangePresets').addEventListener('change',function(e){
+      detailParent=null;
       if(e.target.value==='custom')state.preset='custom';else setPreset(e.target.value);
       render();
       if(state.preset==='custom'){var dateInput=card.querySelector('#yearFromDate');if(window.WowlifeDatePicker)window.WowlifeDatePicker.focus(dateInput);else dateInput.focus();}
@@ -192,18 +223,21 @@
       card.querySelector('#yearRangePresets').value=state.preset;
       card.querySelector('#yearFromDate').value=state.from; card.querySelector('#yearToDate').value=state.to;
       if(window.WowlifeDatePicker)window.WowlifeDatePicker.refresh();
-      var selected=keysFor(state.sources,state.city), points=series(data,state), defined=points.filter(function(p){return p.current!==null;});
+      navigation.hidden=!detailParent&&state.step!=='month';backButton.hidden=!detailParent;
+      viewLabel.textContent=detailParent?MONTH_NAMES[+state.from.slice(5,7)-1]+' '+state.from.slice(0,4)+' · по дням':'Нажмите на месяц на графике, чтобы увидеть дни';
+      var selected=keysFor(state.sources,state.city), points=detailParent?monthSeries(data,state):series(data,state), defined=points.filter(function(p){return p.current!==null;});
       var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.comparablePrevious!==null;}) ? defined.reduce(function(a,p){return a+p.comparablePrevious;},0) : null;
       var names=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];}).join(' + ');
       card.querySelector('#rdTotal').textContent=selected.length ? (defined.length ? money(current) : 'Нет данных текущего периода') : 'Выберите источники';
-      card.querySelector('#rdDelta').textContent=prev===null || !defined.length ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к сопоставимым дням прошлого года');
+      card.querySelector('#rdDelta').textContent=!defined.length ? 'Нет данных текущего периода для сравнения' : prev===null ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к сопоставимым дням прошлого года');
       var captions=[];
       if(state.sources.includes('site')) captions.push('Сайт без B2B — по '+shortDate(data.coverage.siteMsk.to));
       if(state.sources.includes('b2b')) captions.push('B2B — по '+shortDate(data.coverage.b2bAll.to));
       if(state.sources.some(function(s){return ['ozon','wb','ym','flowwow'].includes(s);})) captions.push('Маркеты — по '+shortDate(data.coverage.ozonMsk.to));
       card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — весь выбранный диапазон годом ранее; процент — по сопоставимым доступным дням';
       card.querySelector('#rdCurrentLegend').textContent='Текущий период: '+shortDate(state.from)+' '+state.from.slice(0,4)+' — '+shortDate(state.to)+' '+state.to.slice(0,4);
-      card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(shiftYear(state.to))+' '+shiftYear(state.to).slice(0,4);
+      var previousTo=detailParent?monthEnd(shiftYear(state.to)):shiftYear(state.to);
+      card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(previousTo)+' '+previousTo.slice(0,4);
       hideHover();
       if(!selected.length || !points.some(function(p){return p.current!==null || p.previous!==null;})){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
       var width=Math.max(560,wrap.clientWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
@@ -224,16 +258,17 @@
         if(p.previous!==null && prevPts.filter(Boolean).length<3) svg.push('<circle cx="'+x(i)+'" cy="'+y(p.previous)+'" r="4" fill="var(--surface-1)" stroke="var(--rd-previous)" stroke-width="2"/>');
         if(p.current!==null) svg.push('<circle class="rd-point" cx="'+x(i)+'" cy="'+y(p.current)+'" r="'+(points.length>60?2.5:4.5)+'"/>');
         if(i%labelEvery===0 || i===points.length-1){
-          var label=state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from);
-          svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label" data-i="'+i+'">'+esc(label)+'</text>');
+          var label=p.label||(state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from));
+          svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label'+(state.step==='month'?' rd-month-target':'')+'" data-i="'+i+'"'+(state.step==='month'?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+'>'+esc(label)+'</text>');
         }
-        if(p.current!==null || p.previous!==null){
+        if(state.step==='month' || p.current!==null || p.previous!==null){
           var half=points.length===1?pw/2:pw/(points.length-1)/2;
-          svg.push('<rect class="rd-hover" data-i="'+i+'" tabindex="0" role="img" aria-describedby="rdRevenueTooltip" aria-label="'+esc(shortDate(p.from)+': '+(p.current===null?'нет данных текущего периода':money(p.current))+(p.previous===null?'':', прошлый год '+money(p.previous)))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
+          var monthly=state.step==='month',monthName=monthly?MONTH_NAMES[+p.from.slice(5,7)-1]+' '+p.from.slice(0,4):'';
+          svg.push('<rect class="rd-hover'+(monthly?' rd-month-target':'')+'" data-i="'+i+'"'+(monthly?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+' tabindex="0" role="'+(monthly?'button':'img')+'" aria-describedby="rdRevenueTooltip" aria-label="'+esc((monthly?monthName:p.label||shortDate(p.from))+': '+(p.current===null?'нет данных текущего периода':money(p.current))+(p.previous===null?'':', прошлый год '+money(p.previous))+(monthly?'. Открыть по дням':''))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
         }
       });
       svg.push('<g class="rd-crosshair" visibility="hidden" pointer-events="none"><line class="rd-guide" y1="'+top+'" y2="'+(top+ph)+'"/><circle class="rd-active-halo" r="11"/><circle class="rd-active-current" r="5"/><circle class="rd-active-previous" r="4.5"/></g>');
-      wrap.innerHTML='<svg role="img" aria-label="Динамика выручки: сплошная линия — текущий период, пунктир — прошлый год" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>';
+      wrap.innerHTML='<svg role="group" aria-label="Динамика выручки: сплошная линия — текущий период, пунктир — прошлый год" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>';
       var svgEl=wrap.querySelector('svg'),crosshair=svgEl.querySelector('.rd-crosshair');
       hideHover=function(){
         tip.hidden=true;crosshair.setAttribute('visibility','hidden');
@@ -255,8 +290,8 @@
           var change=p.current!==null && !p.partial && !p.previousPartial && p.previous!==null && p.previous!==0 ? (p.current-p.previous)/Math.abs(p.previous)*100 : null;
           var delta=change===null?'':'<span class="rd-tip-delta '+(change>=0?'up':'down')+'">'+(change>0?'+':'')+change.toLocaleString('ru-RU',{maximumFractionDigits:1})+'%</span>';
           tip.innerHTML='<div class="rd-tip-heading"><span>Период</span><span>Выручка</span></div>'+
-            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(periodLabel(p.from,p.through || p.to))+'</span></div><strong>'+(p.current===null?'нет данных':money(p.current))+'</strong></div>'+
-            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(p.noCurrentDay?'Такого дня нет в текущем году':periodLabel(p.from,p.through || p.to))+'</span></div><strong>'+(p.current===null?'нет данных':money(p.current))+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(p.noPreviousDay?'Такого дня нет в прошлом году':periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
             (delta?'<div class="rd-tip-change"><span>К прошлому году</span>'+delta+'</div>':'')+
             (p.partial?'<div class="rd-tip-note">Текущий период: неполные данные по источникам</div>':'');
           tip.hidden=false;
@@ -266,14 +301,17 @@
           tip.style.top=Math.max(12,sr.top-cr.top+top*sr.height/height-tip.offsetHeight-14)+'px';
           tip.style.setProperty('--rd-tip-arrow',Math.max(16,Math.min(tip.offsetWidth-16,anchorX-left))+'px');
         }
-        zone.addEventListener('mousemove',show);zone.addEventListener('focus',show);zone.addEventListener('click',show);zone.addEventListener('mouseleave',hideHover);zone.addEventListener('blur',hideHover);
+        zone.addEventListener('mousemove',show);zone.addEventListener('focus',show);zone.addEventListener('mouseleave',hideHover);zone.addEventListener('blur',hideHover);
+        zone.addEventListener('click',function(event){if(zone.dataset.rdMonth)openMonth(zone.dataset.rdMonth);else show(event);});
+        if(zone.dataset.rdMonth)zone.addEventListener('keydown',function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();openMonth(zone.dataset.rdMonth);}});
       });
+      wrap.querySelectorAll('.rd-period-label[data-rd-month]').forEach(function(label){label.addEventListener('click',function(){openMonth(label.dataset.rdMonth);});});
     }
     ['yearFromDate','yearToDate'].forEach(function(id){card.querySelector('#'+id).addEventListener('change',function(){
       var from=card.querySelector('#yearFromDate').value,to=card.querySelector('#yearToDate').value;
       if(!isoDate(from)||!isoDate(to)||from>to){card.querySelector('#rdCaption').textContent='Дата начала должна быть не позже даты окончания';return;}
       if((+new Date(to)-+new Date(from))/86400000>3660){card.querySelector('#rdCaption').textContent='Выберите диапазон не больше 10 лет';return;}
-      state.from=from;state.to=to;state.preset='custom';render();
+      detailParent=null;state.from=from;state.to=to;state.preset='custom';render();
     });});
     function setData(next){
       if(!next || next.version!==1 || !next.days || !next.coverage || !isoDate(next.asOf)) return;
@@ -282,5 +320,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,mount:mount};
 });

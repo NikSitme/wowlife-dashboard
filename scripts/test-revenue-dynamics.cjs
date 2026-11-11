@@ -78,3 +78,36 @@ for(const step of ['day','week','month','year']){
  assert.equal(result.reduce((n,p)=>n+(p.current||0),0),10,'Current receipts unchanged: '+step);
 }
 console.log('Revenue previous-year range: full months/year, future-current gaps, custom endpoints, prior-only buckets and matching-date percentage passed.');
+
+assert.deepEqual(model.monthRange('2026-11-17'),{from:'2026-11-01',to:'2026-11-30'});
+assert.deepEqual(model.monthRange('2026-12-31'),{from:'2026-12-01',to:'2026-12-31'});
+assert.deepEqual(model.monthRange('2024-02-10'),{from:'2024-02-01',to:'2024-02-29'});
+assert.equal(model.monthRange('2026-02-31'),null);
+// Clicking a clipped monthly bucket still opens the complete calendar month.
+const detail=model.monthSeries(fullPriorYear,{...fullOptions,from:'2026-11-05',to:'2026-11-06'});
+assert.equal(detail.length,30);assert.equal(detail[0].from,'2026-11-01');assert.equal(detail.at(-1).to,'2026-11-30');
+assert.equal(detail[0].current,10);assert.equal(detail[0].previous,20);
+assert.equal(detail[19].current,null);assert.equal(detail[19].previous,280,'The previous month stays complete beyond current coverage');
+assert.equal(detail[1].current,0,'Covered days without receipts remain real zeros');
+assert.equal(detail[8].current,null,'Uncovered days are gaps');
+assert.equal(detail.reduce((n,p)=>n+(p.current||0),0),fullPrior[0].current);
+assert.equal(detail.reduce((n,p)=>n+(p.previous||0),0),fullPrior[0].previous);
+const before=JSON.stringify(data);
+for(const sources of [['site'],['b2b'],['ozon','wb'],['site','ozon','wb','b2b'],[]])for(const city of ['all','msk','spb']){
+  const options={sources,city,from:'2026-01-02',to:'2026-01-03'};
+  const days=model.monthSeries(data,options),aggregate=model.series(data,{...options,step:'month',from:'2026-01-01',to:'2026-01-31'})[0];
+  assert.equal(days.length,31);
+  assert.equal(days.reduce((n,p)=>n+(p.current||0),0),aggregate.current||0,'Selected sources/city remain identical in the daily view');
+  assert.equal(days.reduce((n,p)=>n+(p.previous||0),0),aggregate.previous||0,'Prior-year daily receipts reconcile to the month');
+}
+assert.equal(JSON.stringify(data),before,'Drill-down never changes source receipts or coverage');
+const currentLeap=model.monthSeries(leap,{sources:['site'],city:'all',from:'2024-02-01'});
+assert.equal(currentLeap.length,29);assert.equal(currentLeap[28].current,6);assert.equal(currentLeap[28].previous,null);
+assert.equal(currentLeap[28].noPreviousDay,true);
+assert.equal(currentLeap.reduce((n,p)=>n+(p.previous||0),0),12,'No repeated prior February 28 for a leap-year current month');
+const previousLeap={version:1,asOf:'2025-02-28',coverage:{siteMsk:{from:'2024-01-01',to:'2025-02-28'},siteSpb:{from:'2024-01-01',to:'2025-02-28'}},days:{'2024-02-28':{siteMsk:12},'2024-02-29':{siteMsk:7},'2025-02-28':{siteMsk:5}}};
+const leapDetail=model.monthSeries(previousLeap,{sources:['site'],city:'all',from:'2025-02-01'});
+assert.equal(leapDetail.length,29);assert.equal(leapDetail[28].current,null);assert.equal(leapDetail[28].previous,7);
+assert.equal(leapDetail[28].from,null);assert.equal(leapDetail[28].previousFrom,'2024-02-29');assert.equal(leapDetail[28].noCurrentDay,true);
+assert.equal(leapDetail.reduce((n,p)=>n+(p.previous||0),0),19,'Prior leap day is shown once, without fabricating a current-year date');
+console.log('Month drill-down: full calendar months, day-of-month alignment, source/city totals, current gaps, prior-only days, both leap-year directions and immutable inputs passed.');
