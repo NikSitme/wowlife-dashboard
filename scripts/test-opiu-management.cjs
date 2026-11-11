@@ -28,7 +28,7 @@ const grouping={DATA:embedded};
 vm.runInNewContext(definitions,grouping);
 const blocks=grouping.OS_BLOCKS;
 const fot=blocks.find(b=>b.key==='fixed').groups.find(g=>g.label==='ФОТ');
-const moved={'Менеджер маркетплейсов':'Маркетплейсы','РОП (перем)':'Отдел заботы','МОП (перем)':'Отдел заботы','СММ менеджер (перем)':'Маркетинг'};
+const moved={'Менеджер маркетплейсов':'Маркетплейсы','РОП (перем)':'Отдел заботы','МОП (перем)':'Отдел заботы','СММ менеджер (перем)':'Маркетинг','Блогеры':'Маркетинг'};
 const allLeaves=blocks.flatMap(b=>b.groups.flatMap(g=>g.children?g.children.flatMap(c=>Array.from(c.items)):Array.from(g.items)));
 for(const [article,department] of Object.entries(moved)){
   assert.equal(allLeaves.filter(s=>s===article).length,1,article+' is counted exactly once');
@@ -45,8 +45,8 @@ for(let i=0;i<embedded.length;i++){
 // parent rows: regrouping must leave operating/net profit unchanged.
 const fixture={label:'2026-11',rows:{'Wowlife МСК выручка':100000,'Активация':-10000,
  'Менеджер маркетплейсов':-12000,'РОП (перем)':-2000,'МОП (перем)':-3000,'СММ менеджер (перем)':-4000,
- 'Самовыкупы м-плейсы':-5000,'Отдел м-плейсов':-999999,'ФОТ ОП':-999999,'ФОТ Маркетинга':-999999}};
-assert.equal(management(fixture).value,64000);
+ 'Самовыкупы м-плейсы':-5000,'Блогеры':-6000,'Отдел м-плейсов':-999999,'ФОТ ОП':-999999,'ФОТ Маркетинга':-999999}};
+assert.equal(management(fixture).value,58000);
 grouping.DATA=[fixture];
 vm.runInNewContext('osExpanded={"block/fixed":true,"fixed/ФОТ":true,"fixed/ФОТ/Отдел заботы":true,"fixed/ФОТ/Маркетинг":true};',grouping);
 vm.runInNewContext(render+'\nvar head={},body={};osFillTable(head,body);',Object.assign(grouping,{monthLabel:m=>m.label,escapeHtml:s=>String(s)}));
