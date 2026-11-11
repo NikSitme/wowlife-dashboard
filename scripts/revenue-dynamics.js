@@ -133,6 +133,17 @@
     }
     return points;
   }
+  function moscowDate(now){
+    var parts={};new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now || new Date()).forEach(function(p){parts[p.type]=p.value;});
+    return parts.year+'-'+parts.month+'-'+parts.day;
+  }
+  function comparison(data,options,today){
+    var cutoff=addDays(isoDate(today) || moscowDate(),-1),to=options.to<cutoff?options.to:cutoff;
+    var points=options.from>to?[]:series(data,Object.assign({},options,{to:to})).filter(function(p){return p.current!==null;});
+    var current=points.length?Math.round(points.reduce(function(n,p){return n+p.current;},0)*100)/100:null;
+    var previous=points.length&&points.every(function(p){return p.comparablePrevious!==null;})?Math.round(points.reduce(function(n,p){return n+p.comparablePrevious;},0)*100)/100:null;
+    return {current:current,previous:previous,percent:previous===null||previous===0?null:(current/previous-1)*100,through:points.map(function(p){return p.through;}).sort().pop() || null,cutoff:cutoff};
+  }
   function money(n){ return Math.round(n).toLocaleString('ru-RU')+' ₽'; }
   function axis(n){ return Math.abs(n)>=1e6 ? (n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' млн' : Math.abs(n)>=1000 ? (n/1000).toLocaleString('ru-RU',{maximumFractionDigits:0})+' тыс' : Math.round(n).toLocaleString('ru-RU'); }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -226,15 +237,15 @@
       navigation.hidden=!detailParent&&state.step!=='month';backButton.hidden=!detailParent;
       viewLabel.textContent=detailParent?MONTH_NAMES[+state.from.slice(5,7)-1]+' '+state.from.slice(0,4)+' · по дням':'Нажмите на месяц на графике, чтобы увидеть дни';
       var selected=keysFor(state.sources,state.city), points=detailParent?monthSeries(data,state):series(data,state), defined=points.filter(function(p){return p.current!==null;});
-      var current=defined.reduce(function(a,p){return a+p.current;},0), prev=defined.every(function(p){return p.comparablePrevious!==null;}) ? defined.reduce(function(a,p){return a+p.comparablePrevious;},0) : null;
+      var current=defined.reduce(function(a,p){return a+p.current;},0),compared=comparison(data,state);
       var names=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];}).join(' + ');
       card.querySelector('#rdTotal').textContent=selected.length ? (defined.length ? money(current) : 'Нет данных текущего периода') : 'Выберите источники';
-      card.querySelector('#rdDelta').textContent=!defined.length ? 'Нет данных текущего периода для сравнения' : prev===null ? 'Нет сопоставимых данных прошлого года' : (prev===0 ? 'Прошлый год: '+money(prev) : (current>=prev?'+':'')+((current/prev-1)*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к сопоставимым дням прошлого года');
+      card.querySelector('#rdDelta').textContent=!selected.length ? '' : !compared.through ? 'Нет данных за завершённые дни для сравнения' : compared.previous===null ? 'Нет сопоставимых данных прошлого года' : (compared.previous===0 ? 'Прошлый год: '+money(compared.previous) : (compared.percent>=0?'+':'')+compared.percent.toLocaleString('ru-RU',{maximumFractionDigits:1})+'% к сопоставимым дням прошлого года')+' · по '+shortDate(compared.through)+' '+compared.through.slice(0,4);
       var captions=[];
       if(state.sources.includes('site')) captions.push('Сайт без B2B — по '+shortDate(data.coverage.siteMsk.to));
       if(state.sources.includes('b2b')) captions.push('B2B — по '+shortDate(data.coverage.b2bAll.to));
       if(state.sources.some(function(s){return ['ozon','wb','ym','flowwow'].includes(s);})) captions.push('Маркеты — по '+shortDate(data.coverage.ozonMsk.to));
-      card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — весь выбранный диапазон годом ранее; процент — по сопоставимым доступным дням';
+      card.querySelector('#rdCaption').textContent=(names || 'Источники не выбраны')+' · '+captions.join(' · ')+' · пунктир — весь выбранный диапазон годом ранее; процент — по сопоставимым дням, не позднее вчерашнего дня (МСК)';
       card.querySelector('#rdCurrentLegend').textContent='Текущий период: '+shortDate(state.from)+' '+state.from.slice(0,4)+' — '+shortDate(state.to)+' '+state.to.slice(0,4);
       var previousTo=detailParent?monthEnd(shiftYear(state.to)):shiftYear(state.to);
       card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(previousTo)+' '+previousTo.slice(0,4);
@@ -287,12 +298,14 @@
           var prevDot=crosshair.querySelector('.rd-active-previous');prevDot.setAttribute('visibility',p.previous===null?'hidden':'visible');
           if(p.previous!==null){prevDot.setAttribute('cx',cx);prevDot.setAttribute('cy',y(p.previous));}
           svgEl.querySelectorAll('.rd-period-label').forEach(function(label){label.classList.toggle('is-active',+label.dataset.i===i);});
-          var change=p.current!==null && !p.partial && !p.previousPartial && p.previous!==null && p.previous!==0 ? (p.current-p.previous)/Math.abs(p.previous)*100 : null;
+          var comparisonOptions=p.from?Object.assign({},state,{from:p.from,to:p.to}):null,periodComparison=comparisonOptions?comparison(data,comparisonOptions):null;
+          var change=periodComparison?periodComparison.percent:null;
           var delta=change===null?'':'<span class="rd-tip-delta '+(change>=0?'up':'down')+'">'+(change>0?'+':'')+change.toLocaleString('ru-RU',{maximumFractionDigits:1})+'%</span>';
           tip.innerHTML='<div class="rd-tip-heading"><span>Период</span><span>Выручка</span></div>'+
             '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(p.noCurrentDay?'Такого дня нет в текущем году':periodLabel(p.from,p.through || p.to))+'</span></div><strong>'+(p.current===null?'нет данных':money(p.current))+'</strong></div>'+
             '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(p.noPreviousDay?'Такого дня нет в прошлом году':periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
-            (delta?'<div class="rd-tip-change"><span>К прошлому году</span>'+delta+'</div>':'')+
+            (delta?'<div class="rd-tip-change"><span>К прошлому году · по '+esc(shortDate(periodComparison.through))+'</span>'+delta+'</div>':'')+
+            (p.from&&p.to>=(moscowDate())?'<div class="rd-tip-note">Процент — только за завершённые дни (МСК)</div>':'')+
             (p.partial?'<div class="rd-tip-note">Текущий период: неполные данные по источникам</div>':'');
           tip.hidden=false;
           var cr=card.getBoundingClientRect(),sr=svgEl.getBoundingClientRect(),anchorX=sr.left+cx*sr.width/width-cr.left;
@@ -320,5 +333,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,mount:mount};
 });

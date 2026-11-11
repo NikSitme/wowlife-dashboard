@@ -111,3 +111,39 @@ assert.equal(leapDetail.length,29);assert.equal(leapDetail[28].current,null);ass
 assert.equal(leapDetail[28].from,null);assert.equal(leapDetail[28].previousFrom,'2024-02-29');assert.equal(leapDetail[28].noCurrentDay,true);
 assert.equal(leapDetail.reduce((n,p)=>n+(p.previous||0),0),19,'Prior leap day is shown once, without fabricating a current-year date');
 console.log('Month drill-down: full calendar months, day-of-month alignment, source/city totals, current gaps, prior-only days, both leap-year directions and immutable inputs passed.');
+
+// The comparison excludes today's partial receipts from both sides, without
+// trimming the plotted series or extending a historical selection.
+assert.equal(model.moscowDate(new Date('2026-11-10T20:59:59Z')),'2026-11-10');
+assert.equal(model.moscowDate(new Date('2026-11-10T21:00:00Z')),'2026-11-11');
+assert.equal(model.moscowDate(new Date('2025-12-31T21:00:00Z')),'2026-01-01');
+const partialToday={version:1,asOf:'2026-11-11',coverage:{
+ siteMsk:{from:'2025-01-01',to:'2026-11-11'},siteSpb:{from:'2025-01-01',to:'2026-11-11'},
+ ozonMsk:{from:'2025-01-01',to:'2026-11-08'},ozonSpb:{from:'2025-01-01',to:'2026-11-08'}
+},days:{'2026-11-10':{siteMsk:100},'2026-11-11':{siteMsk:300},'2025-11-10':{siteMsk:10},'2025-11-11':{siteMsk:10000},'2026-11-08':{ozonMsk:50},'2025-11-08':{ozonMsk:5}}};
+const cutoffOptions={sources:['site','ozon'],city:'all',from:'2026-11-01',to:'2026-11-30',step:'month'};
+const initialToday=JSON.stringify(partialToday);
+for(const step of ['day','week','month','year']){
+ const result=model.comparison(partialToday,{...cutoffOptions,step},'2026-11-11');
+ assert.deepEqual(result,{current:150,previous:15,percent:900,through:'2026-11-10',cutoff:'2026-11-10'},step);
+ assert.equal(model.series(partialToday,{...cutoffOptions,step}).reduce((n,p)=>n+(p.current||0),0),450,'Plotted/current total still includes today');
+}
+assert.equal(model.comparison(partialToday,{...cutoffOptions,from:'2026-11-11'},'2026-11-11').percent,null,'Only today/future: no percentage');
+assert.equal(model.comparison(partialToday,{...cutoffOptions,from:'2026-12-01',to:'2026-12-31'},'2026-11-11').through,null);
+assert.equal(model.comparison(partialToday,{...cutoffOptions,sources:[]},'2026-11-11').percent,null);
+assert.equal(model.comparison(partialToday,{...cutoffOptions,sources:['b2b'],city:'msk'},'2026-11-11').current,null);
+assert.equal(model.comparison(partialToday,{...cutoffOptions,sources:['site'],city:'msk'},'2026-11-11').current,100);
+assert.equal(model.comparison(partialToday,{...cutoffOptions,sources:['site'],city:'spb'},'2026-11-11').previous,0,'Real zero is retained');
+assert.equal(model.comparison(partialToday,{...cutoffOptions,sources:['ozon']},'2026-11-11').through,'2026-11-08','Older source coverage is never extended to yesterday');
+const selectedEnd=model.comparison(partialToday,{...cutoffOptions,to:'2026-11-08'},'2026-11-11');
+assert.equal(selectedEnd.current,50);assert.equal(selectedEnd.previous,5);assert.equal(selectedEnd.through,'2026-11-08');
+const historical=model.comparison(partialToday,{...cutoffOptions,to:'2026-11-10'},'2026-11-20');
+assert.equal(historical.current,150);assert.equal(historical.previous,15);assert.equal(historical.through,'2026-11-10');
+const nextDay=model.comparison(partialToday,cutoffOptions,'2026-11-12');
+assert.equal(nextDay.current,450);assert.equal(nextDay.previous,10015,'Once today is finished, both matching days enter the comparison');
+const changedToday=JSON.parse(JSON.stringify(partialToday));changedToday.days['2026-11-11'].siteMsk=9999999;
+assert.equal(model.comparison(changedToday,cutoffOptions,'2026-11-11').percent,900,'Intraday receipts do not change the deviation');
+const pastYear={version:1,asOf:'2026-01-01',coverage:{siteMsk:{from:'2024-01-01',to:'2026-01-01'}},days:{'2024-12-31':{siteMsk:20},'2025-12-31':{siteMsk:30},'2026-01-01':{siteMsk:999}}};
+assert.deepEqual(model.comparison(pastYear,{sources:['site'],city:'msk',from:'2025-12-01',to:'2025-12-31',step:'month'},'2026-01-01'),{current:30,previous:20,percent:50,through:'2025-12-31',cutoff:'2025-12-31'});
+assert.equal(JSON.stringify(partialToday),initialToday,'Percentage calculation never mutates coverage/receipts');
+console.log('Completed-day comparison: Moscow midnight/year boundary, all steps, both operands capped, source coverage, city/empty/zero data, historical endpoints and intraday invariance passed.');
