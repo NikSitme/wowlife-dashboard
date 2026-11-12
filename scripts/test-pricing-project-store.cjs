@@ -58,6 +58,17 @@ function client(server,initial,storage=new MemoryStorage()){
  // UI sorting/searching is local and must not create server versions.
  const before=offline.project().revision;d.get().view='services';d.get().city='СПб';d.ctrl.record();await d.ctrl.flush();assert.equal(offline.project().revision,before);
  console.log('PASS offline recovery, no false success, idempotent uncertain commit and local-only filters');
+ // Typing while the initial cloud read or an IndexedDB backup is pending must not be lost.
+ const bootServer=fixture(model([])),boot=client(bootServer,model([]));let releaseRead;const bootCall=boot.ctrl.call;
+ boot.ctrl.call=async(action,args)=>{if(action==='read')await new Promise(resolve=>{releaseRead=resolve;});return bootCall(action,args);};
+ const opening=boot.ctrl.connect({id,key});boot.get().customSets.push(set('during-open'));boot.ctrl.record();releaseRead();await opening;assert.equal(bootServer.project().state.customSets[0].id,'during-open');
+ const racing=fixture(model([set('r')])),ra=client(racing),rb=client(racing);await ra.ctrl.connect({id,key});await rb.ctrl.connect({id,key});
+ ra.get().customSets.push(set('remote-new'));ra.ctrl.record();await ra.ctrl.flush();rb.get().customSets[0].name='Local while old';rb.ctrl.record();
+ let releaseBackup,backupStarted;const started=new Promise(resolve=>{backupStarted=resolve;});const normalBackup=rb.ctrl.journal.backup;
+ rb.ctrl.journal.backup=async(s,reason)=>{if(reason==='before-merge'){backupStarted();await new Promise(resolve=>{releaseBackup=resolve;});}return normalBackup(s,reason);};
+ const flushing=rb.ctrl.flush();await started;rb.get().customSets.push(set('during-merge'));rb.ctrl.record();releaseBackup();await flushing;
+ assert.deepEqual(new Set(racing.project().state.customSets.map(x=>x.id)),new Set(['r','remote-new','during-merge']));assert.equal(racing.project().state.customSets[0].name,'Local while old');
+ console.log('PASS edits during cloud startup and asynchronous merge backup remain intact');
  const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');assert(html.includes('projectController.record()'));assert(html.includes('data-setname'));assert(!html.includes(' · сохранены в этом браузере'));assert(html.includes('prProjectHistory'));assert(html.includes('prProjectDownload'));
  console.log('PASS page integration and truthful save status');
 })().catch(e=>{console.error(e);process.exitCode=1;});

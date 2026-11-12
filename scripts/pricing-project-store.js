@@ -72,10 +72,11 @@
   Controller.prototype.adopt=function(project){this.base=project;this.base.state=shared(project.state||{});this.apply(clone(this.base.state));this.lastLocal=stable(this.base.state);this.journal.local(this.get());};
   Controller.prototype.connect=async function(conn){
     if(this.busy)throw Error('Подождите окончания сохранения');
-    var local=shared(this.get()),project=await this.call('read',{p_id:conn.id,p_key:conn.key});project.state=shared(project.state||{});
+    var project=await this.call('read',{p_id:conn.id,p_key:conn.key});project.state=shared(project.state||{});
     var saved=null;try{saved=JSON.parse(this.storage.getItem(CONNECTION)||'null');}catch(e){}
     var same=!!(saved&&saved.id===conn.id&&saved.key===conn.key),base=same&&saved.base?shared(saved.base):null,mergeResult;
     await this.journal.backup(this.get(),'before-open');
+    var local=shared(this.get());
     if(base){mergeResult=merge(base,local,project.state);}
     else if(valuable(local)&&!equal(local,project.state)){
       if(!valuable(project.state))mergeResult={state:local,conflicts:[]};
@@ -103,8 +104,8 @@
           this.paused=true;this.notify('empty','Пустая версия не заменила сохранённые наборы. Подтвердите очистку или откройте общую версию.');break;
         }
         if(result.status==='conflict'){
-          var combined=merge(this.base.state,shared(this.get()),project.state);
           await this.journal.backup(this.get(),'before-merge');
+          var combined=merge(this.base.state,shared(this.get()),project.state);
           this.base=project;this.retry=null;
           if(combined.conflicts.length){this.paused=true;this.notify('conflict','Одни поля изменены одновременно. Обе версии сохранены; выберите, как продолжить.');break;}
           this.apply(combined.state);this.journal.local(this.get());this.lastLocal=stable(combined.state);this.persistBase();continue;
@@ -125,7 +126,7 @@
       this.adopt(p);this.persistBase();this.savedStatus();
     }}catch(e){this.notify('error','Не удалось проверить общую версию. Доступна сохранённая копия на устройстве.');}finally{this.busy=false;}
   };
-  Controller.prototype.useRemote=async function(){if(this.busy)return;var p=await this.call('read',this.args());await this.journal.backup(this.get(),'before-choose-remote');this.adopt(p);this.dirty=false;this.paused=false;this.retry=null;this.persistBase();this.savedStatus();};
+  Controller.prototype.useRemote=async function(){if(this.busy)return;var seq=this.seq,p=await this.call('read',this.args());await this.journal.backup(this.get(),'before-choose-remote');if(seq!==this.seq)throw Error('Появились новые правки. Общая версия не открыта; повторите выбор после сохранения.');this.adopt(p);this.dirty=false;this.paused=false;this.retry=null;this.persistBase();this.savedStatus();};
   Controller.prototype.confirmEmpty=async function(){this.paused=false;this.dirty=true;await this.flush(true);};
   var api={FIELDS:FIELDS,STORE:STORE,CONNECTION:CONNECTION,shared:shared,valuable:valuable,validate:validate,stable:stable,equal:equal,merge:merge,parseLink:parseLink,link:link,rpc:rpc,Journal:Journal,Controller:Controller};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePricingProjects=api;

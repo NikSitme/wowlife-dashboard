@@ -4,7 +4,7 @@
 <p>Проверка не изменяет и не очищает сохранённые данные. Здесь можно скачать найденную копию и перенести её в общий проект.</p>
 <p id="status" role="status">Проверяю сохранённые данные…</p><div id="copies"></div>
 <section><h2>Общий проект</h2><label>Закрытая ссылка от Никиты<input id="link" type="url" autocomplete="off" placeholder="Вставьте полную ссылку общего проекта"></label><small>Ссылка даёт доступ к проекту. Она не включается в скачиваемые резервные файлы.</small></section>
-<script src="./scripts/pricing-project-config.js?v=20261112"></script><script src="./scripts/pricing-project-store.js?v=20261112"></script>
+<script src="./scripts/pricing-project-config.js?v=20261112"></script><script src="./scripts/pricing-project-store.js?v=20261112-race-safe"></script>
 <script>
 (async function(){'use strict';var A=window.WowlifePricingProjects,status=document.querySelector('#status'),box=document.querySelector('#copies'),candidates=[],seen=new Set();
 function add(state,source,date){try{state=A.validate(state);if(!A.valuable(state))return;var sig=A.stable(state);if(seen.has(sig))return;seen.add(sig);candidates.push({state:state,source:source,savedAt:date||null});}catch(e){}}
