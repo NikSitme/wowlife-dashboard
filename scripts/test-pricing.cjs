@@ -45,7 +45,7 @@ const fact=model.defaults([{label:'2026-09',revenue_total:2000,revenue_breakdown
 near(fact.acq,2);near(fact.pack,3);near(fact.logistics,5.5);assert.equal(fact.ret,undefined);
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
-body=body.replace('\n  load();\n','\n  window.pricingTest={state,load,save,usagePercent,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
+body=body.replace('\n  load();\n','\n  window.pricingTest={state,load,save,usagePercent,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,catalogCandidateRows,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='',savedPricing=null;
 const context={localStorage:{getItem(){return savedPricing;},setItem(k,v){savedPricing=v;}},Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{addEventListener(){},WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
@@ -306,3 +306,42 @@ t.state.customSets=[{id:'snapshot-set',name:'Набор с копией услу
 t.save();assert.equal(JSON.parse(savedPricing).serviceSnapshots.a.name,'Сохранённая услуга');
 t.setData({catalog:{},sets:[]},null);const restoredSet=t.allSets().find(s=>s.id==='snapshot-set');assert.equal(restoredSet.items.length,1);assert.equal(restoredSet.items[0].name,'Сохранённая услуга');near(restoredSet.items[0].cost,1000);
 console.log('PASS custom set composition persists independently of downloaded CRM cache');
+
+// Picker previews use the set sale price and its discount, not the standalone service price.
+t.state.params={...defaults};t.state.pmode={...modes};t.state.usageMode='custom';t.state.mode='avg';
+t.state.rowParams={'set:picker':{disc:{mode:'pct',value:10},partner:{mode:'rub',value:1}}};
+const pickerSet={id:'picker',name:'Набор',city:'Мск',price:5000,items:[]};
+const pickerServices=[
+  {sid:'candidate',name:'Услуга',partner:'One',city:'Мск',price:2000,cost:1000,costKnown:true},
+  {sid:'loss',name:'Дорогая',partner:'One',city:'Мск',price:8000,cost:6000,costKnown:true},
+  {sid:'free',name:'Бесплатная',partner:'One',city:'Мск',price:500,cost:0,costKnown:true},
+  {sid:'missing',name:'Неизвестно',partner:'One',city:'Мск',price:500,cost:0,costKnown:false}
+];
+const pickerBefore=JSON.stringify([pickerSet,pickerServices,t.state]);
+let pickerRows=t.catalogCandidateRows(pickerSet,pickerServices);
+// 4500 after discount - 600 expected payout - 405 percentage expenses - 150 fixed variable expenses - 225 overhead.
+near(pickerRows[0].npRub,3120);near(pickerRows[0].npPct,3120/4500);
+near(pickerRows[1].npRub,120);near(pickerRows[2].npRub,3720);
+assert.equal(pickerRows[3].npRub,null);assert.equal(pickerRows[3].npPct,null);
+assert.equal(pickerRows[0].inSet,false);
+assert.equal(JSON.stringify([pickerSet,pickerServices,t.state]),pickerBefore,'Preview must not edit the project');
+assert.notEqual(pickerRows[0].npRub,t.calcService(pickerServices[0]).npAct);
+const addedSet={...pickerSet,items:[pickerServices[0]]};
+const afterAdd=t.calcItem(addedSet,addedSet.items[0],t.calcSet(addedSet));
+near(pickerRows[0].npRub,afterAdd.npAct);near(pickerRows[0].npPct,afterAdd.nAct);
+assert(t.catalogCandidateRows(addedSet,pickerServices)[0].inSet);
+// Already included items retain their actual payout, including composition-specific prices.
+const editedSet={...pickerSet,items:[{...pickerServices[0],cost:1200}]};
+const editedPreview=t.catalogCandidateRows(editedSet,pickerServices)[0];
+near(editedPreview.cost,1200);near(editedPreview.npRub,3000);
+near(editedPreview.npRub,t.calcItem(editedSet,editedSet.items[0],t.calcSet(editedSet)).npAct);
+t.state.usageMode='full';pickerRows=t.catalogCandidateRows(pickerSet,pickerServices);
+near(pickerRows[0].npRub,2720);near(pickerRows[1].npRub,-2280);
+t.state.params.fixed=500;t.state.pmode.fixed='rub';
+near(t.catalogCandidateRows(pickerSet,pickerServices)[0].npRub,2445);
+for(const price of [null,0])for(const row of t.catalogCandidateRows({...pickerSet,price},pickerServices)){
+  assert.equal(row.npRub,null);assert.equal(row.npPct,null);
+}
+t.state.rowParams['set:picker'].disc={mode:'pct',value:100};
+assert.equal(t.catalogCandidateRows(pickerSet,pickerServices)[0].npRub,null);
+console.log('PASS picker net profit: set price, discount, usage, all expenses, composition payout, before/after add, missing/zero prices and payouts, no project mutation');

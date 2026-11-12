@@ -14,6 +14,7 @@
       if(spec.key==='activations')return Number.isSafeInteger(row.activations12m)&&row.activations12m>=0?row.activations12m:null;
       if(spec.key==='cost')return Number.isFinite(row.cost)&&(row.cost>0||row.cost===0&&row.costKnown===true)?row.cost:null;
       if(spec.key==='price')return Number.isFinite(row.price)?row.price:null;
+      if(spec.key==='npRub'||spec.key==='npPct')return Number.isFinite(row[spec.key])?row[spec.key]:null;
       if(spec.key==='inSet')return row.inSet?1:0;
       var text=String(row[spec.key]||'').trim();return text||null;
     }
@@ -25,7 +26,7 @@
     });
   }
   function sortSpec(value){
-    var match=String(value||'name').match(/^(name|category|partner|activations|price|cost|inSet)(?:-(asc|desc))?$/);
+    var match=String(value||'name').match(/^(name|category|partner|activations|price|cost|npRub|npPct|inSet)(?:-(asc|desc))?$/);
     return match?{key:match[1],dir:match[2]||'asc'}:{key:'name',dir:'asc'};
   }
   function matchesQuery(row,query){

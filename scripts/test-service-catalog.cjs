@@ -34,10 +34,10 @@ assert.deepEqual(C.filter(missingPrice,'Мск',{sort:'price-asc'}).map(s=>s.sid
 assert.deepEqual(C.filter(missingPrice,'Мск',{max:200}).map(s=>s.sid),['known']);
 // All picker columns sort the complete filtered catalog; zero is data, not missing.
 const sortRows=[
-  {sid:'10',city:'Мск',name:'Услуга 10',category:'Яхты',partner:'Я 10',activations12m:10,price:100,cost:80,inSet:true},
-  {sid:'2',city:'Мск',name:'Услуга 2',category:'Арт 10',partner:'А 10',activations12m:2,price:20,cost:10,inSet:false},
-  {sid:'1',city:'Мск',name:'Услуга 1',category:'Арт 2',partner:'А 2',activations12m:0,price:0,cost:0,costKnown:true,inSet:false},
-  {sid:'missing',city:'Мск',name:'Пропуск',category:'',partner:'',activations12m:null,price:null,cost:0,costKnown:false,inSet:false},
+  {sid:'10',city:'Мск',name:'Услуга 10',category:'Яхты',partner:'Я 10',activations12m:10,price:100,cost:80,npRub:100,npPct:.25,inSet:true},
+  {sid:'2',city:'Мск',name:'Услуга 2',category:'Арт 10',partner:'А 10',activations12m:2,price:20,cost:10,npRub:0,npPct:0,inSet:false},
+  {sid:'1',city:'Мск',name:'Услуга 1',category:'Арт 2',partner:'А 2',activations12m:0,price:0,cost:0,costKnown:true,npRub:-20,npPct:-.1,inSet:false},
+  {sid:'missing',city:'Мск',name:'Пропуск',category:'',partner:'',activations12m:null,price:null,cost:0,costKnown:false,npRub:null,npPct:null,inSet:false},
   {sid:'other-city',city:'СПб',name:'А',category:'А',partner:'А',activations12m:999,price:999,cost:999,inSet:true}
 ];
 sortRows.forEach(Object.freeze);Object.freeze(sortRows);
@@ -48,6 +48,8 @@ const sortExpectations={
   activations:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
   price:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
   cost:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  npRub:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
+  npPct:{asc:['1','2','10','missing'],desc:['10','2','1','missing']},
   inSet:{asc:['missing','1','2','10'],desc:['10','missing','1','2']}
 };
 for(const [key,directions] of Object.entries(sortExpectations))for(const [dir,expected] of Object.entries(directions)){
@@ -82,7 +84,7 @@ for(const [sid,city,category] of [['21514','Мск','СПА, массаж, ба�
   assert.equal(figmaClassify({sid,city}),category,sid);
 }
 assert(!data.categories.some(c=>['Прочее','Романтические впечатления','Семейный отдых','Без категории','Наборы и сертификат на сумму'].includes(c)),'Only the 12 service categories from the Figma board');
-console.log('PASS service catalog: all 7 sort keys in both directions, missing/zero values, stable ties, city isolation, combined filters, Figma categories, uncapped results and inline syntax');
+console.log('PASS service catalog: all 9 sort keys in both directions, missing/zero values, stable ties, city isolation, combined filters, Figma categories, uncapped results and inline syntax');
 
 const search=require("./service-catalog").matchesQuery;
 assert(search({sid:"30",name:"Example"},"30"));
