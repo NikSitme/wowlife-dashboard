@@ -4195,7 +4195,8 @@ window.__salesActSetData = function(newData){
       <button type="button" class="pr-btn quiet reset" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
     </div>
     <section id="prProjectBar" class="pr-project-bar" aria-label="Сохранение наборов" data-status="local">
-      <h3 id="prProjectName">Общий проект не подключён</h3>
+      <h3 id="prProjectName">Подключаю общий проект…</h3>
+      <p id="prProjectAudience" hidden>Общий для всех посетителей. Изменения услуг и наборов видны всем.</p>
       <p role="status" aria-live="polite">Проверяю сохранённые копии…</p>
       <div class="pr-project-actions">
         <button type="button" class="pr-btn pri" id="prProjectOpen">Открыть общий проект</button>
@@ -8134,9 +8135,9 @@ window.__salesActSetData = function(newData){
 </script>
 
 <link rel="stylesheet" href="./styles/pricing-projects.css?v=20261112">
-<script src="./scripts/pricing-project-config.js?v=20261112"></script>
-<script src="./scripts/pricing-project-store.js?v=20261112-race-safe"></script>
-<script src="./scripts/pricing-project-ui.js?v=20261112"></script>
+<script src="./scripts/pricing-project-config.js?v=20261112-public"></script>
+<script src="./scripts/pricing-project-store.js?v=20261112-public"></script>
+<script src="./scripts/pricing-project-ui.js?v=20261112-public"></script>
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/service-catalog.js?v=picker-sorting-20261109"></script>

@@ -1,5 +1,5 @@
 -- Shared pricing drafts. Only provisioned projects exist; there is no anonymous create/list API.
--- A 256-bit access key lives in the URL fragment, never in this repository or a query URL.
+-- A provisioned project can be explicitly public; other projects still require a private key.
 begin;
 create schema if not exists pricing_private;
 revoke all on schema pricing_private from public, anon, authenticated;
@@ -7,6 +7,7 @@ create table if not exists pricing_private.projects (
   id uuid primary key,
   key_hash bytea not null,
   title text not null,
+  public_access boolean not null default false,
   revision bigint not null default 0,
   state jsonb not null default '{}'::jsonb,
   mutation_id uuid,
@@ -21,6 +22,7 @@ create table if not exists pricing_private.versions (
   saved_at timestamptz not null default now(),
   primary key(project_id, revision)
 );
+alter table pricing_private.projects add column if not exists public_access boolean not null default false;
 alter table pricing_private.projects enable row level security;
 alter table pricing_private.versions enable row level security;
 revoke all on all tables in schema pricing_private from public, anon, authenticated;
@@ -29,12 +31,12 @@ create or replace function pricing_private.authorize(p_id uuid, p_key text)
 returns pricing_private.projects language plpgsql security definer set search_path = '' as $$
 declare p pricing_private.projects;
 begin
-  if p_key is null or p_key !~ '^[A-Za-z0-9_-]{43}$' then
+  select * into p from pricing_private.projects where id = p_id;
+  if not found then raise exception 'Project unavailable' using errcode = '42501'; end if;
+  if not p.public_access and (p_key is null or p_key !~ '^[A-Za-z0-9_-]{43}$'
+    or p.key_hash <> pg_catalog.sha256(pg_catalog.convert_to(p_key, 'UTF8'))) then
     raise exception 'Project unavailable' using errcode = '42501';
   end if;
-  select * into p from pricing_private.projects
-  where id = p_id and key_hash = pg_catalog.sha256(pg_catalog.convert_to(p_key, 'UTF8'));
-  if not found then raise exception 'Project unavailable' using errcode = '42501'; end if;
   return p;
 end $$;
 revoke all on function pricing_private.authorize(uuid,text) from public, anon, authenticated;

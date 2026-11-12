@@ -6,9 +6,9 @@ const key='k'.repeat(43),id='51ea7765-8e15-469a-8f50-6693a66ecda6';
 const set=(id,name=id)=>({id,name,city:'Мск',price:1000,items:['123','456']});
 const model=sets=>A.shared({params:{act:60,pack:244},pmode:{pack:'rub'},mode:'max',usageMode:'custom',customSets:sets,customServices:{},ov:{},sov:{},rowParams:{}});
 class MemoryStorage{constructor(){this.data=new Map();}get length(){return this.data.size;}key(i){return [...this.data.keys()][i];}getItem(k){return this.data.get(k)||null;}setItem(k,v){this.data.set(k,String(v));}removeItem(k){this.data.delete(k);}}
-function fixture(initial){
+function fixture(initial,isPublic=false){
  let project={id,title:'Тестовый проект',revision:1,state:clone(initial||model([])),updatedAt:new Date().toISOString()},versions=[clone(project)],calls=[];
- async function call(action,args){calls.push({action,args:clone(args)});if(args.p_key!==key)throw Error('No access');if(action==='read')return clone(project);
+ async function call(action,args){calls.push({action,args:clone(args)});if(args.p_id!==id||(!isPublic&&args.p_key!==key))throw Error('No access');if(action==='read')return clone(project);
   if(action==='save'){
    if(project.mutation===args.p_mutation)return {status:'saved',project:clone(project)};
    if(project.revision!==args.p_revision)return {status:'conflict',project:clone(project)};
@@ -69,6 +69,35 @@ function client(server,initial,storage=new MemoryStorage()){
  const flushing=rb.ctrl.flush();await started;rb.get().customSets.push(set('during-merge'));rb.ctrl.record();releaseBackup();await flushing;
  assert.deepEqual(new Set(racing.project().state.customSets.map(x=>x.id)),new Set(['r','remote-new','during-merge']));assert.equal(racing.project().state.customSets[0].name,'Local while old');
  console.log('PASS edits during cloud startup and asynchronous merge backup remain intact');
+ // Public default: one server project, no access key in ordinary URLs or requests.
+ const config={defaultProjectId:id},publicConn={id,public:true};
+ assert.deepEqual(A.connection(config,'https://niksitme.github.io/wowlife-dashboard/',null),publicConn);
+ assert.deepEqual(A.connection(config,url,{id,key}),publicConn);
+ assert.equal(A.link(publicConn,url),'https://niksitme.github.io/wowlife-dashboard/?tab=pricing');
+ const publicState=model([set('published')]);publicState.customServices.s1={id:'s1',name:'Общая услуга',price:1500};
+ const pub=fixture(publicState,true),visitor=client(pub,model([set('old-local')]));
+ await visitor.ctrl.connect(publicConn);
+ assert.deepEqual(visitor.get(),publicState);assert.equal(pub.project().revision,1);
+ assert(visitor.backups.some(x=>x.state.customSets[0]?.id==='old-local'));
+ assert(pub.calls.every(x=>x.args.p_key===null));
+ const visitor2=client(pub);await visitor2.ctrl.connect(publicConn);
+ visitor.get().customSets.push(set('new-public'));visitor.ctrl.record();await visitor.ctrl.flush();
+ visitor2.get().customServices.s2={id:'s2',name:'Создана другим посетителем',price:2000};visitor2.ctrl.record();await visitor2.ctrl.flush();
+ await visitor.ctrl.poll();assert.equal(visitor.get().customSets.length,2);assert.equal(Object.keys(visitor.get().customServices).length,2);
+ const visitorReload=client(pub,JSON.parse(visitor.storage.getItem(A.STORE)),visitor.storage);await visitorReload.ctrl.connect(publicConn);
+ assert.deepEqual(visitorReload.get(),pub.project().state);
+ // A known private connection upgrades without losing pending edits or retaining its key.
+ const prior=client(pub);await prior.ctrl.connect({id,key});prior.get().customSets[0].name='Правка до перехода';prior.ctrl.record();clearTimeout(prior.ctrl.timer);
+ const upgrade=client(pub,prior.get(),prior.storage);await upgrade.ctrl.connect(publicConn);
+ assert.equal(pub.project().state.customSets[0].name,'Правка до перехода');assert.equal(JSON.parse(prior.storage.getItem(A.CONNECTION)).key,undefined);
+ // Offline first load retries without silently dropping work created in this session.
+ const later=client(pub,model([set('unlinked')])),goodCall=later.ctrl.call;
+ later.ctrl.call=async()=>{throw Error('Offline');};await assert.rejects(later.ctrl.connect(publicConn));
+ later.get().customSets.push(set('created-offline'));later.ctrl.record();later.ctrl.call=goodCall;await later.ctrl.connect(publicConn);
+ assert(pub.project().state.customSets.some(x=>x.id==='created-offline'));assert(!pub.project().state.customSets.some(x=>x.id==='unlinked'));
+ const cfgSource=require('node:fs').readFileSync(require('node:path').join(__dirname,'pricing-project-config.js'),'utf8');
+ const cfgContext={window:{}};require('node:vm').runInNewContext(cfgSource,cfgContext);assert.equal(cfgContext.window.WOWLIFE_PROJECT_CONFIG.defaultProjectId,'0ff5bd23-e903-460c-8987-a76f30fff0ac');
+ console.log('PASS public default, legacy backups, two visitors, services/sets sync, reload, private migration and offline-first edits');
  const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');assert(html.includes('projectController.record()'));assert(html.includes('data-setname'));assert(!html.includes(' · сохранены в этом браузере'));assert(html.includes('prProjectHistory'));assert(html.includes('prProjectDownload'));
  console.log('PASS page integration and truthful save status');
 })().catch(e=>{console.error(e);process.exitCode=1;});

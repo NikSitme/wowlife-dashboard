@@ -3,8 +3,8 @@
 <body><h1>Восстановление наборов</h1><p>Откройте эту страницу на компьютере Василисы, в том же браузере и профиле, где она собирала наборы на дашборде.</p>
 <p>Проверка не изменяет и не очищает сохранённые данные. Здесь можно скачать найденную копию и перенести её в общий проект.</p>
 <p id="status" role="status">Проверяю сохранённые данные…</p><div id="copies"></div>
-<section><h2>Общий проект</h2><label>Закрытая ссылка от Никиты<input id="link" type="url" autocomplete="off" placeholder="Вставьте полную ссылку общего проекта"></label><small>Ссылка даёт доступ к проекту. Она не включается в скачиваемые резервные файлы.</small></section>
-<script src="./scripts/pricing-project-config.js?v=20261112"></script><script src="./scripts/pricing-project-store.js?v=20261112-race-safe"></script>
+<section><h2>Общий проект</h2><p>Найденную копию можно перенести в общий прайс. После подтверждения наборы и услуги будут доступны всем посетителям дашборда.</p></section>
+<script src="./scripts/pricing-project-config.js?v=20261112-public"></script><script src="./scripts/pricing-project-store.js?v=20261112-public"></script>
 <script>
 (async function(){'use strict';var A=window.WowlifePricingProjects,status=document.querySelector('#status'),box=document.querySelector('#copies'),candidates=[],seen=new Set();
 function add(state,source,date){try{state=A.validate(state);if(!A.valuable(state))return;var sig=A.stable(state);if(seen.has(sig))return;seen.add(sig);candidates.push({state:state,source:source,savedAt:date||null});}catch(e){}}
@@ -15,12 +15,12 @@ if(!candidates.length){if(!status.className)status.textContent='В этом бр
 status.textContent='Найдены сохранённые версии: '+candidates.length+'. Сначала скачайте резервную копию.';
 candidates.sort(function(a,b){return b.state.customSets.length-a.state.customSets.length;}).forEach(function(c,index){var section=document.createElement('section'),h=document.createElement('h2'),p=document.createElement('p'),save=document.createElement('button'),transfer=document.createElement('button');h.textContent='Копия '+(index+1)+' · наборов '+c.state.customSets.length;p.textContent=c.state.customSets.map(function(s){return s.name;}).join(' · ');section.append(h,p);var small=document.createElement('small');small.textContent=c.source+(c.savedAt?' · '+new Date(c.savedAt).toLocaleString('ru-RU'):'');section.appendChild(small);
 save.textContent='Скачать резервную копию';save.onclick=function(){download(c);};transfer.textContent='Перенести в общий проект';
-transfer.onclick=async function(){var conn=A.parseLink(document.querySelector('#link').value);if(!conn){status.textContent='Вставьте закрытую ссылку общего проекта.';return;}transfer.disabled=true;
-try{var call=A.rpc(window.WOWLIFE_PROJECT_CONFIG,window.fetch.bind(window)),args={p_id:conn.id,p_key:conn.key},remote=await call('read',args),remoteState=A.shared(remote.state||{}),local=c.state;
+transfer.onclick=async function(){var conn=A.connection(window.WOWLIFE_PROJECT_CONFIG,window.location.href,null);if(!conn){status.textContent='Общий проект не настроен.';return;}transfer.disabled=true;
+try{var call=A.rpc(window.WOWLIFE_PROJECT_CONFIG,window.fetch.bind(window)),args={p_id:conn.id,p_key:conn.key||null},remote=await call('read',args),remoteState=A.shared(remote.state||{}),local=c.state;
 // Preserve the shared project's financial parameters; import full set definitions and their overrides.
 if(A.valuable(remoteState)){local=Object.assign({},remoteState,{customSets:c.state.customSets,customServices:c.state.customServices,serviceSnapshots:c.state.serviceSnapshots,ov:c.state.ov,sov:c.state.sov,rowParams:c.state.rowParams});}
 var combined=A.merge(A.shared({}),local,remoteState);if(combined.conflicts.length)throw Error('Есть разные версии одних наборов или настроек. Скачайте копию: общая версия не перезаписана.');
-if(!window.confirm('Перенести '+c.state.customSets.length+' наборов в общий проект? Существующие наборы сохранятся.'))return;
+if(!window.confirm('Перенести '+c.state.customSets.length+' наборов и '+Object.keys(c.state.customServices).length+' услуг в общий проект для всех посетителей? Существующие наборы сохранятся.'))return;
 await journal.backup(c.state,'recovered-before-transfer');var result=await call('save',Object.assign(args,{p_revision:remote.revision,p_state:A.validate(combined.state),p_mutation:crypto.randomUUID(),p_allow_empty:false}));
 if(result.status!=='saved')throw Error('Общий проект успели изменить. Повторите перенос: данные не перезаписаны.');
 status.textContent='Восстановление подтверждено сервером: в общем проекте '+result.project.state.customSets.length+' наборов, версия '+result.project.revision+'.';transfer.textContent='Перенесено';

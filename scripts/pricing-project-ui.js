@@ -10,7 +10,9 @@
     var ctrl=new API.Controller({get:options.get,apply:options.apply,storage:storage,journal:journal,
       call:API.rpc(window.WOWLIFE_PROJECT_CONFIG,window.fetch.bind(window)),confirm:window.confirm.bind(window),
       editing:function(){return root.contains(document.activeElement)&&!!document.activeElement.closest('input,select,textarea');},
-      status:function(s){status.textContent=s.message;bar.dataset.status=s.kind;root.querySelector('#prProjectName').textContent=s.project?s.project.title:'Общий проект не подключён';
+      status:function(s){status.textContent=s.message;bar.dataset.status=s.kind;root.querySelector('#prProjectName').textContent=s.project?s.project.title:'Подключаю общий проект…';
+        root.querySelector('#prProjectOpen').hidden=!!(ctrl&&ctrl.conn&&ctrl.conn.public);
+        root.querySelector('#prProjectAudience').hidden=!(ctrl&&ctrl.conn&&ctrl.conn.public);
         ['#prProjectShare','#prProjectHistory'].forEach(function(sel){root.querySelector(sel).hidden=!s.connected;});
         root.querySelector('#prProjectRetry').hidden=s.kind!=='error'&&s.kind!=='pending';
         root.querySelector('#prProjectRemote').hidden=!['conflict','empty'].includes(s.kind);root.querySelector('#prProjectEmpty').hidden=s.kind!=='empty';
@@ -21,13 +23,13 @@
     function fail(e){ctrl.notify('error',e.message||'Не удалось выполнить действие');}
     function saveFile(data,label){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify({format:'wowlife-pricing-project',version:1,savedAt:new Date().toISOString(),state:API.shared(data)},null,2)],{type:'application/json'}));a.href=url;a.download='wowlife-наборы-'+(label||new Date().toISOString().replace(/[:.]/g,'-'))+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},30000);}
     async function openProject(value){
-      var c=API.parseLink(value);if(!c){fail(Error('Вставьте полную закрытую ссылку общего проекта'));return;}
+      var c=typeof value==='string'?API.connection(window.WOWLIFE_PROJECT_CONFIG,value,null):value;if(!c){fail(Error('Вставьте полную закрытую ссылку общего проекта'));return;}
       try{ctrl.notify('pending','Открываю общий проект…');await ctrl.connect(c);dialog.close();if(ctrl.base){window.history.replaceState(null,'',API.link(c,window.location.href));}}
       catch(e){fail(e);}
     }
     root.querySelector('#prProjectOpen').addEventListener('click',function(){var box=show('Открыть общий проект'),label=el('label','Закрытая ссылка проекта',box),input=el('input','',label);input.type='url';input.placeholder='Вставьте ссылку, полученную от Никиты или Василисы';input.autocomplete='off';el('p','Ссылка даёт доступ к составам и ценам проекта. Передавайте её только тем, кто работает над наборами.',box);button('Открыть',box,function(){openProject(input.value);});input.focus();});
     root.querySelector('#prProjectShare').addEventListener('click',async function(){var url=API.link(ctrl.conn,'https://niksitme.github.io/wowlife-dashboard/');
-      try{await navigator.clipboard.writeText(url);ctrl.notify('saved','Закрытая ссылка скопирована. Передайте её Василисе.');}
+      try{await navigator.clipboard.writeText(url);ctrl.notify('saved',ctrl.conn.public?'Ссылка скопирована. Общий проект открывается у всех посетителей.':'Закрытая ссылка скопирована.');}
       catch(e){var box=show('Ссылка общего проекта'),input=el('input','',box);input.value=url;input.readOnly=true;input.select();}
     });
     root.querySelector('#prProjectDownload').addEventListener('click',function(){saveFile(options.get());});
@@ -55,28 +57,30 @@
     }
     root.querySelector('#prProjectHistory').addEventListener('click',function(){history(false);});
     root.querySelector('#prProjectLocal').addEventListener('click',function(){history(true);});
-    root.querySelector('#prProjectRetry').addEventListener('click',function(){ctrl.flush();});
+    async function sync(){if(ctrl.conn){if(ctrl.dirty)await ctrl.flush();else await ctrl.poll();}else if(targetConnection&&!opening){opening=true;try{await openProject(targetConnection);}finally{opening=false;}}}
+    root.querySelector('#prProjectRetry').addEventListener('click',sync);
     root.querySelector('#prProjectRemote').addEventListener('click',function(){if(window.confirm('Открыть общую версию? Ваши текущие правки останутся в «Копиях устройства».'))ctrl.useRemote().catch(fail);});
     root.querySelector('#prProjectEmpty').addEventListener('click',function(){if(window.confirm('Подтверждаете удаление всех новых наборов из общего проекта? Прежняя версия останется в истории.'))ctrl.confirmEmpty();});
     root.querySelector('#prProjectClose').addEventListener('click',function(){dialog.close();});
-    window.addEventListener('online',function(){ctrl.flush();});
+    window.addEventListener('online',sync);
     window.addEventListener('beforeunload',function(e){if(ctrl.dirty){e.preventDefault();e.returnValue='';}});
-    document.addEventListener('visibilitychange',function(){if(document.hidden)ctrl.flush();else ctrl.poll();});
-    var interval=setInterval(function(){ctrl.dirty?ctrl.flush():ctrl.poll();},10000);
+    document.addEventListener('visibilitychange',function(){if(document.hidden)ctrl.flush();else sync();});
+    var targetConnection=null,opening=true;
+    var interval=setInterval(sync,10000);
     window.addEventListener('pagehide',function(){clearInterval(interval);});
     // Do not replace newer in-memory edits with an asynchronous startup recovery.
     var starting=API.stable(API.shared(options.get()));
     ctrl.ready=(async function(){
       var copies=await journal.list(),current=options.get();
-      if(!API.valuable(current)&&copies.length&&API.valuable(copies[0].state)&&API.stable(API.shared(current))===starting){
+      if(!window.WOWLIFE_PROJECT_CONFIG.defaultProjectId&&!API.valuable(current)&&copies.length&&API.valuable(copies[0].state)&&API.stable(API.shared(current))===starting){
         options.apply(API.shared(copies[0].state));journal.local(options.get());ctrl.notify('local','Восстановлена последняя копия с этого устройства.');
       }
       var fromLink=API.parseLink(window.location.href),saved=null;
       if(!fromLink){try{saved=JSON.parse(storage.getItem(API.CONNECTION)||'null');}catch(e){}}
-      var c=fromLink||saved;
-      if(c&&c.id&&c.key){await openProject(API.link(c,window.location.href));}
+      var c=API.connection(window.WOWLIFE_PROJECT_CONFIG,window.location.href,saved);targetConnection=c;
+      if(c){await openProject(c);}
       else ctrl.notify('local','Сохраняется на устройстве. Откройте закрытую ссылку для совместной работы.');
-    })().catch(fail);
+    })().catch(fail).finally(function(){opening=false;});
     ctrl.saveFile=saveFile;return ctrl;
   };
 })();

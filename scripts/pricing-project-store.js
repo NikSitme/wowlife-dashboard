@@ -41,7 +41,12 @@
     try{var u=new URL(raw,root.location&&root.location.href||'https://niksitme.github.io/wowlife-dashboard/');var p=new URLSearchParams(u.hash.slice(1)),id=p.get('pricing-project'),key=p.get('key');
       if(!/^[0-9a-f-]{36}$/i.test(id||'')||!/^[A-Za-z0-9_-]{43}$/.test(key||''))return null;return {id:id,key:key};}catch(e){return null;}
   }
-  function link(c,base){var u=new URL(base);u.hash=new URLSearchParams({'pricing-project':c.id,key:c.key}).toString();return u.href;}
+  function link(c,base){var u=new URL(base);if(c.public){u.hash='';u.searchParams.set('tab','pricing');return u.href;}u.hash=new URLSearchParams({'pricing-project':c.id,key:c.key}).toString();return u.href;}
+  function connection(config,url,saved){
+    var explicit=parseLink(url),id=config&&config.defaultProjectId;
+    if(id&&(!explicit||explicit.id===id))return {id:id,public:true};
+    return explicit||(saved&&saved.id&&saved.key?{id:saved.id,key:saved.key}:null);
+  }
   function uuid(){if(root.crypto&&root.crypto.randomUUID)return root.crypto.randomUUID();throw Error('Для сохранения нужен защищённый адрес HTTPS');}
   function rpc(config,fetcher){return async function(name,args){
     var ctrl=typeof AbortController!=='undefined'?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort();},15000):null;
@@ -60,7 +65,7 @@
     return new Promise(function(resolve){try{var tx=db.transaction('snapshots','readwrite'),id=reason==='edit'?'edit-'+Math.floor(Date.now()/1500):Date.now()+'-'+uuid();tx.objectStore('snapshots').put({id:id,savedAt:new Date().toISOString(),reason:reason||'edit',state:clean(clone(state))});tx.oncomplete=function(){resolve(true);};tx.onerror=tx.onabort=function(){resolve(false);};}catch(e){resolve(false);}});
   };
   Journal.prototype.list=async function(){var db=await this.open();if(!db)return [];return new Promise(function(resolve){var req=db.transaction('snapshots').objectStore('snapshots').getAll();req.onsuccess=function(){resolve(req.result.sort(function(a,b){return b.savedAt.localeCompare(a.savedAt);}));};req.onerror=function(){resolve([]);};});};
-  function Controller(opts){this.get=opts.get;this.apply=opts.apply;this.status=opts.status||function(){};this.call=opts.call;this.journal=opts.journal;this.storage=opts.storage;this.confirm=opts.confirm||function(){return false;};this.editing=opts.editing||function(){return false;};this.conn=null;this.base=null;this.dirty=false;this.paused=false;this.busy=false;this.seq=0;this.timer=null;this.retry=null;this.pending=null;this.lastLocal='';}
+  function Controller(opts){this.get=opts.get;this.apply=opts.apply;this.status=opts.status||function(){};this.call=opts.call;this.journal=opts.journal;this.storage=opts.storage;this.confirm=opts.confirm||function(){return false;};this.editing=opts.editing||function(){return false;};this.conn=null;this.base=null;this.dirty=false;this.paused=false;this.busy=false;this.seq=0;this.timer=null;this.retry=null;this.pending=null;this.lastLocal='';this.startState=shared(this.get());}
   Controller.prototype.notify=function(kind,message){this.status({kind:kind,message:message,project:this.base,connected:!!this.conn,dirty:this.dirty});};
   Controller.prototype.record=function(){
     var self=this,snapshot=clean(clone(self.get())),now=shared(snapshot),sig=stable(now),ok=self.journal.local(snapshot);
@@ -68,16 +73,23 @@
     if(self.conn&&self.base&&!equal(now,self.base.state)){self.dirty=true;if(!self.paused)self.notify('pending','Есть изменения — сохраняю в общий проект…');clearTimeout(self.timer);self.timer=setTimeout(function(){self.flush();},900);}
     else if(!self.conn&&ok)self.notify('local','Сохранено на устройстве. Общий проект не подключён.');return ok;
   };
-  Controller.prototype.args=function(){return {p_id:this.conn.id,p_key:this.conn.key};};
+  Controller.prototype.args=function(){return {p_id:this.conn.id,p_key:this.conn.key||null};};
   Controller.prototype.adopt=function(project){this.base=project;this.base.state=shared(project.state||{});this.apply(clone(this.base.state));this.lastLocal=stable(this.base.state);this.journal.local(this.get());};
   Controller.prototype.connect=async function(conn){
     if(this.busy)throw Error('Подождите окончания сохранения');
-    var project=await this.call('read',{p_id:conn.id,p_key:conn.key});project.state=shared(project.state||{});
+    var openingState=this.conn?shared(this.get()):this.startState;
+    var project=await this.call('read',{p_id:conn.id,p_key:conn.key||null});project.state=shared(project.state||{});
     var saved=null;try{saved=JSON.parse(this.storage.getItem(CONNECTION)||'null');}catch(e){}
-    var same=!!(saved&&saved.id===conn.id&&saved.key===conn.key),base=same&&saved.base?shared(saved.base):null,mergeResult;
-    await this.journal.backup(this.get(),'before-open');
+    var same=!!(saved&&saved.id===conn.id&&(conn.public||saved.key===conn.key)),base=same&&saved.base?shared(saved.base):null,mergeResult;
+    var backedUp=await this.journal.backup(this.get(),'before-open');
     var local=shared(this.get());
+    if(conn.public&&!base&&valuable(openingState)&&!equal(openingState,project.state)&&!backedUp)throw Error('Не удалось сохранить прежние локальные правки. Скачайте копию перед открытием общего проекта.');
     if(base){mergeResult=merge(base,local,project.state);}
+    else if(conn.public){
+      // Unlinked legacy drafts remain in the device backup. Only edits made during this opening
+      // can merge into the shared project; visiting must never publish stale local drafts.
+      mergeResult=merge(openingState,local,project.state);
+    }
     else if(valuable(local)&&!equal(local,project.state)){
       if(!valuable(project.state))mergeResult={state:local,conflicts:[]};
       else{if(!this.confirm('В браузере есть свои правки. Объединить их с общим проектом? Если один набор изменён по-разному, потребуется выбрать версию. Резервная копия уже сохранена.'))throw Error('Открытие отменено. Локальные правки сохранены.');mergeResult=merge(shared({}),local,project.state);}
@@ -87,8 +99,8 @@
     this.apply(clone(mergeResult.state));var applied=shared(this.get());this.lastLocal=stable(applied);this.journal.local(this.get());this.dirty=!equal(applied,project.state);this.persistBase();
     if(this.dirty){this.notify('pending','Переношу сохранённые правки в общий проект…');await this.flush();}else this.savedStatus();
   };
-  Controller.prototype.persistBase=function(){try{this.storage.setItem(CONNECTION,JSON.stringify({id:this.conn.id,key:this.conn.key,base:this.base.state,revision:this.base.revision}));}catch(e){this.notify('error','Ссылка проекта не сохранилась в браузере. Скопируйте её для следующего входа.');}};
-  Controller.prototype.savedStatus=function(){this.notify('saved','Сохранено в общем проекте · версия '+this.base.revision+' · '+new Date(this.base.updatedAt).toLocaleString('ru-RU')+' · наборов '+this.base.state.customSets.length);};
+  Controller.prototype.persistBase=function(){try{this.storage.setItem(CONNECTION,JSON.stringify({id:this.conn.id,key:this.conn.key,public:!!this.conn.public,base:this.base.state,revision:this.base.revision}));}catch(e){this.notify('error','Ссылка проекта не сохранилась в браузере. Скопируйте её для следующего входа.');}};
+  Controller.prototype.savedStatus=function(){this.notify('saved','Сохранено в общем проекте · версия '+this.base.revision+' · '+new Date(this.base.updatedAt).toLocaleString('ru-RU')+' · наборов '+this.base.state.customSets.length+' · новых услуг '+Object.keys(this.base.state.customServices).length);};
   Controller.prototype.flush=async function(allowEmpty){
     if(!this.conn||!this.base||!this.dirty||this.paused||this.busy)return;
     clearTimeout(this.timer);this.busy=true;
@@ -124,10 +136,10 @@
     try{var p=await this.call('read',this.args());if(p.revision!==this.base.revision&&seq===this.seq&&!this.dirty&&!this.editing()){
       await this.journal.backup(this.get(),'before-remote');if(seq!==this.seq||this.dirty||this.editing())return;
       this.adopt(p);this.persistBase();this.savedStatus();
-    }}catch(e){this.notify('error','Не удалось проверить общую версию. Доступна сохранённая копия на устройстве.');}finally{this.busy=false;}
+    }else if(p.revision===this.base.revision&&seq===this.seq&&!this.dirty)this.savedStatus();}catch(e){this.notify('error','Не удалось проверить общую версию. Доступна сохранённая копия на устройстве.');}finally{this.busy=false;}
   };
   Controller.prototype.useRemote=async function(){if(this.busy)return;var seq=this.seq,p=await this.call('read',this.args());await this.journal.backup(this.get(),'before-choose-remote');if(seq!==this.seq)throw Error('Появились новые правки. Общая версия не открыта; повторите выбор после сохранения.');this.adopt(p);this.dirty=false;this.paused=false;this.retry=null;this.persistBase();this.savedStatus();};
   Controller.prototype.confirmEmpty=async function(){this.paused=false;this.dirty=true;await this.flush(true);};
-  var api={FIELDS:FIELDS,STORE:STORE,CONNECTION:CONNECTION,shared:shared,valuable:valuable,validate:validate,stable:stable,equal:equal,merge:merge,parseLink:parseLink,link:link,rpc:rpc,Journal:Journal,Controller:Controller};
+  var api={FIELDS:FIELDS,STORE:STORE,CONNECTION:CONNECTION,shared:shared,valuable:valuable,validate:validate,stable:stable,equal:equal,merge:merge,parseLink:parseLink,link:link,connection:connection,rpc:rpc,Journal:Journal,Controller:Controller};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.WowlifePricingProjects=api;
 })(typeof window==='object'?window:globalThis);
