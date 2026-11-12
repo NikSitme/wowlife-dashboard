@@ -299,3 +299,10 @@ assert.equal(t.state.mode,'max');assert.equal(t.state.usageMode,'custom');near(t
 near(t.calcSet(t.allSets().find(s=>s.id==='independent')).partnerForecast,660);
 for(const mode of ['avg','act']){savedPricing=JSON.stringify({...preserved,mode});t.load();assert.equal(t.state.usageMode,'custom');near(t.usagePercent(),60);}
 console.log('PASS forecast persistence: legacy worst migrates to full + maximum, new selections reload independently, prices/discounts/drafts preserved');
+
+// A custom set retains a source snapshot when a later source download is unavailable.
+t.setData({catalog:{a:{sid:'a',name:'Сохранённая услуга',partner:'Партнёр',city:'Мск',price:2000,cost:1000}},sets:[]},null);
+t.state.customSets=[{id:'snapshot-set',name:'Набор с копией услуги',city:'Мск',price:3000,items:['a']}];t.state.customServices={};t.state.sov={};
+t.save();assert.equal(JSON.parse(savedPricing).serviceSnapshots.a.name,'Сохранённая услуга');
+t.setData({catalog:{},sets:[]},null);const restoredSet=t.allSets().find(s=>s.id==='snapshot-set');assert.equal(restoredSet.items.length,1);assert.equal(restoredSet.items[0].name,'Сохранённая услуга');near(restoredSet.items[0].cost,1000);
+console.log('PASS custom set composition persists independently of downloaded CRM cache');

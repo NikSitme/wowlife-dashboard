@@ -1,0 +1,30 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Восстановление наборов WOWlife</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;max-width:940px;margin:50px auto;padding:0 24px;color:#202b3b;background:#fafbfc}h1{font-size:32px;line-height:1.2}section{background:white;border:1px solid #dce2ea;border-radius:14px;padding:22px;margin:18px 0}button{background:#286fce;border:0;color:white;border-radius:9px;padding:12px 17px;font:inherit;margin:8px 10px 8px 0;cursor:pointer}button:disabled{background:#8390a1}input{box-sizing:border-box;width:100%;padding:13px;border:1px solid #bdc7d6;border-radius:8px;font:inherit}small{display:block;color:#5f6b7e}.error{color:#ac2929}#status{font-weight:600}</style></head>
+<body><h1>Восстановление наборов</h1><p>Откройте эту страницу на компьютере Василисы, в том же браузере и профиле, где она собирала наборы на дашборде.</p>
+<p>Проверка не изменяет и не очищает сохранённые данные. Здесь можно скачать найденную копию и перенести её в общий проект.</p>
+<p id="status" role="status">Проверяю сохранённые данные…</p><div id="copies"></div>
+<section><h2>Общий проект</h2><label>Закрытая ссылка от Никиты<input id="link" type="url" autocomplete="off" placeholder="Вставьте полную ссылку общего проекта"></label><small>Ссылка даёт доступ к проекту. Она не включается в скачиваемые резервные файлы.</small></section>
+<script src="./scripts/pricing-project-config.js?v=20261112"></script><script src="./scripts/pricing-project-store.js?v=20261112"></script>
+<script>
+(async function(){'use strict';var A=window.WowlifePricingProjects,status=document.querySelector('#status'),box=document.querySelector('#copies'),candidates=[],seen=new Set();
+function add(state,source,date){try{state=A.validate(state);if(!A.valuable(state))return;var sig=A.stable(state);if(seen.has(sig))return;seen.add(sig);candidates.push({state:state,source:source,savedAt:date||null});}catch(e){}}
+function download(c){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify({format:'wowlife-pricing-project',version:1,state:c.state,recoveredFrom:c.source,savedAt:c.savedAt},null,2)],{type:'application/json'}));a.href=url;a.download='wowlife-vosstanovlenie-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},30000);}
+var storage=null,journal=null;try{storage=localStorage;for(var i=0;i<storage.length;i++){var key=storage.key(i);if(!/wowlife.*pric/i.test(key))continue;try{var value=JSON.parse(storage.getItem(key));if(value){add(value.state||value,key,value.savedAt);if(value.base)add(value.base,key+' / последняя общая копия',null);}}catch(ignore){}}}catch(e){status.textContent='Браузер не разрешил прочитать сохранённые данные. Проверьте, что это обычный профиль, а не приватное окно.';status.className='error';}
+try{journal=new A.Journal(storage,window.indexedDB);(await journal.list()).forEach(function(v){add(v.state,'Резервная копия устройства',v.savedAt);});}catch(ignore){}
+if(!candidates.length){if(!status.className)status.textContent='В этом браузере по этому адресу сохранённые наборы не найдены. Проверьте исходный браузер, профиль и адрес дашборда. Без сохранившейся копии составы автоматически восстановить нельзя.';return;}
+status.textContent='Найдены сохранённые версии: '+candidates.length+'. Сначала скачайте резервную копию.';
+candidates.sort(function(a,b){return b.state.customSets.length-a.state.customSets.length;}).forEach(function(c,index){var section=document.createElement('section'),h=document.createElement('h2'),p=document.createElement('p'),save=document.createElement('button'),transfer=document.createElement('button');h.textContent='Копия '+(index+1)+' · наборов '+c.state.customSets.length;p.textContent=c.state.customSets.map(function(s){return s.name;}).join(' · ');section.append(h,p);var small=document.createElement('small');small.textContent=c.source+(c.savedAt?' · '+new Date(c.savedAt).toLocaleString('ru-RU'):'');section.appendChild(small);
+save.textContent='Скачать резервную копию';save.onclick=function(){download(c);};transfer.textContent='Перенести в общий проект';
+transfer.onclick=async function(){var conn=A.parseLink(document.querySelector('#link').value);if(!conn){status.textContent='Вставьте закрытую ссылку общего проекта.';return;}transfer.disabled=true;
+try{var call=A.rpc(window.WOWLIFE_PROJECT_CONFIG,window.fetch.bind(window)),args={p_id:conn.id,p_key:conn.key},remote=await call('read',args),remoteState=A.shared(remote.state||{}),local=c.state;
+// Preserve the shared project's financial parameters; import full set definitions and their overrides.
+if(A.valuable(remoteState)){local=Object.assign({},remoteState,{customSets:c.state.customSets,customServices:c.state.customServices,serviceSnapshots:c.state.serviceSnapshots,ov:c.state.ov,sov:c.state.sov,rowParams:c.state.rowParams});}
+var combined=A.merge(A.shared({}),local,remoteState);if(combined.conflicts.length)throw Error('Есть разные версии одних наборов или настроек. Скачайте копию: общая версия не перезаписана.');
+if(!window.confirm('Перенести '+c.state.customSets.length+' наборов в общий проект? Существующие наборы сохранятся.'))return;
+await journal.backup(c.state,'recovered-before-transfer');var result=await call('save',Object.assign(args,{p_revision:remote.revision,p_state:A.validate(combined.state),p_mutation:crypto.randomUUID(),p_allow_empty:false}));
+if(result.status!=='saved')throw Error('Общий проект успели изменить. Повторите перенос: данные не перезаписаны.');
+status.textContent='Восстановление подтверждено сервером: в общем проекте '+result.project.state.customSets.length+' наборов, версия '+result.project.revision+'.';transfer.textContent='Перенесено';
+}catch(e){status.textContent=e.message;status.className='error';}finally{transfer.disabled=false;}};
+section.append(save,transfer);box.appendChild(section);});
+})();
+</script></body></html>

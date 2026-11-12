@@ -598,7 +598,7 @@
         <li><b>Маржа услуги внутри набора</b> считается от цены набора, а не от цены услуги: получатель платит цену набора, какую бы услугу ни выбрал.</li>
         <li><b>Конструктор.</b> Вкладка «Новые наборы» содержит только созданные вручную наборы и копии для переработки; текущие наборы CRM находятся во вкладке «Наборы». «Новый набор» сразу открывает отдельную вкладку и создаёт пустой набор: название и цена; город берётся из выбранного города прайса (при «Все города» — Москва). Внутри набора повторного переключателя города нет. «⋮ → Добавить услугу» открывает полный каталог этого города: поиск, диапазон цены, категория, партнёр, сортировка по названию или цене. Фильтры применяются совместно, окно остаётся открытым после добавления, включённые услуги отмечены. Категории и порядок — по Figma WOW CJM, привязка тарифов по ID через карточки сайта. Новые услуги без сопоставления доступны в «Без категории». «Дублировать» переносит копию в «Новые наборы», «Скрыть» убирает текущий набор из прайса. Целевая цена — справочный расчёт покрытия всех расходов; цена модели меняется вручную.</li>
         <li><b>Актуальность.</b> Скрываются позиции с явными пометками «не работаем», «не сотрудничаем», «закрылись», «архив», «неактивен», а также со статусом отключения, если он передан в выгрузке. Правило действует в прайсе, составе, подборе, показателях и CSV. Нулевая цена не является признаком отключения. Текущая выгрузка не содержит отдельного поля активности, поэтому позиции без явного признака остаются видимыми. Сохранённые проекты и история не удаляются.</li>
-        <li><b>Правки.</b> Цены наборов и услуг, себестоимость, состав, новые наборы и услуги хранятся в localStorage этого браузера (как рычаги финмодели) и не меняют CRM. Правка себестоимости услуги действует во всех наборах, где она есть. «CSV» выгружает текущую таблицу; «Сбросить правки» удаляет все изменения.</li>
+        <li><b>Правки и сохранение.</b> В подключённом общем проекте цены, расходы, составы, новые наборы и услуги автоматически сохраняются на сервере с историей версий. Откройте одну закрытую ссылку на обоих компьютерах; доступ есть у владельцев ссылки. Статус подтверждённого сохранения показан над прайсом. На устройстве остаются резервные копии; проект можно скачать и открыть файлом. При одновременных изменениях разных наборов правки объединяются, при конфликте одного поля требуется выбрать версию. Без подключения общего проекта правки остаются только на устройстве. CRM не меняется. «CSV» выгружает текущую таблицу, резервный JSON сохраняет весь проект и составы.</li>
         <li><b>Ограничения.</b> Средняя маржа по наборам — простое среднее без веса продаж. Услуги без себестоимости в CRM (0) в расчёт не входят и помечены. Себестоимость в составе набора иногда отличается от прайса услуг (CRM хранит обе) — для набора берём значение из состава, если нет ручной выплаты или локальной правки.</li>
       </ul>
       <h3 id="doc-known">12. Известные особенности и принятые решения</h3>
@@ -4194,6 +4194,26 @@ window.__salesActSetData = function(newData){
       <button type="button" class="pr-btn" id="prCsv">Экспорт CSV</button>
       <button type="button" class="pr-btn quiet reset" id="prResetAll" title="Удалить все мои правки, новые наборы и услуги">Сбросить правки</button>
     </div>
+    <section id="prProjectBar" class="pr-project-bar" aria-label="Сохранение наборов" data-status="local">
+      <h3 id="prProjectName">Общий проект не подключён</h3>
+      <p role="status" aria-live="polite">Проверяю сохранённые копии…</p>
+      <div class="pr-project-actions">
+        <button type="button" class="pr-btn pri" id="prProjectOpen">Открыть общий проект</button>
+        <button type="button" class="pr-btn" id="prProjectShare" hidden>Копировать ссылку</button>
+        <button type="button" class="pr-btn" id="prProjectHistory" hidden>История проекта</button>
+        <button type="button" class="pr-btn" id="prProjectDownload">Скачать копию</button>
+        <button type="button" class="pr-btn" id="prProjectImport">Открыть копию</button>
+        <button type="button" class="pr-btn" id="prProjectLocal">Копии устройства</button>
+        <button type="button" class="pr-btn" id="prProjectRetry" hidden>Повторить сохранение</button>
+        <button type="button" class="pr-btn" id="prProjectRemote" hidden>Открыть общую версию</button>
+        <button type="button" class="pr-btn" id="prProjectEmpty" hidden>Подтвердить очистку</button>
+      </div>
+      <input type="file" id="prProjectFile" accept="application/json,.json" hidden>
+    </section>
+    <dialog id="prProjectDialog" class="pr-project-dialog" aria-labelledby="prProjectDialogTitle">
+      <header><h2 id="prProjectDialogTitle">Сохранение проекта</h2><button type="button" class="pr-btn" id="prProjectClose" aria-label="Закрыть сохранение проекта">Закрыть ×</button></header>
+      <div class="pr-project-body"></div>
+    </dialog>
     <details class="pr-help"><summary>Как работать с прайсом</summary>
     <div class="pr-howto" id="prHowSets">
       <div><b>Что сделать</b><span>Открыть набор кликом — услуги появятся в отдельном окне. Проверить состав и сравнить свою цену с целевой ценой покрытия расходов. Собрать новый набор: вкладка «Новые наборы» → значок папки с «+» → название, услуги из каталога города. В каталоге доступны фильтры по цене, категории и партнёру. Созданные наборы и копии находятся в этой вкладке отдельно от текущего прайса.</span></div>
@@ -8113,6 +8133,10 @@ window.__salesActSetData = function(newData){
 
 </script>
 
+<link rel="stylesheet" href="./styles/pricing-projects.css?v=20261112">
+<script src="./scripts/pricing-project-config.js?v=20261112"></script>
+<script src="./scripts/pricing-project-store.js?v=20261112"></script>
+<script src="./scripts/pricing-project-ui.js?v=20261112"></script>
 <script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/service-catalog.js?v=picker-sorting-20261109"></script>
@@ -8120,7 +8144,7 @@ window.__salesActSetData = function(newData){
 <script>
 // ===== Вкладка «Ценообразование»: прайс услуг и наборный прайс по логике standfin =====
 // Данные: проверенные ручные наборы и услуги таблицы «Никита»; CRM — выплаты и комиссии.
-// веса по активациям — лист «Активация». Правки пользователя (цены, состав, новые наборы/услуги) — в localStorage.
+// Веса по активациям — лист «Активация». Правки — общий проект, localStorage + IndexedDB как резерв.
 (function(){
   var root = document.querySelector('[data-panel="pricing"]');
   if (!root) return;
@@ -8128,6 +8152,8 @@ window.__salesActSetData = function(newData){
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v17-tank-payout-20261108", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
   var state = { params: null, pmode: {}, packaging: null, packagingVersion: 0, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", usageMode: "custom", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var projectController=null;
+  state.serviceSnapshots={};
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
   var STRUCTURE=window.WowlifePriceStructure,commissionIndex=STRUCTURE.index([]),commissionStarted=false;
   async function loadCommissions(){
@@ -8174,8 +8200,12 @@ window.__salesActSetData = function(newData){
   function cls(m, t){ return m === null ? "muted" : m < 0 ? "bad" : m < t ? "warn" : "good"; }
 
   // ---------- хранение ----------
-  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify({ params: state.params, pmode: state.pmode, packaging: state.packaging, packagingVersion: state.packagingVersion, packagingLinked: state.packagingLinked, rowParams: state.rowParams, collapsed: state.collapsed, view: state.view, city: state.city, mode: state.mode, usageMode: state.usageMode, sort: state.sort, itemSort: state.itemSort, ov: state.ov, sov: state.sov, customSets: state.customSets, customServices: state.customServices })); } catch (e) {} }
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
+  function projectSnapshot(){
+    state.customSets.forEach(function(s){(s.items||[]).forEach(function(sid){var source=state.customServices[sid]||CRM&&CRM.catalog[sid];if(!source)return;var copy={sid:sid};['name','partner','city','price','cost','costKnown','manualFields','manualSource','fromComposition','activations12m','activationPeriod','sourceTerms','manualReference'].forEach(function(k){if(source[k]!==undefined)copy[k]=source[k];});state.serviceSnapshots[sid]=copy;});});
+    return {params:state.params,pmode:state.pmode,packaging:state.packaging,packagingVersion:state.packagingVersion,packagingLinked:state.packagingLinked,rowParams:state.rowParams,collapsed:state.collapsed,view:state.view,city:state.city,mode:state.mode,usageMode:state.usageMode,sort:state.sort,itemSort:state.itemSort,ov:state.ov,sov:state.sov,customSets:state.customSets,customServices:state.customServices,serviceSnapshots:state.serviceSnapshots};
+  }
+  function save(){if(projectController)return projectController.record();try{var raw=JSON.stringify(projectSnapshot());localStorage.setItem(STORE_KEY,raw);if(localStorage.getItem(STORE_KEY)!==raw)throw Error('Storage verification');return true;}catch(e){var bar=root.querySelector('#prProjectBar [role="status"]');if(bar)bar.textContent='Сохранение на устройстве недоступно. Подключите общий проект или скачайте копию.';return false;}}
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices","serviceSnapshots"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
@@ -8305,7 +8335,7 @@ window.__salesActSetData = function(newData){
     if(CRM&&CRM.sets.some(function(s){return String(s.id)===String(sid);}))return null;
     var source=CRM && CRM.catalog[sid];
     if(source&&!CATALOG.serviceAvailable(source))return null;
-    var base = state.customServices[sid] || source || fallback || null;
+    var base = state.customServices[sid] || source || fallback || state.serviceSnapshots[sid] || null;
     if (!CATALOG.serviceAvailable(base)||fallback&&!CATALOG.serviceAvailable(fallback)) return null;
     var o = state.sov[sid] || {};
     var result = { sid: sid, name: o.name !== undefined ? o.name : base.name, partner: o.partner !== undefined ? o.partner : base.partner, city: base.city, basePrice: base.price, price: o.price !== undefined ? o.price : base.price, cost: o.cost !== undefined ? o.cost : base.cost, costKnown: o.cost !== undefined || base.costKnown === true || base.cost > 0, manualFields:base.manualFields, manualSource:base.manualSource, fromComposition:!!base.fromComposition, custom: !!state.customServices[sid], edited: !!(state.sov[sid] && Object.keys(state.sov[sid]).length) };
@@ -8693,7 +8723,7 @@ window.__salesActSetData = function(newData){
     var q = root.querySelector("#prQ"); if (q.value !== state.q) q.value = state.q;
     root.querySelector('#prActivationPeriod').textContent=CRM&&CRM.activationPeriod?CRM.activationPeriod:'период не загружен';
     renderKpis(visibleSets());
-    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · сохранены в этом браузере" : CRM ? "Проверенный прайс: " + CRM.sets.length + " наборов · ручных услуг " + (CRM.manualCount||0) + " · 3 вхождения Bortneva исключены по решению Никиты · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
+    if (!crmLoading && !actLoading && !/Не удалось/.test(root.querySelector("#prStatus").textContent)) setStatus(state.view === "newsets" ? "Новые наборы: " + state.customSets.length + " · состояние сохранения — в блоке общего проекта выше" : CRM ? "Проверенный прайс: " + CRM.sets.length + " наборов · ручных услуг " + (CRM.manualCount||0) + " · 3 вхождения Bortneva исключены по решению Никиты · загружено " + new Date(CRM.savedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + (state.mode === "act" && ACT ? " · активаций для весов " + fmtN(ACT.n) + " с " + ACT.since : "") : "");
     root.querySelectorAll('[data-service-pagination]').forEach(function(nav){nav.hidden=state.view!=="services";});
     if (state.view !== "services") renderSets(); else renderServices();
     root.querySelector("#prTableWrap").setAttribute("role", "tabpanel");
@@ -8701,7 +8731,7 @@ window.__salesActSetData = function(newData){
   }
 
   // ---------- события ----------
-  function newId(){ return "u" + Date.now().toString(36); }
+  function newId(){ return "u" + (window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)); }
   function ov(id){ return state.ov[id] = state.ov[id] || {}; }
   function sov(id){ return state.sov[id] = state.sov[id] || {}; }
   function findCustomSet(id){ return state.customSets.filter(function(s){ return s.id === id; })[0]; }
@@ -8714,6 +8744,23 @@ window.__salesActSetData = function(newData){
   });
   root.addEventListener("input", function(e){
     var t = e.target; var k = t.getAttribute("data-k");
+    if(t.hasAttribute('data-rp-key')&&!(t.validity&&t.validity.badInput)){
+      var inputKey=t.getAttribute('data-rp-key'),inputField=t.getAttribute('data-rp-field'),inputMode=t.getAttribute('data-rp-mode'),inputValue=rowParameterValue(t.value,inputField,inputMode);
+      if((inputField==='disc'||inputField==='partner')&&inputValue!==null){
+        if(inputField==='partner'&&inputKey.indexOf('service:')===0){var inputSid=inputKey.slice(8),inputService=serviceOf(inputSid);if(!inputService)return;var inputPrice=calcService(inputService).price;if(inputMode==='pct'&&!(inputPrice>0))return;sov(inputSid).cost=inputMode==='pct'?inputPrice*inputValue/100:inputValue;}
+        else{var inputRow=state.rowParams[inputKey]=state.rowParams[inputKey]||{};inputRow[inputField]={mode:inputMode,value:inputValue};}
+        save();return;
+      }
+    }
+    if(!(t.validity&&t.validity.badInput)){
+      var editId=t.getAttribute('data-setname'),editSet;
+      if(editId&&(editSet=findCustomSet(editId))){editSet.name=t.value.trim()||'Новый набор';save();return;}
+      editId=t.getAttribute('data-setprice');if(editId){editSet=findCustomSet(editId);if(editSet)editSet.price=ruNum(t.value);else ov(editId).price=ruNum(t.value);save();return;}
+      editId=t.getAttribute('data-cost');if(editId){sov(editId).cost=ruNum(t.value);save();return;}
+      editId=t.getAttribute('data-sprice');if(editId){sov(editId).price=ruNum(t.value);save();return;}
+      editId=t.getAttribute('data-sname');if(editId&&state.customServices[editId]){state.customServices[editId].name=t.value.trim()||'Новая услуга';save();return;}
+      editId=t.getAttribute('data-spartner');if(editId&&state.customServices[editId]){state.customServices[editId].partner=t.value.trim();save();return;}
+    }
     var part=t.getAttribute("data-pack-part");
     if(part){
       if(!PACKAGING_PARTS.some(function(x){return x.key===part;})||t.validity&&t.validity.badInput)return;
@@ -8853,8 +8900,15 @@ window.__salesActSetData = function(newData){
 
 
   load();
+  if(window.WowlifePricingProjects&&window.WowlifePricingProjects.mount){
+    projectController=window.WowlifePricingProjects.mount({root:root,get:projectSnapshot,apply:function(data){
+      window.WowlifePricingProjects.FIELDS.forEach(function(k){if(data[k]!==undefined)state[k]=data[k];});
+      ensureParams();if(state.customSets.length)state.view='newsets';render();
+    }});
+  }
   window.__pricingRerender = function(){ loadCommissions(); FACT = null; ensureParams(); if (!started){ started = true; loadCrm(false); if (state.mode === "act") loadAct(); } render(); };
   if (!root.hidden) window.__pricingRerender();
+  if(window.WowlifePricingProjects&&window.WowlifePricingProjects.parseLink(window.location.href)){var pricingTab=document.querySelector('[data-tab="pricing"]');if(pricingTab)pricingTab.click();}
 })();
 </script>
 
