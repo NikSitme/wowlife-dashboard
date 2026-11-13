@@ -4237,6 +4237,7 @@ window.__salesActSetData = function(newData){
     <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. Активируют конкретную услугу. В строке набора показано, сколько активаций услуг пришлось на сертификаты, купленные как этот набор; связь определяется по исходному товару в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; у 10 сертификатов типа «Набор» не заполнен исходный товар, ещё в одной карточке указаны разные наборы — эти 11 карточек не распределены по наборам. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
     <div class="pr-table-controls">
       <div class="pr-filter-line"><div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
+        <div class="pr-filter-group"><span class="pr-filter-label">Сертификаты</span><div class="seg" id="prCertificateType" role="group" aria-label="Формат сертификатов"><button type="button" data-certificate-type="physical" class="active" aria-pressed="true">Физические</button><button type="button" data-certificate-type="electronic" aria-pressed="false">Электронные</button></div></div>
         <div class="pr-calculation" id="prModeGroup">
           <div class="pr-filter-group"><span class="pr-filter-label">Прогноз активаций</span><div class="pr-activation-field"><div class="seg" id="prUsageMode" role="group" aria-label="Прогноз активаций"><button type="button" data-usage="custom" class="active">Заданный %</button><button type="button" data-usage="full">100%</button></div><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div>
           <div class="pr-filter-group" id="prPayoutGroup"><span class="pr-filter-label">Выплата за услугу в наборе</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Максимальная</button></div></div>
@@ -8140,9 +8141,9 @@ window.__salesActSetData = function(newData){
 
 <link rel="stylesheet" href="./styles/pricing-projects.css?v=20261112">
 <script src="./scripts/pricing-project-config.js?v=20261112-public"></script>
-<script src="./scripts/pricing-project-store.js?v=20261112-public"></script>
+<script src="./scripts/pricing-project-store.js?v=20261113-certificate-format"></script>
 <script src="./scripts/pricing-project-ui.js?v=20261112-public"></script>
-<script src="./scripts/pricing-model.js?v=20261030-cost-coverage"></script>
+<script src="./scripts/pricing-model.js?v=20261113-certificate-format"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/service-catalog.js?v=picker-profit-20261112"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
@@ -8156,7 +8157,7 @@ window.__salesActSetData = function(newData){
   var NIKITA_ID = "1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M";
   var STORE_KEY = "wowlife-pricing-v1", CRM_KEY = "wowlife-pricing-crm-v17-tank-payout-20261108", ACT_KEY = "wowlife-pricing-act-v1";
   var CRM = null, ACT = null, actLoading = false, crmLoading = false, started = false;
-  var state = { params: null, pmode: {}, packaging: null, packagingVersion: 0, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", usageMode: "custom", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
+  var state = { params: null, pmode: {}, packaging: null, packagingVersion: 0, packagingLinked: false, rowParams: {}, collapsed: {}, view: "sets", city: "all", mode: "avg", usageMode: "custom", certificateType: "physical", q: "", open: {}, sort: { k: "name", d: 1 }, itemSort: { k: "exp", d: -1 }, ov: {}, sov: {}, customSets: [], customServices: {} };
   var projectController=null;
   state.serviceSnapshots={};
   var MODEL = window.WowlifePricing, CATALOG = window.WowlifePricingCatalog;
@@ -8207,16 +8208,17 @@ window.__salesActSetData = function(newData){
   // ---------- хранение ----------
   function projectSnapshot(){
     state.customSets.forEach(function(s){(s.items||[]).forEach(function(sid){var source=state.customServices[sid]||CRM&&CRM.catalog[sid];if(!source)return;var copy={sid:sid};['name','partner','city','price','cost','costKnown','manualFields','manualSource','fromComposition','activations12m','activationPeriod','sourceTerms','manualReference'].forEach(function(k){if(source[k]!==undefined)copy[k]=source[k];});state.serviceSnapshots[sid]=copy;});});
-    return {params:state.params,pmode:state.pmode,packaging:state.packaging,packagingVersion:state.packagingVersion,packagingLinked:state.packagingLinked,rowParams:state.rowParams,collapsed:state.collapsed,view:state.view,city:state.city,mode:state.mode,usageMode:state.usageMode,sort:state.sort,itemSort:state.itemSort,ov:state.ov,sov:state.sov,customSets:state.customSets,customServices:state.customServices,serviceSnapshots:state.serviceSnapshots};
+    return {params:state.params,pmode:state.pmode,packaging:state.packaging,packagingVersion:state.packagingVersion,packagingLinked:state.packagingLinked,rowParams:state.rowParams,collapsed:state.collapsed,view:state.view,city:state.city,mode:state.mode,usageMode:state.usageMode,certificateType:state.certificateType,sort:state.sort,itemSort:state.itemSort,ov:state.ov,sov:state.sov,customSets:state.customSets,customServices:state.customServices,serviceSnapshots:state.serviceSnapshots};
   }
   function save(){if(projectController)return projectController.record();try{var raw=JSON.stringify(projectSnapshot());localStorage.setItem(STORE_KEY,raw);if(localStorage.getItem(STORE_KEY)!==raw)throw Error('Storage verification');return true;}catch(e){var bar=root.querySelector('#prProjectBar [role="status"]');if(bar)bar.textContent='Сохранение на устройстве недоступно. Подключите общий проект или скачайте копию.';return false;}}
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices","serviceSnapshots"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices","serviceSnapshots"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.certificateType = s.certificateType === "electronic" ? "electronic" : "physical"; state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
   function factDefaults(){ return MODEL.defaults(window.__opiuData || []); }
   var FACT = null;
   function ensureParams(){
+    state.certificateType=state.certificateType==="electronic"?"electronic":"physical";
     if (!FACT) FACT = factDefaults();
     if (!state.params) state.params = {};
     PARAM_DEFS.forEach(function(d){ if (state.params[d.k] === undefined) state.params[d.k] = FACT[d.k]; });
@@ -8385,9 +8387,12 @@ window.__salesActSetData = function(newData){
   function usage(){ var u = {}; allSets().forEach(function(s){ s.items.forEach(function(it){ u[it.sid] = (u[it.sid] || 0) + 1; }); }); return u; }
 
   // ---------- расчёт ----------
+  function isElectronic(){return state.certificateType==="electronic";}
+  function certificateLabel(){return isElectronic()?"Электронные":"Физические";}
+  function physicalExpense(k){return k==="pack"||k==="logistics";}
   function isRub(k){ return state.pmode[k] === "rub"; }
   function usagePercent(){ return state.usageMode === "full" ? 100 : state.params.act; }
-  function P(key){ var row=state.rowParams[key]||{};return MODEL.parameters(Object.assign({},state.params,{disc:0,act:usagePercent()}),Object.assign({},state.pmode,{disc:"pct"}),{disc:row.disc,partner:row.partner}); }
+  function P(key){ var row=state.rowParams[key]||{};return MODEL.parameters(Object.assign({},state.params,{disc:0,act:usagePercent()}),Object.assign({},state.pmode,{disc:"pct"}),{disc:row.disc,partner:row.partner},state.certificateType); }
   function netPrice(price,p){ return MODEL.netPrice(price,p); }
   function targetPrice(cost,p){ return MODEL.targetPrice(cost,p); }
   function fixedOf(price, p){ return price * p.fP + p.fR; }
@@ -8463,7 +8468,7 @@ window.__salesActSetData = function(newData){
   }
   function renderParams(){
     var box = root.querySelector("#prParams"); var ref = refPrice(); var groups = [];
-    PARAM_DEFS.filter(function(d){return d.k!=="act";}).forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
+    PARAM_DEFS.filter(function(d){return d.k!=="act"&&!(isElectronic()&&physicalExpense(d.k));}).forEach(function(d){ var g = groups.filter(function(x){ return x.name === d.g; })[0]; if (!g){ g = { name: d.g, items: [] }; groups.push(g); } g.items.push(d); });
     box.innerHTML = groups.map(function(g){
       return '<div class="pr-group"><h4>' + g.name + '</h4>' + g.items.map(function(d){
         var v = state.params[d.k], f = FACT[d.k], rub = isRub(d.k), ch = !rub && Math.abs(v - f) > 1e-9;
@@ -8484,7 +8489,7 @@ window.__salesActSetData = function(newData){
     root.querySelector("#prKpis").innerHTML =
       kpi(services?"Средняя МП услуг":"Средняя МП наборов", fmtR(mpAct), "по выбранному прогнозу · с расчётом " + fmtN(withM.length), mAct === null ? "" : cls(nAct, 0)) +
       kpi(services?"Средняя маржа услуг":"Средняя маржа наборов", fmtP(mAct), "при использовании " + usagePercent() + " % · " + fmtN(sets.length) + (services?" услуг":" наборов"), mAct === null ? "" : cls(nAct, 0)) +
-      kpi(services?"Чистая прибыль с услуги":"Чистая прибыль с набора", fmtP(nAct), "после комиссий, налогов, упаковки, логистики и постоянных расходов", nAct === null ? "" : (nAct < 0 ? "bad" : "good")) +
+      kpi(services?"Чистая прибыль с услуги":"Чистая прибыль с набора", fmtP(nAct), (isElectronic()?"после комиссий, налогов и постоянных расходов":"после комиссий, налогов, упаковки, логистики и постоянных расходов"), nAct === null ? "" : (nAct < 0 ? "bad" : "good")) +
       kpi("Ниже целевой цены", fmtN(below) + (services?" услуг":" наборов"), "не покрывают все расходы · без расчёта цели: "+fmtN(rs.filter(function(r){return r.target===null;}).length), below?"warn":"good");
   }
   function filtered(list){
@@ -8525,6 +8530,7 @@ window.__salesActSetData = function(newData){
     {id:'np',label:'Чистая прибыль',tip:'Маржинальная прибыль минус эквайринг, налоги, упаковка, логистика и постоянные расходы из параметров прайса.',cols:[['npRub','ЧП, ₽','Прибыль после всех расходов строки и доли постоянных расходов.','npRub'],['npPct','ЧП, %','Чистая прибыль / цена со скидкой.','np']]}
   ];
   GROUPS.forEach(function(g){g.cols.forEach(function(c){if(c[0]!=='commissionTerms'&&!c[3])c[3]=c[0];});});
+  function visibleGroups(){return GROUPS.filter(function(g){return !(isElectronic()&&physicalExpense(g.id));});}
   function visibleCols(g){
     if(!state.collapsed[g.id])return g.cols;
     if(g.id==='open')return g.cols;
@@ -8534,16 +8540,16 @@ window.__salesActSetData = function(newData){
     var key={markup:'markupRub',mp:'mpRub',fees:'feesSum',pack:'packRub',logistics:'logisticsRub',np:'npRub'}[g.id];
     return [['summary','Итого, ₽',g.tip,key]];
   }
-  function colCount(weight){return 4+(weight?1:0)+GROUPS.reduce(function(n,g){return n+visibleCols(g).length;},0);}
+  function colCount(weight){return 4+(weight?1:0)+visibleGroups().reduce(function(n,g){return n+visibleCols(g).length;},0);}
   function headCell(label,tip,sort,extra,item){var selected=item?state.itemSort:state.sort,active=sort&&selected.k===sort,caption=label.indexOf('Активации')===0?'<span class="pr-activation-heading">Активации<small>12 мес.</small></span>':esc(label);return '<th '+(extra||'')+(sort?' '+(item?'data-item-s':'data-s')+'="'+sort+'" aria-sort="'+(active?(selected.d>0?'ascending':'descending'):'none')+'"':'')+' tabindex="0">'+caption+(active?(selected.d>0?' ↑':' ↓'):'')+'</th>';}
   function pricingHead(kind,weight){
     var h='<thead><tr class="pr-group-head">'+headCell(kind==='service'||kind==='item'?'Услуга':'Набор',kind==='item'?'Услуга в составе набора. Прибыль считается от цены набора.':'Название из CRM или вашей модели.','name','rowspan="2"',kind==='item');
     h+=headCell(kind==='set'?'Активации услуг из набора, 12 мес.':'Активации, 12 мес.','Количество уникальных активаций за '+(CRM&&CRM.activationPeriod||'период из таблицы')+'. '+(kind==='set'?'Активации конкретных услуг по сертификатам, купленным как этот набор; исходный набор определяется по товару сертификата в CRM.':'Все активации услуги: из любых наборов и отдельных сертификатов. Это не число выборов услуги только в данном наборе.'),'activations12m','rowspan="2"',kind==='item');
     if(weight)h+=headCell('Вес','Доля выбора услуги по активациям её партнёра за последние 24 месяца.','weight','rowspan="2"',true);
-    GROUPS.forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
+    visibleGroups().forEach(function(g){h+='<th colspan="'+visibleCols(g).length+'"><button type="button" class="pr-group-toggle" data-prgroup="'+g.id+'" aria-expanded="'+String(!state.collapsed[g.id])+'">'+g.label+'<span aria-hidden="true">'+(state.collapsed[g.id]?'›':'⌄')+'</span></button></th>';});
     h+=headCell('Целевая цена, ₽','Цена до дополнительной скидки, которая покрывает прогноз выплаты партнёру, переменные и постоянные расходы из блока «Цель». ЧП при этой цене равна нулю. Учитываются выбранный прогноз активаций и расходы строки.','target','rowspan="2" class="key"',kind==='item');
     h+=headCell(kind==='service'?'В наборах':'Проверка',kind==='service'?'Количество наборов, содержащих услугу.':'Число убыточных услуг и услуг без выплаты партнёру.',kind==='item'?null:kind==='service'?'use':'loss','rowspan="2"')+'</tr><tr class="pr-column-head">';
-    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],c[3],i===0?'class="pr-group-start"':'',kind==='item');});});return h+'</tr></thead>';
+    visibleGroups().forEach(function(g){visibleCols(g).forEach(function(c,i){h+=headCell(c[1],c[2],c[3],i===0?'class="pr-group-start"':'',kind==='item');});});return h+'</tr></thead>';
   }
   function decimal(n){return Number.isFinite(n)?String(Math.round(n*100)/100):'';}
   function rowInput(ctx,field,mode,value,tip,changed){
@@ -8584,14 +8590,14 @@ window.__salesActSetData = function(newData){
       else {var mode=/Pct$/.test(k)?'pct':'rub';text=expense(k.replace(/Pct$|Rub$/,''),mode);}
       return '<td data-price-component="'+k+'" class="'+css+'">'+text+'</td>';
     }
-    return GROUPS.map(function(g){return visibleCols(g).map(function(c,i){var h=cell(c,g);return i===0?h.replace('class="','class="pr-group-start '):h;}).join('');}).join('');
+    return visibleGroups().map(function(g){return visibleCols(g).map(function(c,i){var h=cell(c,g);return i===0?h.replace('class="','class="pr-group-start '):h;}).join('');}).join('');
   }
   function tableMarkup(html){return html.replace(/\s(?:title|data-tip)="[^"]*"/g,'');}
   function folderIcon(add){return '<svg class="pr-folder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7h18"/>'+(add?'<path d="M12 11v6m-3-3h6"/>':'')+'</svg>';}
   function collectionRow(kind){
     var label=kind==='service'?'Все услуги':state.view==='newsets'?'Новые наборы':'Все наборы';
     var h='<tr class="pr-collection-row"><td><div class="pr-collection-name"><span>'+label+'</span>'+(kind==='service'?'':'<button type="button" id="prNewSet" class="pr-folder-add" aria-label="Новый набор">'+folderIcon(true)+'</button>')+'</div></td><td></td>';
-    GROUPS.forEach(function(g){visibleCols(g).forEach(function(c,i){h+='<td'+(i===0?' class="pr-group-start"':'')+'></td>';});});return h+'<td></td><td></td></tr>';
+    visibleGroups().forEach(function(g){visibleCols(g).forEach(function(c,i){h+='<td'+(i===0?' class="pr-group-start"':'')+'></td>';});});return h+'<td></td><td></td></tr>';
   }
   function setName(s){return '<div class="pr-set-name">'+folderIcon(false)+'<span class="pr-name-copy"><button type="button" class="pr-set-open" data-set-open="'+esc(s.id)+'" aria-haspopup="dialog" aria-controls="prSetDialog" aria-label="Открыть услуги набора '+esc(s.name)+'"><span class="nm">'+esc(s.name)+(s.custom?'<span class="tag">мой</span>':s.edited?'<span class="tag">правки</span>':'')+'</span></button><span class="meta">'+s.city+' · услуг '+s.items.length+' · ID '+esc(s.id)+'</span></span><button type="button" class="pr-menu-button" data-set-menu="'+esc(s.id)+'" aria-label="Действия с набором '+esc(s.name)+'" aria-haspopup="menu" aria-controls="prRowMenu" aria-expanded="false">⋮</button></div>';}
   var setMenuAnchor=null,activeSetId=null,setReturnId=null;
@@ -8606,7 +8612,7 @@ window.__salesActSetData = function(newData){
     var body=root.querySelector('#prSetDialogBody'),top=resetScroll?0:body.scrollTop,left=resetScroll?0:body.scrollLeft;
     var focused=document.activeElement,focus=body.contains(focused)?{tag:focused.tagName,attrs:Array.from(focused.attributes).filter(function(a){return a.name.indexOf('data-')===0;}).map(function(a){return [a.name,a.value];}),start:focused.selectionStart,end:focused.selectionEnd}:null;
     root.querySelector('#prSetDialogName').textContent=set.name;
-    root.querySelector('#prSetDialogMeta').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · услуг '+set.items.length+' · ID '+set.id;
+    root.querySelector('#prSetDialogMeta').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · услуг '+set.items.length+' · ID '+set.id+' · '+certificateLabel();
     root.querySelector('#prSetDialogAdd').setAttribute('data-catalog-open',set.id);
     var markup=tableMarkup(renderSetItems(set,calcSet(set))),header=body.querySelector('.hdr');
     if(!resetScroll&&header){
@@ -8708,12 +8714,13 @@ window.__salesActSetData = function(newData){
 
   function renderForecastControls(){
     var services = state.view === "services";
+    root.querySelector("#prCertificateType").querySelectorAll("button").forEach(function(b){var selected=b.getAttribute("data-certificate-type")===state.certificateType;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     root.querySelector("#prPayoutGroup").hidden = services;
     root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var selected=b.getAttribute("data-m")===state.mode;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     root.querySelector("#prUsageMode").querySelectorAll("button").forEach(function(b){var selected=b.getAttribute("data-usage")===state.usageMode;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     var activation=root.querySelector("#prActivation");activation.disabled=state.usageMode==="full";activation.value=usagePercent();
     var payout=services?"выплата за выбранную услугу":state.mode==="max"?"максимальная выплата из состава":state.mode==="act"?"средняя выплата с весами по активациям партнёров в городе":"средняя выплата по всем услугам состава";
-    root.querySelector("#prForecastHint").textContent="Используют " + usagePercent() + "% сертификатов · " + payout + (!services&&state.mode==="act"?". Если весов для набора нет, используется простая средняя.":"");
+    root.querySelector("#prForecastHint").textContent=certificateLabel()+" · "+(isElectronic()?"без упаковки и логистики · ":"")+"Используют " + usagePercent() + "% сертификатов · " + payout + (!services&&state.mode==="act"?". Если весов для набора нет, используется простая средняя.":"");
   }
   function render(){
     closeSetMenu();
@@ -8811,6 +8818,7 @@ window.__salesActSetData = function(newData){
     if((b=t.closest("[data-resetrow]"))){delete state.rowParams[b.getAttribute("data-resetrow")];save();render();return;}
     if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); resetServicePage(); state.sort = { k: "name", d: 1 }; save(); render(); root.querySelector("#prTableWrap").scrollLeft = 0; root.querySelector("#prTableWrap").scrollTop = 0; return; }
     if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); resetServicePage(); save(); render(); return; }
+    if ((b = t.closest("#prCertificateType button"))){ state.certificateType = b.getAttribute("data-certificate-type") === "electronic" ? "electronic" : "physical"; save(); render(); return; }
     if ((b = t.closest("#prUsageMode button"))){ state.usageMode = b.getAttribute("data-usage"); save(); render(); return; }
     if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
     if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; state.packaging=null; state.packagingLinked=false; save(); render(); return; }
@@ -8857,7 +8865,7 @@ window.__salesActSetData = function(newData){
     root.querySelector('#prCatalogCategory').innerHTML=catalogOptions(services,'category',catalogSelection.category,'Все категории');
     root.querySelector('#prCatalogPartner').innerHTML=catalogOptions(services,'partner',catalogSelection.partner,'Все партнёры');
     root.querySelector('#prCatalogName').textContent='Добавить услуги в «'+set.name+'»';
-    root.querySelector('#prCatalogCity').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · '+services.length+' услуг в каталоге';
+    root.querySelector('#prCatalogCity').textContent=(set.city==='СПб'?'Петербург':'Москва')+' · '+services.length+' услуг в каталоге · '+certificateLabel();
     root.querySelector('#prCatalogHint').textContent=!catalogClassify?'Загружаю категории…':catalogCategoryOrder.length?'Категории — по структуре Figma.':'Категории недоступны. Доступен поиск по названию, партнёру и ID.';
   }
   function catalogSortUpdate(){
@@ -8877,7 +8885,7 @@ window.__salesActSetData = function(newData){
     var list=window.WowlifeServiceCatalog.filter(services,set.city,selection);catalogSortUpdate();
     root.querySelector('#prCatalogCount').textContent='Найдено: '+list.length+' · в наборе: '+set.items.length;
     var result=calcSet(set);
-    root.querySelector('#prCatalogProfitNote').textContent=result.price>0?'Чистая прибыль — при выборе услуги из набора за '+fmtR(result.price)+' после скидки, использовании '+fmtP(result.p.a)+' сертификатов и текущих расходах.':'Задайте цену набора, чтобы увидеть чистую прибыль по каждой услуге.';
+    root.querySelector('#prCatalogProfitNote').textContent=result.price>0?'Чистая прибыль — при выборе услуги из набора за '+fmtR(result.price)+' после скидки, использовании '+fmtP(result.p.a)+' сертификатов и текущих расходах'+(isElectronic()?' без упаковки и логистики':'')+'.':'Задайте цену набора, чтобы увидеть чистую прибыль по каждой услуге.';
     root.querySelector('#prCatalogRows').innerHTML=list.length?list.map(function(s){return '<tr><td><b>'+esc(s.name)+'</b><span class="meta">'+esc(s.category)+'</span></td><td>'+esc(s.partner||'Партнёр не указан')+'</td><td class="num" data-activations-12m>'+ (Number.isSafeInteger(s.activations12m)?fmtN(s.activations12m):'—')+'</td><td class="num">'+fmtR(s.price)+'</td><td class="num">'+(knownCost(s)?fmtR(s.cost):'—')+'</td><td class="num profit '+(s.npRub===null?'':s.npRub<0?'bad':'good')+'" data-catalog-profit="rub">'+fmtR(s.npRub)+'</td><td class="num profit '+(s.npPct===null?'':s.npPct<0?'bad':'good')+'" data-catalog-profit="pct">'+fmtP(s.npPct)+'</td><td><button type="button" class="pr-btn '+(s.inSet?'':'pri')+'" data-catalog-pick="'+esc(s.sid)+'"'+(s.inSet?' disabled':'')+' aria-label="'+esc((s.inSet?'Уже в наборе: ':'Добавить: ')+s.name)+'">'+(s.inSet?'✓ В наборе':'+ Добавить')+'</button></td></tr>';}).join(''):'<tr><td colspan="8" class="pr-empty">По этим фильтрам услуг нет. Измените условия или сбросьте фильтры.</td></tr>';
   }
   async function openCatalog(id){
@@ -8894,11 +8902,11 @@ window.__salesActSetData = function(newData){
   root.addEventListener('change',function(e){var field=e.target.getAttribute('data-catalog-filter');if(!field)return;catalogSelection[field]=e.target.value;catalogResults();});
   root.addEventListener('click',function(e){var button=e.target.closest('[data-catalog-sort]');if(button){var key=button.getAttribute('data-catalog-sort'),spec=window.WowlifeServiceCatalog.sortSpec(catalogSelection.sort),dir=spec.key===key?(spec.dir==='asc'?'desc':'asc'):(['name','category','partner'].indexOf(key)>=0?'asc':'desc');catalogSelection.sort=key==='name'&&dir==='asc'?'name':key+'-'+dir;catalogResults();root.querySelector('.pr-catalog-results').scrollTop=0;return;}button=e.target.closest('[data-catalog-open]');if(button){openCatalog(button.getAttribute('data-catalog-open'));return;}button=e.target.closest('[data-catalog-pick]');if(button){addCatalogService(button.getAttribute('data-catalog-pick'));return;}if(e.target.closest('#prCatalogClose')){root.querySelector('#prCatalog').close();return;}if(e.target.closest('#prCatalogReset')){catalogSelection={id:catalogSelection.id,q:'',min:'',max:'',category:'',partner:'',sort:'name'};root.querySelectorAll('[data-catalog-filter]').forEach(function(el){el.value=catalogSelection[el.getAttribute('data-catalog-filter')];});catalogResults();}});
   function exportCsv(){
-    var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽','Активации услуги за 12 мес.','Период активаций']];
+    var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽','Активации услуги за 12 мес.','Период активаций','Формат сертификатов']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
-    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target,services?s.activations12m:null,services?s.activationPeriod:'']);});
+    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target,services?s.activations12m:null,services?s.activationPeriod:'',certificateLabel()]);});
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
-    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+state.certificateType+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
   }
   document.addEventListener('click',function(e){if(!e.target.closest('#prRowMenu,[data-set-menu]'))closeSetMenu();});
   root.addEventListener('scroll',function(){closeSetMenu();},true);

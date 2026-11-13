@@ -18,11 +18,12 @@
     if(last.length)d.months=last[0].label+' … '+last[last.length-1].label;
     return d;
   }
-  function parameters(values,modes,overrides){
+  function parameters(values,modes,overrides,certificateType){
     modes=modes||{};overrides=overrides||{};
     var p={a:Math.max(0,Math.min(100,Number(values.act)||0))/100,t:(Number(values.target)||0)/100,v:0,vr:0,costs:{},partner:overrides.partner||null};
     function read(k){var o=overrides[k];return {value:Math.max(0,Number(o?o.value:values[k])||0),mode:o?o.mode:modes[k]};}
-    KEYS.forEach(function(k){var x=read(k);p.costs[k]={pct:x.mode==='rub'?0:x.value/100,rub:x.mode==='rub'?x.value:0};p.v+=p.costs[k].pct;p.vr+=p.costs[k].rub;});
+    p.certificateType=certificateType==='electronic'?'electronic':'physical';
+    KEYS.forEach(function(k){var x=read(k);if(p.certificateType==='electronic'&&(k==='pack'||k==='logistics'))x.value=0;p.costs[k]={pct:x.mode==='rub'?0:x.value/100,rub:x.mode==='rub'?x.value:0};p.v+=p.costs[k].pct;p.vr+=p.costs[k].rub;});
     var disc=read('disc'),fixed=read('fixed');p.discP=disc.mode==='rub'?0:Math.min(1,disc.value/100);p.discR=disc.mode==='rub'?disc.value:0;p.fP=fixed.mode==='rub'?0:fixed.value/100;p.fR=fixed.mode==='rub'?fixed.value:0;
     return p;
   }

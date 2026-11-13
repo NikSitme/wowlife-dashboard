@@ -98,6 +98,18 @@ function client(server,initial,storage=new MemoryStorage()){
  const cfgSource=require('node:fs').readFileSync(require('node:path').join(__dirname,'pricing-project-config.js'),'utf8');
  const cfgContext={window:{}};require('node:vm').runInNewContext(cfgSource,cfgContext);assert.equal(cfgContext.window.WOWLIFE_PROJECT_CONFIG.defaultProjectId,'0ff5bd23-e903-460c-8987-a76f30fff0ac');
  console.log('PASS public default, legacy backups, two visitors, services/sets sync, reload, private migration and offline-first edits');
+ // The shared format is independent from the retained physical expense settings.
+ const legacyFormat=model([set('format')]);delete legacyFormat.certificateType;
+ assert.equal(A.shared(legacyFormat).certificateType,'physical');assert.equal(A.shared({...legacyFormat,certificateType:'invalid'}).certificateType,'physical');
+ const formats=fixture(legacyFormat,true),fa=client(formats),fb=client(formats);
+ await fa.ctrl.connect(publicConn);await fb.ctrl.connect(publicConn);assert.equal(formats.project().revision,1,'Legacy read must not publish a new version');
+ fa.get().certificateType='electronic';fa.ctrl.record();
+ fb.get().params.pack=300;fb.ctrl.record();await fb.ctrl.flush();await fa.ctrl.flush();await fb.ctrl.poll();
+ assert.equal(fb.get().certificateType,'electronic');assert.equal(fb.get().params.pack,300);assert.equal(fb.get().pmode.pack,'rub');assert.equal(fa.ctrl.paused,false);
+ fb.get().certificateType='physical';fb.ctrl.record();await fb.ctrl.flush();await fa.ctrl.poll();
+ assert.equal(fa.get().certificateType,'physical');assert.equal(fa.get().params.pack,300);assert.equal(fa.get().customSets[0].id,'format');
+ const formatReload=client(formats);await formatReload.ctrl.connect(publicConn);assert.equal(formatReload.get().certificateType,'physical');
+ console.log('PASS shared certificate format: legacy defaults, no write on read, two visitors, concurrent expense edits, restoration and reload');
  const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');assert(html.includes('projectController.record()'));assert(html.includes('data-setname'));assert(!html.includes(' · сохранены в этом браузере'));assert(html.includes('prProjectHistory'));assert(html.includes('prProjectDownload'));
  console.log('PASS page integration and truthful save status');
 })().catch(e=>{console.error(e);process.exitCode=1;});

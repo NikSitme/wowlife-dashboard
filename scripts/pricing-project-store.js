@@ -1,6 +1,6 @@
 (function(root){
   'use strict';
-  var FIELDS=['params','pmode','packaging','packagingVersion','packagingLinked','rowParams','mode','usageMode','ov','sov','customSets','customServices','serviceSnapshots'];
+  var FIELDS=['params','pmode','packaging','packagingVersion','packagingLinked','rowParams','mode','usageMode','certificateType','ov','sov','customSets','customServices','serviceSnapshots'];
   var STORE='wowlife-pricing-v1', CONNECTION='wowlife-pricing-project-v1';
   function clone(x){return JSON.parse(JSON.stringify(x));}
   function clean(x){
@@ -10,7 +10,8 @@
   }
   function shared(s){var o={};FIELDS.forEach(function(k){if(s[k]!==undefined)o[k]=clean(clone(s[k]));});
     ['ov','sov','customServices','serviceSnapshots','rowParams','pmode'].forEach(function(k){if(!o[k]||Array.isArray(o[k])||typeof o[k]!=='object')o[k]={};});
-    if(!Array.isArray(o.customSets))o.customSets=[];return o;}
+    if(!Array.isArray(o.customSets))o.customSets=[];
+    o.certificateType=o.certificateType==='electronic'?'electronic':'physical';return o;}
   function stable(x){if(x===undefined)return 'undefined';if(Array.isArray(x))return '['+x.map(stable).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(function(k){return JSON.stringify(k)+':'+stable(x[k]);}).join(',')+'}';return JSON.stringify(x);}
   function equal(a,b){return stable(a)===stable(b);}
   function valuable(s){return !!((s.customSets||[]).length||Object.keys(s.ov||{}).length||Object.keys(s.sov||{}).length||Object.keys(s.customServices||{}).length);}

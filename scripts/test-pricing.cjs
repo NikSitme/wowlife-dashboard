@@ -103,7 +103,7 @@ near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);
 near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
-t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,26);assert.equal(exportLines[1].split(';').length,26);console.log('PASS pricing CSV: full filtered selection and 26 aligned columns');
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,27);assert.equal(exportLines[1].split(';').length,27);console.log('PASS pricing CSV: full filtered selection and 27 aligned columns');
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
@@ -345,3 +345,52 @@ for(const price of [null,0])for(const row of t.catalogCandidateRows({...pickerSe
 t.state.rowParams['set:picker'].disc={mode:'pct',value:100};
 assert.equal(t.catalogCandidateRows(pickerSet,pickerServices)[0].npRub,null);
 console.log('PASS picker net profit: set price, discount, usage, all expenses, composition payout, before/after add, missing/zero prices and payouts, no project mutation');
+
+// Certificate format changes only fulfillment costs, with all physical inputs retained.
+for(const fulfillmentModes of [{pack:'rub',logistics:'rub'},{pack:'pct',logistics:'pct'},{pack:'rub',logistics:'pct'}]){
+ const values={act:60,acq:2,tax:7,pack:10,logistics:5,disc:10,fixed:6};
+ const overrides={pack:{mode:fulfillmentModes.pack,value:12},logistics:{mode:fulfillmentModes.logistics,value:8}};
+ const before=JSON.stringify([values,fulfillmentModes,overrides]);
+ const old=model.parameters(values,fulfillmentModes,overrides),physical=model.parameters(values,fulfillmentModes,overrides,'physical'),electronic=model.parameters(values,fulfillmentModes,overrides,'electronic');
+ assert.deepEqual(physical,old);
+ const pr=model.calculate(5000,1000,physical),er=model.calculate(5000,1000,electronic);
+ near(er.expenses.pack,0);near(er.expenses.logistics,0);
+ near(er.npAct-pr.npAct,pr.expenses.pack+pr.expenses.logistics);
+ for(const field of ['price','discount','exp','partnerForecast','mpAct'])near(er[field],pr[field]);
+ near(er.expenses.acq,pr.expenses.acq);near(er.expenses.tax,pr.expenses.tax);
+ near(model.calculate(er.target,1000,electronic).npAct,0);assert(er.target<pr.target);
+ assert.equal(JSON.stringify([values,fulfillmentModes,overrides]),before);
+}
+t.state.params={act:60,acq:2,tax:7,pack:244,logistics:3,fixed:5};t.state.pmode={pack:'rub'};
+t.state.rowParams={'set:format':{disc:{mode:'pct',value:10}},'set:custom-format':{disc:{mode:'pct',value:10}}};
+t.state.sov={};t.state.ov={};t.state.customServices={};t.state.packagingLinked=false;
+t.state.customSets=[{id:'custom-format',name:'Custom',city:'Мск',price:5000,items:['a','b']}];
+t.setData({catalog:{a:{sid:'a',name:'A',city:'Мск',partner:'One',price:2000,cost:1000,costKnown:true},b:{sid:'b',name:'B',city:'Мск',partner:'Two',price:3000,cost:1500,costKnown:true}},sets:[{id:'format',name:'Format',city:'Мск',price:5000,items:[{sid:'a',cost:1000},{sid:'b',cost:1500}]}]},{counts:{'Мск':{One:3,Two:1}}});
+const formatInputs=JSON.stringify([t.state.params,t.state.pmode,t.state.packaging,t.state.packagingLinked,t.state.rowParams]);
+for(const payoutMode of ['avg','act','max'])for(const usageMode of ['custom','full']){
+ t.state.mode=payoutMode;t.state.usageMode=usageMode;
+ const results=()=>[t.calcService(t.serviceOf('a')),...t.allSets().flatMap(s=>[t.calcSet(s),t.calcItem(s,s.items[0],t.calcSet(s))])];
+ t.state.certificateType='physical';const physical=results();
+ t.state.certificateType='electronic';const electronic=results();
+ electronic.forEach((r,i)=>{near(r.expenses.pack,0);near(r.expenses.logistics,0);near(r.npAct-physical[i].npAct,physical[i].expenses.pack+physical[i].expenses.logistics);near(r.mpAct,physical[i].mpAct);near(model.calculate(r.target,r.exp,r.p).npAct,0);});
+ for(const s of t.allSets())near(t.catalogCandidateRows(s,[t.serviceOf('a')])[0].npRub,t.calcItem(s,s.items[0],t.calcSet(s)).npAct);
+ assert.equal(t.calcService({sid:'unknown',price:5000,cost:null,costKnown:false}).npAct,null);
+ t.state.certificateType='physical';assert.equal(JSON.stringify(results()),JSON.stringify(physical));
+}
+assert.equal(JSON.stringify([t.state.params,t.state.pmode,t.state.packaging,t.state.packagingLinked,t.state.rowParams]),formatInputs);
+for(const format of ['physical','electronic'])for(const collapsed of [{},{price:true,pack:true,logistics:true,net:true}]){
+ t.state.certificateType=format;t.state.collapsed=collapsed;
+ const s=t.allSets()[0],r=t.calcSet(s),head=t.pricingHead('set');
+ assert.equal(head.includes('data-prgroup="pack"'),format==='physical');
+ assert.equal(head.includes('data-prgroup="logistics"'),format==='physical');
+ assert.equal((t.financialCells(s,r,{key:'set:format',kind:'set'}).match(/<td /g)||[]).length+4,t.colCount());
+ assert.equal((t.collectionRow('set').match(/<td/g)||[]).length,t.colCount());
+ t.state.view='sets';t.state.city='all';t.state.q='';t.exportCsv();
+ const csv=exportedCsv.trim().split('\n').map(line=>line.split(';'));
+ assert(csv.every(row=>row.length===27));assert(csv[1].at(-1).includes(format==='electronic'?'Электронные':'Физические'));
+ for(const field of ['Упаковка','Логистика']){const col=csv[0].findIndex(x=>x.includes(field));assert.equal(Number(csv[1][col].replace(',','.'))===0,format==='electronic');}
+}
+t.state.certificateType='electronic';t.save();t.state.certificateType='physical';t.load();assert.equal(t.state.certificateType,'electronic');
+const savedFormat=JSON.parse(savedPricing);delete savedFormat.certificateType;savedPricing=JSON.stringify(savedFormat);t.load();assert.equal(t.state.certificateType,'physical');
+assert(html.includes('id="prCertificateType"'));assert(html.includes('data-certificate-type="electronic"'));assert(html.includes('data-certificate-type="physical"'));
+console.log('PASS certificate format: physical compatibility, ruble/percent costs, all forecasts and views, picker, targets, unknowns, column alignment, CSV, roundtrip and legacy persistence');
