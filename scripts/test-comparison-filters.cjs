@@ -31,7 +31,8 @@ for(const source of ['all',...model.SOURCES])for(const city of ['all',...model.C
  const l={name,source,city};const result=model.comparisonSeries(raw,l,sampleDates,metric,oct);
  const selected=model.filter(raw,{...oct,sources:source==='all'?model.SOURCES:[source],cities:city==='all'?model.CITIES:[city]}).filter(r=>model.comparisonSeriesKey(r.item)===model.comparisonSeriesKey(name)).filter(r=>metric==='count'?r.recordKind!=='finance':r.recordKind!=='certificate');
  const expected=sampleDates.map(d=>selected.filter(r=>r.date===d).reduce((n,r)=>n+r[metric],0));
- assert.deepEqual(result.values,expected);assert.equal(result.hasData,!!selected.length);checks++;
+ assert.deepEqual(result.values,expected);assert.equal(result.hasData,!!selected.length);
+ assert(Math.abs(result.total-selected.reduce((n,r)=>n+r[metric],0))<0.001,'period total includes every selected day, independently of displayed samples');checks++;
 }
 const character={name:'Подарочный набор «Характер впечатлений»',source:'Ozon',city:'all'};
 assert.equal(model.comparisonSeries(raw,character,sampleDates,'count',oct).hasData,false);
@@ -58,3 +59,17 @@ assert(fn('renderTrendTable').includes('s.hasData'));
 assert(fn('renderTrendChips').includes('data-line-city'));
 assert(!html.match(/window.__wowSalesSetData = function[\s\S]*?\n  };/)[0].includes('state.trendItems = defaultTrendItems()'),'live refresh preserves selected lines');
 console.log('PASS independent comparison series: same product/source/city, exact aliases, both metrics, missing vs zero, Ozon regression, stable colors, duplicates/cap, dates and refresh; '+checks+' real-snapshot checks.');
+
+// Totals share the exact series scope and distinguish missing from recorded zero.
+assert.equal(model.comparisonSeries(rows,line,dates,'revenue',range).total,100);
+assert.equal(model.comparisonSeries(rows,{...line,source:'Ozon',city:'all'},dates,'revenue',range).total,500);
+assert.equal(model.comparisonSeries(rows,{...line,source:'Ozon',city:'all'},dates,'count',range).total,5);
+const returns=[{...rows[1],recordKind:'marketplace',count:1},{...rows[1],date:dates[1],recordKind:'marketplace',revenue:-200,count:-1}];
+assert.equal(model.comparisonSeries(returns,{...line,source:'Ozon'},dates,'revenue',range).total,0);
+const totalContext={state:{metricTrend:'revenue'},fmtMoney:n=>n+' ₽',fmtInt:n=>String(n)};vm.createContext(totalContext);vm.runInContext(fn('trendTotalLabel'),totalContext);
+assert.equal(totalContext.trendTotalLabel({hasData:true,total:0}),'0 ₽');
+assert.equal(totalContext.trendTotalLabel({hasData:false,total:0}),'—');
+totalContext.state.metricTrend='count';assert.equal(totalContext.trendTotalLabel({hasData:true,total:5}),'5 шт');
+assert(fn('renderTrendChips').includes('trendTotalLabel(data)'));
+assert(fn('renderTrendTable').includes('trendTotalLabel(s)'));
+console.log('PASS per-line period totals: every date, product/channel/city filters, money/count switch, returns, recorded zero vs missing, identical chips/table summary.');

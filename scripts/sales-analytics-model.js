@@ -82,13 +82,13 @@
   function comparisonSeries(rows,line,dates,metric,range){
     var selection={start:range.start,end:range.end,cities:line.city&&line.city!=='all'?[line.city]:CITIES,
       sources:line.source&&line.source!=='all'?[line.source]:SOURCES};
-    var key=comparisonSeriesKey(line.name),byDate=new Map(),records=0;
+    var key=comparisonSeriesKey(line.name),byDate=new Map(),records=0,total=0;
     filter(rows,selection).forEach(function(r){
       if(comparisonSeriesKey(r.item)!==key)return;
       if(metric==='count'&&r.recordKind==='finance'||metric==='revenue'&&r.recordKind==='certificate')return;
-      records++;byDate.set(r.date,(byDate.get(r.date)||0)+number(r[metric]));
+      records++;var value=number(r[metric]);total+=value;byDate.set(r.date,(byDate.get(r.date)||0)+value);
     });
-    return {values:dates.map(function(d){return byDate.get(d)||0;}),hasData:records>0,records:records};
+    return {values:dates.map(function(d){return byDate.get(d)||0;}),hasData:records>0,records:records,total:total};
   }
   function namedComparisonItem(name){return !!String(name||'').trim()&&!/^(?:без названия(?:\s|$)|не указано$|не определ[её]н(?:о)?$|—$)/i.test(String(name).trim());}
   // IDs find existing named series; they do not pretend that category-level
