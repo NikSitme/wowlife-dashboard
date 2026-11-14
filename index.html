@@ -565,6 +565,8 @@
       <p><b>Пакеты и упаковка.</b> Две отдельные статьи из товаров в успешных физических сделках CRM «Никита» → «Маркетинг»: «Пакеты» — премиум-пакеты обоих вариантов названия, «Упаковка» — упаковочная бумага всех видов и её прежние названия. Количество берётся из xN, включая позиции с нулевой ценой; все позиции показаны единым количеством. Сумма продаж — сумма строк товаров, уже включённая в сумму заказов CRM. Дата — оплата сделки; общие фильтры периода, города и источника действуют на обе статьи. Курьерские пакеты, коробки и тарифы услуг со словом «пакет» не включаются. Расходы и себестоимость упаковки в этом блоке не рассчитываются.</p>
       <p>Источники — исходная «выгрузка адеск» и лист «Активация» таблицы «Никита». <b>Сайт</b> — банковские поступления Адеска (лист «выгрузка» Адеска) по статьям «Wowlife СПБ Выручка», «Wowlife МСК выручка», «Выручка», «B2B выручка», включая доплаты; товар берётся из поля «Проект». <b>Маркетплейсы</b> — лист «маркетплейсы» Адеска по артикулам; для 2025 года — только строки 2025 года из листа «маркетплейсы-25», по той же методике. Данные 2025 из текущего листа заменяются историей, чтобы исключить двойной учёт. Каждая продажа относится к группе, подгруппе и активности по классификатору «Выручка New» Адеска; неизвестные названия — «Не классифицировано». <b>Продажи через лиды</b> — сделки CRM с отметкой «из лида» = Y, доля от всех сделок за выбранный период. <b>Электронные/физические</b> здесь считаются по всем каналам, включая маркетплейсы. Из-за разных источников «сайт» на этой вкладке (поступления денег) и в ОПиУ «в штуках» (сделки CRM) не совпадают.</p>
 
+      <p><b>Перекрестное сравнение.</b> Собственные канал продаж и период (пресет или даты «С / По») задаются прямо над графиком и применяются к графику и его таблице. Общий фильтр источников и дат на них не влияет; города берутся из общего фильтра. В активациях источник продажи не подтверждён, поэтому выбор канала недоступен.</p>
+
       <h3 id="doc-kred">7. Вкладка «Кредиторка»</h3>
       <p>Источник — лист «Кредиторка» таблицы «Никита». <b>Долг</b> — сделки в стадиях «Ожидает оплаты» и «Ждем сверку». <b>Погашено</b> — стадия «Погашен», по месяцу. «Себес | отдел активаций» — внутренний учёт, долгом не считается. Имя партнёра подтягивается по id партнёра из листа «Активация», юрлицо — из листа «Партнеры» (если их несколько, через точку с запятой). Список партнёров: долги меньше 50 000 ₽ свёрнуты. <b>Долг по месяцам (свечи)</b> — фактический непогашенный долг, возникший в каждом месяце. <b>Успеваем ли платить</b> — новый долг месяца против погашенного за месяц. <b>Как прилетает долг и как мы гасим</b> — долг из CRM против оплат по статье «Активация» в ОПиУ Адеска за тот же месяц.</p>
 
@@ -2301,6 +2303,10 @@ window.__salesActSetData = function(newData){
 
 /* trend line chart (per-activity dynamics) */
 .wsale-root .trend-controls{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:2px 0 14px;}
+.wsale-root .trend-controls .f-group{flex:1 1 180px; min-width:0;}
+.wsale-root .trend-controls .f-select{width:100%; min-width:0;}
+.wsale-root .trend-controls .dp-field{width:100%;}
+.wsale-root .trend-controls .panel-note{flex-basis:100%; margin:0;}
 .wsale-root .trend-picker{position:relative; margin-bottom:12px;}
 .wsale-root .trend-search{width:100%;}
 .wsale-root .trend-options{
@@ -2440,7 +2446,7 @@ window.__salesActSetData = function(newData){
       </div>
     </div>
     <h1 id="ws-page-title">Аналитика продаж</h1>
-    <p class="sub" id="ws-page-sub">Выручка, количество сертификатов и состав продаж. Один фильтр периода, городов и источников управляет всеми блоками.</p>
+    <p class="sub" id="ws-page-sub">Выручка, количество сертификатов и состав продаж. Общие фильтры — сверху; у перекрестного сравнения свой канал и период.</p>
   </header>
 
   <div class="filterbar" id="ws-filterbar"></div>
@@ -2522,7 +2528,7 @@ window.__salesActSetData = function(newData){
         <button type="button" data-metric="count">шт</button>
       </div>
     </div>
-    <p class="panel-note" id="ws-trend-note">Сравните несколько товаров по дням. График использует общий период, города и источники.</p>
+    <p class="panel-note" id="ws-trend-note">Сравните несколько товаров по дням. Выберите канал продаж и период для этого графика; города — из общего фильтра.</p>
 
     <div class="trend-controls" id="ws-trend-controls"></div>
 
@@ -2794,10 +2800,10 @@ window.__salesActSetData = function(newData){
     sortDir: "desc",
     expanded: new Set(),
     expandedServiceCategories: new Set(),
-    trendPreset: "last3m",
-    trendStart: presetRange("last3m")[0],
-    trendEnd: presetRange("last3m")[1],
-    trendCity: "all",
+    trendPreset: "last_month",
+    trendStart: presetRange("last_month")[0],
+    trendEnd: presetRange("last_month")[1],
+    trendSource: "all",
     trendItems: defaultTrendItems(),
     trendShowTable: false,
   };
@@ -2808,10 +2814,10 @@ window.__salesActSetData = function(newData){
     state.metricCat = "revenue"; state.metricSub = "revenue"; state.metricItem = "revenue";
     state.sortKey = "revenue"; state.sortDir = "desc"; state.expanded = new Set();
     state.metricTrend = "revenue";
-    state.trendPreset = "last3m";
-    const [ts, te] = presetRange("last3m");
+    state.trendPreset = "last_month";
+    const [ts, te] = presetRange("last_month");
     state.trendStart = ts; state.trendEnd = te;
-    state.trendCity = "all";
+    state.trendSource = "all";
     state.trendItems = defaultTrendItems();
     state.trendShowTable = false;
   }
@@ -2908,7 +2914,7 @@ window.__salesActSetData = function(newData){
     document.getElementById('ws-f-compare').addEventListener('change',e=>{state.compare=e.target.value!=='none';state.compareMode=e.target.value;renderAll();});
     document.getElementById('ws-f-reset').addEventListener('click',()=>{state.preset='last_month';[state.start,state.end]=presetRange(state.preset);state.cities=window.SalesAnalytics.CITIES.slice();state.sources=window.SalesAnalytics.SOURCES.slice();state.compare=false;renderAll();});
     const pr=state.compare?previousRange():null;
-    document.getElementById('ws-selection-note').textContent='Один период и фильтры для всех блоков'+(pr?' · сравнение: '+pr.map(d=>d.split('-').reverse().join('.')).join(' — '):'');
+    document.getElementById('ws-selection-note').textContent='Общие фильтры; у перекрестного сравнения свой канал и период'+(pr?' · сравнение: '+pr.map(d=>d.split('-').reverse().join('.')).join(' — '):'');
     if(window.WowlifeDatePicker)window.WowlifeDatePicker.enhance(el);
   }
   document.addEventListener('click',e=>document.querySelectorAll('#ws-filterbar details[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
@@ -3090,7 +3096,7 @@ window.__salesActSetData = function(newData){
     for(const r of RAW){
       if(r.item !== item) continue;
       if(r.date < state.trendStart || r.date > state.trendEnd) continue;
-      if(!window.SalesAnalytics.filter([r],selection()).length) continue;
+      if(!window.SalesAnalytics.filter([r],trendSelection()).length) continue;
       const cur = byDate.get(r.date) || {revenue:0, count:0};
       cur.revenue += r.revenue; cur.count += r.count;
       byDate.set(r.date, cur);
@@ -3113,10 +3119,56 @@ window.__salesActSetData = function(newData){
 
   let trendResizeTimer = null;
 
-  const TREND_CITIES = ["all","Москва","Санкт-Петербург","Не определён"];
-  const TREND_CITY_LABELS = {all:"Все города", "Москва":"Москва", "Санкт-Петербург":"Санкт-Петербург", "Не определён":"Не определён"};
+  function trendSelection(){
+    return {start:state.trendStart,end:state.trendEnd,cities:state.cities,
+      sources:state.trendSource==='all'?window.SalesAnalytics.SOURCES:[state.trendSource],view:state.view};
+  }
 
-  function renderTrendControls(){document.getElementById('ws-trend-controls').innerHTML='<p class="panel-note">Период, города и источники — из общего фильтра выше. Выберите товары для сравнения.</p>';}
+  function changeTrendDate(bound,value){
+    const date=window.SalesAnalytics.isoDate(value);
+    if(!date || date>TODAY)return;
+    state.trendPreset='custom';
+    state[bound==='start'?'trendStart':'trendEnd']=date;
+    if(state.trendStart>state.trendEnd){
+      if(bound==='start')state.trendEnd=date;else state.trendStart=date;
+    }
+    renderTrend();
+  }
+
+  function renderTrendControls(){
+    const el=document.getElementById('ws-trend-controls');
+    if(!document.getElementById('ws-trend-source')){
+      el.innerHTML=`<label class="f-group"><span class="f-label">Канал продаж</span><select class="f-select" id="ws-trend-source" aria-label="Канал продаж для перекрестного сравнения"><option value="all">Все каналы</option>${window.SalesAnalytics.SOURCES.map(source=>`<option value="${escapeHtml(source)}">${escapeHtml(source)}</option>`).join('')}</select></label>
+        <label class="f-group"><span class="f-label">Период</span><select class="f-select" id="ws-trend-preset" aria-label="Период перекрестного сравнения">${PRESETS.map(p=>`<option value="${p.key}">${p.label}</option>`).join('')}</select></label>
+        <label class="f-group"><span class="f-label">С</span><input type="date" class="f-select" id="ws-trend-start" aria-label="Начало периода перекрестного сравнения"></label>
+        <label class="f-group"><span class="f-label">По</span><input type="date" class="f-select" id="ws-trend-end" aria-label="Конец периода перекрестного сравнения"></label>
+        <p class="panel-note" id="ws-trend-scope"></p>`;
+      document.getElementById('ws-trend-source').addEventListener('change',e=>{
+        state.trendSource=e.target.value;renderTrend();
+      });
+      document.getElementById('ws-trend-preset').addEventListener('change',e=>{
+        state.trendPreset=e.target.value;
+        if(state.trendPreset!=='custom'){
+          [state.trendStart,state.trendEnd]=presetRange(state.trendPreset);
+        }
+        renderTrend();
+      });
+      document.getElementById('ws-trend-start').addEventListener('change',e=>changeTrendDate('start',e.target.value));
+      document.getElementById('ws-trend-end').addEventListener('change',e=>changeTrendDate('end',e.target.value));
+    }
+    const source=document.getElementById('ws-trend-source');
+    source.value=state.view==='sales'?state.trendSource:'all';
+    // Activation snapshots do not contain a confirmed sales source. Never
+    // present all activations as belonging to the selected marketplace.
+    source.disabled=state.view!=='sales';
+    document.getElementById('ws-trend-preset').value=state.trendPreset;
+    for(const [id,value] of [['ws-trend-start',state.trendStart],['ws-trend-end',state.trendEnd]]){
+      const input=document.getElementById(id);input.value=value;input.max=TODAY;
+    }
+    const cities=state.cities.length===window.SalesAnalytics.CITIES.length?'Все города':state.cities.length?state.cities.join(', '):'Города не выбраны';
+    document.getElementById('ws-trend-scope').textContent=cities+' · '+(state.view==='sales'?'Канал и даты применяются только к этому сравнению.':'В данных активаций канал продажи не указан; показаны все источники.');
+    if(window.WowlifeDatePicker){window.WowlifeDatePicker.enhance(el);window.WowlifeDatePicker.refresh();}
+  }
 
   function toggleTrendItem(name){
     const idx = state.trendItems.findIndex(t => t.name===name);
@@ -3397,7 +3449,6 @@ window.__salesActSetData = function(newData){
   }
 
   function renderAll(){
-    state.trendStart=state.start;state.trendEnd=state.end;
     document.getElementById('ws-th-share').textContent=state.view==='sales'?'Доля сертификатов':'Доля суммы';
     window.__wowSalesSelection=selection();
     renderFilters();
