@@ -54,6 +54,20 @@
     return Array.from(groups.values()).map(function(g){return {name:g.name,revenue:g.revenue,count:g.count,services:Array.from(g.services.values())};});
   }
   function comparisonKey(value){return String(value||'').normalize('NFKC').trim().toLowerCase().replace(/ё/g,'е').replace(/^(?:подарочный\s+набор|п\/н)\s*/,'').replace(/[«»„“”"']/g,'').replace(/\s+/g,' ').trim();}
+  // Exact presentation aliases only: gift-set prefix, quotes and city suffix.
+  // Tariffs, durations and options remain distinct; no fuzzy product matching.
+  function comparisonSeriesKey(name){return comparisonKey(name).replace(/,\s*(?:москва|мск|санкт-петербург|спб)$/, '').trim();}
+  function comparisonSeries(rows,line,dates,metric,range){
+    var selection={start:range.start,end:range.end,cities:line.city&&line.city!=='all'?[line.city]:CITIES,
+      sources:line.source&&line.source!=='all'?[line.source]:SOURCES};
+    var key=comparisonSeriesKey(line.name),byDate=new Map(),records=0;
+    filter(rows,selection).forEach(function(r){
+      if(comparisonSeriesKey(r.item)!==key)return;
+      if(metric==='count'&&r.recordKind==='finance'||metric==='revenue'&&r.recordKind==='certificate')return;
+      records++;byDate.set(r.date,(byDate.get(r.date)||0)+number(r[metric]));
+    });
+    return {values:dates.map(function(d){return byDate.get(d)||0;}),hasData:records>0,records:records};
+  }
   function namedComparisonItem(name){return !!String(name||'').trim()&&!/^(?:без названия(?:\s|$)|не указано$|не определ[её]н(?:о)?$|—$)/i.test(String(name).trim());}
   // IDs find existing named series; they do not pretend that category-level
   // financial data contains a separate time series for each tariff or city.
@@ -150,5 +164,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
 });
