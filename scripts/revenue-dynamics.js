@@ -137,13 +137,17 @@
     var parts={};new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now || new Date()).forEach(function(p){parts[p.type]=p.value;});
     return parts.year+'-'+parts.month+'-'+parts.day;
   }
-  function comparison(data,options,today){
-    var cutoff=addDays(isoDate(today) || moscowDate(),-1),to=options.to<cutoff?options.to:cutoff;
+  function compareThrough(data,options,cutoff){
+    var to=options.to<cutoff?options.to:cutoff;
     var points=options.from>to?[]:series(data,Object.assign({},options,{to:to})).filter(function(p){return p.current!==null;});
     var current=points.length?Math.round(points.reduce(function(n,p){return n+p.current;},0)*100)/100:null;
     var previous=points.length&&points.every(function(p){return p.comparablePrevious!==null;})?Math.round(points.reduce(function(n,p){return n+p.comparablePrevious;},0)*100)/100:null;
     return {current:current,previous:previous,percent:previous===null||previous===0?null:(current/previous-1)*100,through:points.map(function(p){return p.through;}).sort().pop() || null,cutoff:cutoff};
   }
+  // Summary badge uses completed days; hover explicitly includes the current
+  // Moscow date, comparing the same available dates of each source last year.
+  function comparison(data,options,today){return compareThrough(data,options,addDays(isoDate(today)||moscowDate(),-1));}
+  function hoverComparison(data,options,today){return compareThrough(data,options,isoDate(today)||moscowDate());}
   function money(n){ return Math.round(n).toLocaleString('ru-RU')+' ₽'; }
   function axis(n){ return Math.abs(n)>=1e6 ? (n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' млн' : Math.abs(n)>=1000 ? (n/1000).toLocaleString('ru-RU',{maximumFractionDigits:0})+' тыс' : Math.round(n).toLocaleString('ru-RU'); }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -298,15 +302,20 @@
           var prevDot=crosshair.querySelector('.rd-active-previous');prevDot.setAttribute('visibility',p.previous===null?'hidden':'visible');
           if(p.previous!==null){prevDot.setAttribute('cx',cx);prevDot.setAttribute('cy',y(p.previous));}
           svgEl.querySelectorAll('.rd-period-label').forEach(function(label){label.classList.toggle('is-active',+label.dataset.i===i);});
-          var comparisonOptions=p.from?Object.assign({},state,{from:p.from,to:p.to}):null,periodComparison=comparisonOptions?comparison(data,comparisonOptions):null;
+          var comparisonOptions=p.from?Object.assign({},state,{from:p.from,to:p.to}):null,periodComparison=comparisonOptions?hoverComparison(data,comparisonOptions):null;
+          var matched=periodComparison&&periodComparison.current!==null;
+          var currentValue=matched?periodComparison.current:p.current,previousValue=matched?periodComparison.previous:p.previous;
+          var currentThrough=matched?periodComparison.through:p.through;
+          var previousThrough=matched?shiftYear(currentThrough):p.previousThrough;
+          if(matched&&state.step==='month'&&currentThrough===monthEnd(currentThrough))previousThrough=monthEnd(previousThrough);
           var change=periodComparison?periodComparison.percent:null;
           var delta=change===null?'':'<span class="rd-tip-delta '+(change>=0?'up':'down')+'">'+(change>0?'+':'')+change.toLocaleString('ru-RU',{maximumFractionDigits:1})+'%</span>';
-          tip.innerHTML='<div class="rd-tip-heading"><span>Период</span><span>Выручка</span></div>'+
-            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(p.noCurrentDay?'Такого дня нет в текущем году':periodLabel(p.from,p.through || p.to))+'</span></div><strong>'+(p.current===null?'нет данных':money(p.current))+'</strong></div>'+
-            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(p.noPreviousDay?'Такого дня нет в прошлом году':periodLabel(p.previousFrom,p.previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(p.previous===null?'нет данных':money(p.previous))+'</strong></div>'+
+          tip.innerHTML='<div class="rd-tip-heading"><span>Сопоставимый период</span><span>Выручка</span></div>'+
+            '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(p.noCurrentDay?'Такого дня нет в текущем году':periodLabel(p.from,currentThrough || p.to))+'</span></div><strong>'+(currentValue===null?'нет данных':money(currentValue))+'</strong></div>'+
+            '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(p.noPreviousDay?'Такого дня нет в прошлом году':periodLabel(p.previousFrom,previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(previousValue===null?'нет данных':money(previousValue))+'</strong></div>'+
             (delta?'<div class="rd-tip-change"><span>К прошлому году · по '+esc(shortDate(periodComparison.through))+'</span>'+delta+'</div>':'')+
-            (p.from&&p.to>=(moscowDate())?'<div class="rd-tip-note">Процент — только за завершённые дни (МСК)</div>':'')+
-            (p.partial?'<div class="rd-tip-note">Текущий период: неполные данные по источникам</div>':'');
+            (matched&&currentThrough===moscowDate()?'<div class="rd-tip-note">Включая сегодня (МСК): данные дня ещё обновляются</div>':'')+
+            (p.partial?'<div class="rd-tip-note">Суммы и процент — за одинаковые доступные дни каждого источника</div>':'');
           tip.hidden=false;
           var cr=card.getBoundingClientRect(),sr=svgEl.getBoundingClientRect(),anchorX=sr.left+cx*sr.width/width-cr.left;
           var left=Math.max(12,Math.min(cr.width-tip.offsetWidth-12,anchorX-tip.offsetWidth/2));
@@ -333,5 +342,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,mount:mount};
 });

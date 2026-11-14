@@ -147,3 +147,27 @@ const pastYear={version:1,asOf:'2026-01-01',coverage:{siteMsk:{from:'2024-01-01'
 assert.deepEqual(model.comparison(pastYear,{sources:['site'],city:'msk',from:'2025-12-01',to:'2025-12-31',step:'month'},'2026-01-01'),{current:30,previous:20,percent:50,through:'2025-12-31',cutoff:'2025-12-31'});
 assert.equal(JSON.stringify(partialToday),initialToday,'Percentage calculation never mutates coverage/receipts');
 console.log('Completed-day comparison: Moscow midnight/year boundary, all steps, both operands capped, source coverage, city/empty/zero data, historical endpoints and intraday invariance passed.');
+
+// Hover compares both displayed sums and its percentage through the current
+// date, independently of the completed-day summary and the full prior-year line.
+for(const step of ['day','week','month','year']){
+ const result=model.hoverComparison(partialToday,{...cutoffOptions,step},'2026-11-11');
+ assert.deepEqual(result,{current:450,previous:10015,percent:(450/10015-1)*100,through:'2026-11-11',cutoff:'2026-11-11'});
+}
+const november14={version:1,asOf:'2026-11-14',coverage:{siteMsk:{from:'2025-01-01',to:'2026-11-14'},ozonMsk:{from:'2025-01-01',to:'2026-11-08'}},days:{
+ '2026-11-14':{siteMsk:100},'2025-11-20':{siteMsk:9000},
+ '2026-11-08':{ozonMsk:20},'2025-11-08':{ozonMsk:10},'2025-11-14':{siteMsk:80,ozonMsk:5000}
+}};
+const hoverOptions={sources:['site','ozon'],city:'msk',from:'2026-11-01',to:'2026-11-30',step:'month'};
+const matchedHover=model.hoverComparison(november14,hoverOptions,'2026-11-14');
+assert.equal(matchedHover.current,120);assert.equal(matchedHover.previous,90,'Exclude later November and unmatched Ozon days');
+assert.equal(matchedHover.through,'2026-11-14');assert.equal(matchedHover.percent,(120/90-1)*100);
+assert.equal(model.series(november14,hoverOptions)[0].previous,14090,'Full dotted month remains unchanged');
+assert.equal(model.hoverComparison(november14,{...hoverOptions,sources:['ozon']},'2026-11-14').through,'2026-11-08');
+assert.equal(model.hoverComparison(november14,{...hoverOptions,to:'2026-11-07'},'2026-11-14').through,'2026-11-07','Respect selected end');
+assert.equal(model.hoverComparison(november14,{...hoverOptions,from:'2026-12-01',to:'2026-12-31'},'2026-11-14').current,null);
+assert.equal(model.hoverComparison(november14,{...hoverOptions,sources:[]},'2026-11-14').percent,null);
+assert.equal(model.hoverComparison(partialToday,{...cutoffOptions,sources:['site'],city:'spb'},'2026-11-11').percent,null,'No invented percentage from a zero base');
+const beforeHover=JSON.stringify(november14);model.hoverComparison(november14,hoverOptions,'2026-11-14');assert.equal(JSON.stringify(november14),beforeHover);
+assert.equal(model.hoverComparison(pastYear,{sources:['site'],city:'msk',from:'2025-12-01',to:'2025-12-31',step:'month'},'2026-01-01').previous,20,'Historical months are complete');
+console.log('Hover comparison: today included on both sides, per-source coverage, matched sums/percent, selected/historical/future/empty/zero ranges; full prior curve and completed-day summary preserved.');
