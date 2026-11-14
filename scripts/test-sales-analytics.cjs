@@ -99,9 +99,10 @@ const catalog = [[],[],[],[],...Array.from({length:300},(_,i)=>['','Катего
 catalog.push(['','Наборы впечатлений','Универсальные','Подарочный набор «Тест»']);
 const datasets = context.window.testAnalytics.computeWowsales(catalog,tx,mp,act,raw);
 assert.equal(model.sum(model.filter(datasets.sales.rows,selection)).revenue,570);
-assert.equal(model.sum(model.filter(datasets.sales.rows,selection)).count,6,'category rows count certificates rather than financial records');
-assert.equal(datasets.sales.salesMetric,model.CRM_METRIC);
-assert.equal(datasets.sales.rows.find(r=>r.recordKind==='certificate'&&r.item==='Подарочный набор «Тест»').count,1,'CRM product names map to the same financial catalog');
+assert.equal(model.sum(model.filter(datasets.sales.rows,selection)).count,5,'site CRM certificates plus signed marketplace ledger units; no CRM marketplace duplicates');
+assert.equal(datasets.sales.salesMetric,model.SALES_METRIC);
+assert(!datasets.sales.rows.some(r=>r.channel==='Маркетплейсы'&&r.recordKind==='certificate'),'CRM marketplace certificates must not be counted again');
+assert.equal(model.sum(datasets.sales.rows.filter(r=>r.recordKind==='marketplace')).count,0,'a sale and its return cancel the ledger quantity');
 const marketingRaw=raw.map((r,i)=>r.concat(i===0?['utm source','id контакта']:['','']));
 const marketingAct=act.map((r,i)=>r.concat(i===0?['id контакта']:['']));
 const marketingFixture=context.window.testAnalytics.computeMarketing(marketingRaw,marketingAct);
@@ -137,7 +138,7 @@ for(const month of opiu){
   assert.ok(Math.abs(model.sum(rows).revenue-month.revenue_total)<0.02,'same revenue scope must reconcile with OПиУ in '+month.label);
 }
 assert.equal(sales.schemaVersion,2);
-assert.equal(sales.salesMetric,model.CRM_METRIC);
+assert.equal(sales.salesMetric,model.SALES_METRIC);
 assert.equal(model.sum(model.filter(sales.rows,selection)).revenue,8755966);
 assert.equal(activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(partners.activationMetric,model.ACTIVATION_METRIC);
@@ -162,6 +163,9 @@ cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersi
 assert.equal(cacheContext.DATASETS.sales,undefined,'old financial row counts must not replace certificate counts');
 cachedSales.salesMetric=model.CRM_METRIC;
 cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersion:2});
+assert.equal(cacheContext.DATASETS.sales,undefined,'the former CRM marketplace cache is rejected');
+cachedSales.salesMetric=model.SALES_METRIC;
+cacheContext.window.__wowSalesSetData(cachedSales,{schemaVersion:2},{schemaVersion:2});
 assert.equal(cacheContext.DATASETS.sales,cachedSales);
 assert.equal(cacheContext.DATASETS.activations,activations);
 assert.equal(cacheContext.DATASETS.partners,partners);
@@ -179,9 +183,9 @@ for(const month of [...new Set(salesAct.purchaseRows.map(r=>r.date.slice(0,7)))]
   const stats=model.purchaseStats(model.purchases(salesAct.purchaseRows,sel));
   const site=model.purchaseStats(model.purchases(salesAct.purchaseRows,{...sel,sources:['Сайт']}));
   assert.equal(Object.values(salesAct.revenueByTypeMonth[month]||{}).reduce((n,r)=>n+r.count,0),site.quantity,'OPiU and analytics share the same site certificates in '+month);
-  assert.equal(model.sum(model.filter(sales.rows,sel)).count,stats.quantity,'all category quantities match CRM in '+month);
+  assert.equal(model.sum(model.filter(sales.rows,{...sel,sources:['Сайт','B2B']})).count,model.purchaseStats(model.purchases(salesAct.purchaseRows,{...sel,sources:['Сайт','B2B']})).quantity,'site category quantities remain CRM in '+month);
   assert.equal(salesAct.daily.sales.dates.reduce((n,d,i)=>n+(d.startsWith(month)?salesAct.daily.sales.count[i]:0),0),stats.quantity,'sales timeline uses certificates in '+month);
-  for(const cities of [model.CITIES,['Москва'],['Санкт-Петербург'],['Не определён']])for(const src of [model.SOURCES,['Сайт'],['Wildberries']]){
+  for(const cities of [model.CITIES,['Москва'],['Санкт-Петербург'],['Не определён']])for(const src of [['Сайт','B2B'],['Сайт'],['B2B']]){
     const filter={...sel,cities,sources:src};
     assert.equal(model.sum(model.filter(sales.rows,filter)).count,model.purchaseStats(model.purchases(salesAct.purchaseRows,filter)).quantity,'quantity across period/city/source');
   }
@@ -344,3 +348,26 @@ assert(pickerNodes['ws-trend-options'].innerHTML.includes('Ничего не н�
 pickerContext.comparisonProductsLoaded=false;pickerContext.comparisonProductsLoading=true;pickerContext.renderTrendPicker();
 assert(pickerNodes['ws-trend-options'].innerHTML.includes('Загружаю справочник ID'));
 console.log(`Cross comparison: ${idCatalog.products.length} catalog IDs, exact and prefix lookup, tariff priority, real ID matches, defaults and picker passed.`);
+
+// A single ledger row is one unit; no identity deduplication across real sales.
+const ledger=[['Дата операции','Цена','SKU','Операция','Товар','город','площадка'],
+ ['01.10.2026','1 000,50','a','Продажи','Подарочный набор «A»','МСК','ОЗОН'],
+ ['01.10.2026','1 000,50','a','Продажи','Подарочный набор «A»','МСК','ОЗОН'],
+ ['02.10.2026','-1 000,50','a','Возврат','Подарочный набор «A»','МСК','ОЗОН'],
+ ['03.10.2026','200','a','Компенсация от Flowwow','Подарочный набор «A»','СПБ','Flowwow_СПБ'],
+ ['04.10.2026','590','pack','Оплачено клиентом','Упаковочная бумага','СПБ','Flowwow_СПБ'],
+ ['05.10.2026','0','a','','Подарочный набор «A»','СПБ','ЯМ'],
+ ['31.02.2026','100','a','Продажа','Подарочный набор «A»','МСК','ВБ']];
+const ledgerBefore=JSON.stringify(ledger),ledgerRows=model.marketplaceSales(ledger,()=>null);
+assert.equal(model.sum(ledgerRows).count,2);
+assert.equal(model.sum(ledgerRows).revenue,1790.5,'keep signed financial values including compensation/packaging; never multiply by quantity');
+assert.equal(ledgerRows.find(r=>r.platform==='Ozon'&&r.date==='2026-10-01').count,2,'identical sales rows can be different sold units');
+assert.equal(JSON.stringify(ledger),ledgerBefore);
+assert.equal(model.marketplaceQuantity(['','100','','Возврат','Сертификат']),-1);
+assert.equal(model.marketplaceQuantity(['','100','','Комиссия','Сертификат']),0);
+assert.equal(model.marketplaceQuantity(['','100','','Продажи','Доставка']),0);
+assert.equal(model.marketplaceQuantity(['','100','','Продажи','Конная прогулка: Полный пакет']),1);
+assert(!sales.rows.some(r=>r.channel==='Маркетплейсы'&&r.recordKind!=='marketplace'));
+const octMp=model.sum(sales.rows.filter(r=>r.channel==='Маркетплейсы'&&r.date.startsWith('2026-10')));
+assert.equal(octMp.count,672);assert.equal(octMp.revenue,3172948);
+console.log('Marketplace ledger: signed quantity, real repeated sales, zero price, compensation, extras, source/city/date, cache migration and October 672 / 3,172,948 passed.');

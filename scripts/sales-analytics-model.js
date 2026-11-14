@@ -4,6 +4,7 @@
   var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','Мегамаркет','B2B'];
   var ACTIVATION_METRIC='certificate-selection-v1';
   var CRM_METRIC='certificates-all-successful-v3';
+  var SALES_METRIC='site-crm-marketplace-ledger-v1';
   function number(s){var n=Number(String(s==null?'':s).replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0;}
   function iso(s){s=String(s||'').trim();var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),value;
     if(m)value=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
@@ -40,6 +41,27 @@
       var name=String(r.item||'').trim();
       return !/\((?:Add|Box)\)/i.test(name)&&!/^(?:подарочн(?:ый|ые)\s+набор|п\/н(?:\s|$)|набор(?:ы)?\s+впечатлен|номинальн|услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата|тест(?:\s|$))/i.test(name);
     });
+  }
+  // The marketplace ledger has one item per row, with no quantity column.
+  // Keep money from every operation, but count only product sales/returns.
+  function marketplaceQuantity(row){
+    var name=String(row[4]||row[2]||'').trim(),operation=String(row[3]||'').trim();
+    if(!name||/компенсац|достав|комисси|удержан|штраф|хранени/i.test(operation))return 0;
+    if(/\((?:Add|Box)\)/i.test(name)||/^(?:услуги доставки|доставка|упаковоч|упаковка|подарочная упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата)/i.test(name))return 0;
+    if(operation&&!/^(?:продаж[аи]?|оплачено клиентом|возврат(?:\s|$))/i.test(operation))return 0;
+    return /возврат/i.test(operation)||number(row[1])<0?-1:1;
+  }
+  function marketplaceSales(rows,classify){
+    var platforms={'ВБ':'Wildberries','ОЗОН':'Ozon','ЯМ':'Яндекс Маркет','Flowwow_СПБ':'Flowwow','Flowwow_МСК':'Flowwow'},groups=new Map();
+    (rows||[]).forEach(function(row){
+      var d=iso(row[0]);if(!d||row[1]===undefined||row[1]===null||row[1]==='')return;
+      var raw=String(row[6]||'').trim().replace(/^"(.*)"\(\)$/, '$1'),platform=platforms[raw]||raw||'—',c=city(row[5]);
+      var name=String(row[4]||'').trim(),cls=classify(name),g=cls?cls[0]:'Не классифицировано',sg=cls?cls[1]:name||'—',item=cls?cls[2]:name||'—';
+      var key=JSON.stringify([d,platform,c,g,sg,item]),r=groups.get(key);
+      if(!r){r={date:d,channel:'Маркетплейсы',platform:platform,city:c,group:g,subgroup:sg,item:item,opiuExcluded:c==='Не определён'||!platforms[raw],revenue:0,count:0,sourceRecords:0,recordKind:'marketplace'};groups.set(key,r);}
+      r.revenue+=number(row[1]);r.count+=marketplaceQuantity(row);r.sourceRecords++;
+    });
+    return Array.from(groups.values()).map(function(r){r.revenue=Math.round(r.revenue*100)/100;return r;});
   }
   function sum(rows){return rows.reduce(function(a,r){a.revenue+=number(r.revenue);a.count+=number(r.count);return a;},{revenue:0,count:0});}
   function serviceCategories(rows){
@@ -164,5 +186,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,SALES_METRIC:SALES_METRIC,marketplaceQuantity:marketplaceQuantity,marketplaceSales:marketplaceSales,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
 });
