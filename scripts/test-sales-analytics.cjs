@@ -322,7 +322,7 @@ assert.deepEqual(model.comparisonSearch(comparisonNames,idIndex,'  Подаро�
 assert.equal(model.comparisonSearch(comparisonNames,idIndex,'без названия').length,1,'unnamed rows remain manually searchable');
 const defaultsContext={window:{SalesAnalytics:model},itemUniverse:()=>comparisonNames};
 vm.runInNewContext(html.match(/  function defaultTrendItems\(\)\{[\s\S]*?\n  \}/)[0],defaultsContext);
-assert.equal(JSON.stringify(defaultsContext.defaultTrendItems()),JSON.stringify(comparisonNames.slice(1,4).map((name,colorIdx)=>({name,source:"all",city:"all",colorIdx}))));
+assert.equal(JSON.stringify(defaultsContext.defaultTrendItems()),JSON.stringify(comparisonNames.slice(1,3).map((name,colorIdx)=>({name,source:"all",city:"all",colorIdx}))));
 
 const idCatalog=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/comparison-products.json'),'utf8'));
 assert.equal(new Set(idCatalog.products.map(p=>p.id)).size,idCatalog.products.length);

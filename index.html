@@ -2316,6 +2316,14 @@ window.__salesActSetData = function(newData){
 .wsale-root .trend-line-control .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .wsale-root .trend-line-status{grid-column:1/-1;margin:0;color:var(--ink-soft);font-size:12px;}
 .wsale-root .trend-line-control .reset-btn{margin:0;}
+.wsale-root .trend-line-control{background:color-mix(in srgb,var(--line-color) 7%,var(--surface));border-color:color-mix(in srgb,var(--line-color) 28%,var(--border));border-left:4px solid var(--line-color);}
+.wsale-root .trend-line-control select.f-select{border-color:color-mix(in srgb,var(--line-color) 24%,var(--border));background-color:var(--surface);}
+.wsale-root .trend-line-control [data-duplicate]{background:color-mix(in srgb,var(--line-color) 15%,var(--surface));border-color:color-mix(in srgb,var(--line-color) 35%,var(--border));}
+.wsale-root .trend-line-control [data-remove]{background:var(--surface);}
+.wsale-root .trend-controls{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--accent) 5%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 20%,var(--border));}
+.wsale-root .trend-controls select.f-select,.wsale-root .trend-controls .dp-field{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 25%,var(--border));}
+.wsale-root .trend-picker .trend-search{background:color-mix(in srgb,var(--accent) 4%,var(--surface));border-color:color-mix(in srgb,var(--accent) 22%,var(--border));}
+
 @media(max-width:800px){.wsale-root .trend-line-control{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;}.wsale-root .trend-line-name{grid-column:1/-1;}}
 .wsale-root .trend-picker{position:relative; margin-bottom:12px;}
 .wsale-root .trend-search{width:100%;}
@@ -2765,7 +2773,7 @@ window.__salesActSetData = function(newData){
   // removing one item never repaints the color of the items that remain — a fixed
   // slot 0-7 is assigned once per item and freed, not reassigned, on removal.
   function defaultTrendItems(){
-    return itemUniverse().filter(window.SalesAnalytics.namedComparisonItem).slice(0,3).map((name,i) => ({name, source:"all", city:"all", colorIdx:i}));
+    return itemUniverse().filter(window.SalesAnalytics.namedComparisonItem).slice(0,2).map((name,i) => ({name, source:"all", city:"all", colorIdx:i}));
   }
 
   let comparisonProducts = [], comparisonProductsLoaded = false, comparisonProductsLoading = null;
@@ -3213,7 +3221,7 @@ window.__salesActSetData = function(newData){
       const data=trendDataFor(t,trendDateList());
       const label=shortItem(t.name),sources=['all',...window.SalesAnalytics.SOURCES],cities=['all',...window.SalesAnalytics.CITIES];
       const options=(values,selected,all)=>values.map(v=>`<option value="${escapeHtml(v)}" ${v===selected?'selected':''}>${v==='all'?all:escapeHtml(v)}</option>`).join('');
-      return `<div class="trend-line-control" data-line="${t.colorIdx}">
+      return `<div class="trend-line-control" data-line="${t.colorIdx}" style="--line-color:var(--tl-${t.colorIdx+1})">
         <span class="trend-line-name" title="${escapeHtml(t.name)}"><span class="dot" style="background:var(--tl-${t.colorIdx+1})"></span>${escapeHtml(label)}</span>
         <label><span class="f-label">Канал продаж</span><select class="f-select" data-line-source="${t.colorIdx}" aria-label="Канал линии ${t.colorIdx+1}: ${escapeHtml(label)}" ${state.view!=='sales'?'disabled':''}>${options(sources,state.view==='sales'?t.source:'all','Все каналы')}</select></label>
         <label><span class="f-label">Город</span><select class="f-select" data-line-city="${t.colorIdx}" aria-label="Город линии ${t.colorIdx+1}: ${escapeHtml(label)}">${options(cities,t.city,'Все города')}</select></label>
