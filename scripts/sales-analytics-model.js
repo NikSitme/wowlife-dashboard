@@ -84,7 +84,7 @@
       sources:line.source&&line.source!=='all'?[line.source]:SOURCES};
     var key=comparisonSeriesKey(line.name),byDate=new Map(),records=0,total=0;
     filter(rows,selection).forEach(function(r){
-      if(comparisonSeriesKey(r.item)!==key)return;
+      if(line.kind!=='channel'&&comparisonSeriesKey(r.item)!==key)return;
       if(metric==='count'&&r.recordKind==='finance'||metric==='revenue'&&r.recordKind==='certificate')return;
       records++;var value=number(r[metric]);total+=value;byDate.set(r.date,(byDate.get(r.date)||0)+value);
     });

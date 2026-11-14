@@ -70,6 +70,27 @@ const totalContext={state:{metricTrend:'revenue'},fmtMoney:n=>n+' ₽',fmtInt:n=
 assert.equal(totalContext.trendTotalLabel({hasData:true,total:0}),'0 ₽');
 assert.equal(totalContext.trendTotalLabel({hasData:false,total:0}),'—');
 totalContext.state.metricTrend='count';assert.equal(totalContext.trendTotalLabel({hasData:true,total:5}),'5 шт');
-assert(fn('renderTrendChips').includes('trendTotalLabel(data)'));
+assert(!fn('renderTrendChips').includes('trendTotalLabel(data)'));
+assert(fn('renderTrendTotals').includes('trendTotalLabel(data)'));
+assert(html.indexOf('id="ws-trend-totals"')>html.indexOf('id="ws-trend-chart-wrap"'));
 assert(fn('renderTrendTable').includes('trendTotalLabel(s)'));
 console.log('PASS per-line period totals: every date, product/channel/city filters, money/count switch, returns, recorded zero vs missing, identical chips/table summary.');
+
+// Channel mode aggregates every product, without product-name matching.
+const everyDate=Array.from({length:31},(_,i)=>'2026-10-'+String(i+1).padStart(2,'0'));let channelChecks=0;
+for(const source of ['all',...model.SOURCES])for(const city of ['all',...model.CITIES])for(const metric of ['revenue','count']){
+ const channel={kind:'channel',name:'Все товары',source,city};
+ const actual=model.comparisonSeries(raw,channel,everyDate,metric,oct);
+ const selected=model.filter(raw,{...oct,sources:source==='all'?model.SOURCES:[source],cities:city==='all'?model.CITIES:[city]}).filter(r=>metric==='count'?r.recordKind!=='finance':r.recordKind!=='certificate');
+ const expected=selected.reduce((sum,r)=>sum+r[metric],0);
+ assert(Math.abs(actual.total-expected)<0.001);assert(Math.abs(actual.values.reduce((a,b)=>a+b,0)-expected)<0.001);assert.equal(actual.hasData,!!selected.length);channelChecks++;
+}
+const ozone=model.comparisonSeries(raw,{kind:'channel',source:'Ozon',city:'all'},everyDate,'count',oct);assert.equal(ozone.total,577);
+const ozRub=model.comparisonSeries(raw,{kind:'channel',source:'Ozon',city:'all'},everyDate,'revenue',oct);assert.equal(ozRub.total,2377842);
+// Switching modes preserves each mode's lines and the common dates/metric.
+const modeState={view:'sales',trendMode:'products',trendItems:[{name:'Мой товар',source:'Сайт',city:'Москва',colorIdx:0}],trendStart:oct.start,trendEnd:oct.end,metricTrend:'count'};
+const modes={state:modeState,renderTrend(){},defaultTrendItems(){throw Error('must restore product lines');}};vm.createContext(modes);vm.runInContext(fn('switchTrendMode'),modes);
+const products=modeState.trendItems;modes.switchTrendMode('channels');assert.deepEqual(Array.from(modeState.trendItems,t=>t.source),['Сайт','Ozon']);
+modeState.trendItems[0].city='Москва';const channels=modeState.trendItems;modes.switchTrendMode('products');assert.equal(modeState.trendItems,products);modes.switchTrendMode('channels');assert.equal(modeState.trendItems,channels);assert.equal(modeState.trendStart,oct.start);assert.equal(modeState.metricTrend,'count');
+modeState.view='activations';modes.switchTrendMode('products');modes.switchTrendMode('channels');assert.equal(modeState.trendMode,'products','unattributed activations must not be assigned a sales channel');
+console.log('PASS channel mode: '+channelChecks+' independent source/city/metric totals and daily sums; Ozon 577 / 2,377,842; separate mode selections and unsupported activation scope.');
