@@ -26,3 +26,16 @@ const sixRows=D.monthCells('2026-03');assert.equal(sixRows[0].date,'2026-02-23')
 assert.equal(D.allowed('2026-10-02','2026-10-02','2026-10-02'),true);
 assert.equal(D.allowed('2026-10-03','2026-10-02','2026-10-02'),false);
 console.log('PASS date picker: Russian manual dates, invalid/leap dates, Monday-first six-week grids, month/year transitions, inclusive date bounds');
+
+const months=D.yearMonths(2026,'2026-05-18','2026-08-03');
+assert.equal(months.length,12);assert.deepEqual(months.filter(m=>!m.disabled).map(m=>m.month),['2026-05','2026-06','2026-07','2026-08']);
+assert.equal(months[0].label,'Январь');assert.equal(months[11].label,'Декабрь');
+assert.equal(D.yearMonths(2025,'2026-01-01').filter(m=>!m.disabled).length,0);
+assert.equal(D.yearMonths(2027,null,'2026-12-31').filter(m=>!m.disabled).length,0);
+assert.equal(D.dateInMonth('2026-01-31','2026-02'),'2026-02-28');
+assert.equal(D.dateInMonth('2024-01-31','2024-02'),'2024-02-29');
+assert.equal(D.dateInMonth('2026-11-15','2025-12'),'2025-12-15');
+assert.equal(D.dateInMonth('2026-01-03','2026-05','2026-05-18','2026-08-03'),'2026-05-18');
+assert.equal(D.dateInMonth('2026-01-31','2026-08','2026-05-18','2026-08-03'),'2026-08-03');
+assert.equal(D.dateInMonth('2026-01-31','2026-09','2026-05-18','2026-08-03'),null);
+console.log('PASS month selection: twelve Russian months, year bounds, partially available months, leap/end-of-month and inclusive date limits');

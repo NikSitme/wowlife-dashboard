@@ -171,3 +171,13 @@ assert.equal(model.hoverComparison(partialToday,{...cutoffOptions,sources:['site
 const beforeHover=JSON.stringify(november14);model.hoverComparison(november14,hoverOptions,'2026-11-14');assert.equal(JSON.stringify(november14),beforeHover);
 assert.equal(model.hoverComparison(pastYear,{sources:['site'],city:'msk',from:'2025-12-01',to:'2025-12-31',step:'month'},'2026-01-01').previous,20,'Historical months are complete');
 console.log('Hover comparison: today included on both sides, per-source coverage, matched sums/percent, selected/historical/future/empty/zero ranges; full prior curve and completed-day summary preserved.');
+
+assert.deepEqual(model.presetRange('last_month','2026-11-15','2025-01-01'),{from:'2026-10-01',to:'2026-10-31'});
+assert.deepEqual(model.presetRange('last_month','2026-01-01','2025-01-01'),{from:'2025-12-01',to:'2025-12-31'});
+assert.deepEqual(model.presetRange('last_month','2024-03-31','2023-01-01'),{from:'2024-02-01',to:'2024-02-29'});
+assert.deepEqual(model.presetRange('last_month','2026-03-01','2025-01-01'),{from:'2026-02-01',to:'2026-02-28'});
+assert.deepEqual(model.presetRange('year','2026-11-15','2025-01-01'),{from:'2026-01-01',to:'2026-12-31'});
+assert.deepEqual(model.presetRange('30','2026-11-15','2025-01-01'),{from:'2026-10-17',to:'2026-11-15'});
+assert.deepEqual(model.presetRange('90','2026-11-15','2025-01-01'),{from:'2026-08-18',to:'2026-11-15'});
+assert.deepEqual(model.presetRange('all','2026-11-15','2025-01-01'),{from:'2025-01-01',to:'2026-11-15'});
+console.log('PASS previous-month preset: full calendar month, January boundary, leap/non-leap February and unchanged year/rolling/all presets');

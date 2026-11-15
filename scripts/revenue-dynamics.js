@@ -25,6 +25,11 @@
     var date=isoDate(value);if(!date)return null;
     return {from:date.slice(0,7)+'-01',to:monthEnd(date)};
   }
+  function presetRange(preset,asOf,first){
+    var year=asOf.slice(0,4);
+    if(preset==='last_month'){var end=addDays(asOf.slice(0,7)+'-01',-1);return {from:end.slice(0,7)+'-01',to:end};}
+    return {from:preset==='all'?first:preset==='30'?addDays(asOf,-29):preset==='90'?addDays(asOf,-89):year+'-01-01',to:preset==='year'?year+'-12-31':asOf};
+  }
   function fromRows(siteRows, mpRows, today){
     var h = siteRows[0] || [], dateCol = h.indexOf('Дата зачисления'), amountCol = h.indexOf('Сумма операции'), articleCol = h.indexOf('Статья');
     if (dateCol < 0 || amountCol < 0 || articleCol < 0) throw new Error('Динамика выручки: нет заголовков операций Адеска');
@@ -186,9 +191,8 @@
     function setPreset(preset){
       state.preset=preset;
       if(!data)return;
-      var year=data.asOf.slice(0,4), first=Object.keys(data.coverage).map(function(k){return data.coverage[k].from;}).sort()[0];
-      state.from=preset==='all' ? first : preset==='30' ? addDays(data.asOf,-29) : preset==='90' ? addDays(data.asOf,-89) : year+'-01-01';
-      state.to=preset==='year' ? year+'-12-31' : data.asOf;
+      var first=Object.keys(data.coverage).map(function(k){return data.coverage[k].from;}).sort()[0];
+      var range=presetRange(preset,data.asOf,first);state.from=range.from;state.to=range.to;
     }
     var picker=card.querySelector('#rdSourcePicker'), sourceInputs={}, allInput=card.querySelector('#rdSelectAllSources');
     SOURCES.forEach(function(source){
@@ -214,7 +218,7 @@
     card.querySelector('#yearCityPresets').addEventListener('change',function(e){state.city=e.target.value;render();});
     card.querySelector('#yearStepPresets').addEventListener('change',function(e){
       detailParent=null;state.step=e.target.value;
-      if(state.preset!=='custom')setPreset(state.step==='day'?'30':state.step==='week'?'90':state.step==='year'?'all':'year');
+      if(state.preset!=='custom'&&state.preset!=='last_month')setPreset(state.step==='day'?'30':state.step==='week'?'90':state.step==='year'?'all':'year');
       render();
     });
     card.querySelector('#yearRangePresets').addEventListener('change',function(e){
@@ -342,5 +346,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,presetRange:presetRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,mount:mount};
 });

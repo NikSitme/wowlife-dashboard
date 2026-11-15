@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="utf-8">
 <title>Финансовый дашборд WOWlife</title>
-<link rel="stylesheet" href="./scripts/date-picker.css?v=20261108">
-<script src="./scripts/date-picker.js?v=20261108" defer></script>
+<link rel="stylesheet" href="./scripts/date-picker.css?v=month-grid-20261115">
+<script src="./scripts/date-picker.js?v=month-grid-20261115" defer></script>
 <style>
   :root,
   .viz-root {
@@ -684,7 +684,7 @@
         <label class="rd-field"><span class="rd-label">Шаг</span><select id="yearStepPresets"><option value="day">По дням</option><option value="week">По неделям</option><option value="month" selected>По месяцам</option><option value="year">По годам</option></select></label>
       </div>
       <div class="rd-period-grid">
-        <label class="rd-field"><span class="rd-label">Период</span><select id="yearRangePresets"><option value="year">Текущий год</option><option value="30">30 дней</option><option value="90">90 дней</option><option value="all">Всё время</option><option value="custom">Свой диапазон</option></select></label>
+        <label class="rd-field"><span class="rd-label">Период</span><select id="yearRangePresets"><option value="year">Текущий год</option><option value="last_month">Прошлый месяц</option><option value="30">30 дней</option><option value="90">90 дней</option><option value="all">Всё время</option><option value="custom">Свой диапазон</option></select></label>
         <label class="rd-field"><span class="rd-label">С</span><input type="date" id="yearFromDate"></label>
         <label class="rd-field"><span class="rd-label">По</span><input type="date" id="yearToDate"></label>
       </div>
@@ -4751,7 +4751,7 @@ window.__salesActSetData = function(newData){
 </div>
 </div>
 
-<script src="scripts/revenue-dynamics.js?v=hover-matching-date-20261114"></script>
+<script src="scripts/revenue-dynamics.js?v=last-month-20261115"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){
