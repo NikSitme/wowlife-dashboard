@@ -394,3 +394,53 @@ t.state.certificateType='electronic';t.save();t.state.certificateType='physical'
 const savedFormat=JSON.parse(savedPricing);delete savedFormat.certificateType;savedPricing=JSON.stringify(savedFormat);t.load();assert.equal(t.state.certificateType,'physical');
 assert(html.includes('id="prCertificateType"'));assert(html.includes('data-certificate-type="electronic"'));assert(html.includes('data-certificate-type="physical"'));
 console.log('PASS certificate format: physical compatibility, ruble/percent costs, all forecasts and views, picker, targets, unknowns, column alignment, CSV, roundtrip and legacy persistence');
+
+// Annual format mix is certificate-weighted and excludes marketplaces/current month.
+const mixData={meta:{start:'2025-01-01',end:'2026-11-14'},purchaseRows:[
+ {date:'2025-11-01',city:'Москва',source:'Сайт',type:'Физический',quantity:1,revenue:90000,orders:1},
+ {date:'2026-10-31',city:'Москва',source:'Сайт',type:'Электронный',quantity:3,revenue:1,orders:1},
+ {date:'2026-05-10',city:'Санкт-Петербург',source:'Сайт',type:'Физический',quantity:6,revenue:0,orders:1},
+ {date:'2026-04-01',city:'Москва',source:'Сайт',type:'Не указан',quantity:2},
+ ...['2025-10-31','2026-11-01'].map(date=>({date,city:'Москва',source:'Сайт',type:'Физический',quantity:999})),
+ {date:'2026-09-01',city:'Москва',source:'Ozon',type:'Физический',quantity:999},
+ {date:'2026-09-01',city:'Москва',source:'B2B',type:'Физический',quantity:999}
+]};
+let mix=model.certificateMix(mixData,'all','2026-11-15');
+assert.equal(mix.start,'2025-11-01');assert.equal(mix.end,'2026-10-31');near(mix.physicalShare,.7);assert.equal(mix.unknown,2);
+near(model.certificateMix(mixData,'Мск','2026-11-15').physicalShare,.25);near(model.certificateMix(mixData,'СПб','2026-11-15').physicalShare,1);
+assert.equal(model.certificateMix({...mixData,meta:{start:'2025-12-01',end:'2026-11-15'}},'all','2026-11-15').available,false);
+assert.equal(model.certificateMix({...mixData,meta:{start:'2024-01-01',end:'2026-10-20'}},'all','2026-11-15').available,false);
+const febMix=model.certificateMix({meta:{start:'2020-01-01',end:'2030-01-01'},purchaseRows:[]},'all','2024-03-01');
+assert.equal(febMix.start,'2023-03-01');assert.equal(febMix.end,'2024-02-29');assert.equal(febMix.physicalShare,null);
+for(const expenseModes of [{pack:'rub',logistics:'rub'},{pack:'pct',logistics:'pct'}]){
+ const values={act:60,acq:2,tax:7,pack:expenseModes.pack==='rub'?244:3,logistics:expenseModes.logistics==='rub'?120:2,fixed:10,disc:10};
+ const physical=model.calculate(5000,2000,model.parameters(values,expenseModes,{},'physical'));
+ const electronic=model.calculate(5000,2000,model.parameters(values,expenseModes,{},'electronic'));
+ const average=model.calculate(5000,2000,model.parameters(values,expenseModes,{},'average',.7));
+ near(average.npAct,.7*physical.npAct+.3*electronic.npAct);near(average.expenses.pack,physical.expenses.pack*.7);near(average.expenses.logistics,physical.expenses.logistics*.7);
+ near(model.calculate(average.target,2000,average.p).npAct,0);
+ for(const share of [0,1]){const result=model.calculate(5000,2000,model.parameters(values,expenseModes,{},'average',share));near(result.npAct,share?physical.npAct:electronic.npAct);}
+ const missing=model.calculate(5000,2000,model.parameters(values,expenseModes,{},'average',null));
+ assert.equal(missing.npAct,null);assert.equal(missing.target,null);assert.equal(missing.expenses.pack,null);near(missing.mpAct,physical.mpAct);
+}
+// The shared model applies the same weight in service, set, composition, picker and CSV.
+const dynamicPeriod=model.certificateMix(null,'all');
+context.window.__salesActData={meta:{start:'2000-01-01',end:'2099-01-01'},purchaseRows:[
+ {date:dynamicPeriod.start,source:'Сайт',city:'Москва',type:'Физический',quantity:1},
+ {date:dynamicPeriod.end,source:'Сайт',city:'Москва',type:'Электронный',quantity:3}
+]};
+t.state.city='Мск';t.state.certificateType='physical';t.state.params.pack=244;t.state.params.logistics=120;t.state.pmode.pack='rub';t.state.pmode.logistics='rub';
+const averageSet=t.allSets()[0],mixedSvc=t.serviceOf('a');
+const formatResults=()=>[t.calcService(mixedSvc),t.calcSet(averageSet),t.calcItem(averageSet,averageSet.items[0],t.calcSet(averageSet))];
+const fullResults=formatResults();t.state.certificateType='average';
+formatResults().forEach((r,i)=>{near(r.expenses.pack,fullResults[i].expenses.pack*.25);near(r.expenses.logistics,fullResults[i].expenses.logistics*.25);near(r.npAct-fullResults[i].npAct,.75*(fullResults[i].expenses.pack+fullResults[i].expenses.logistics));});
+near(t.catalogCandidateRows(averageSet,[mixedSvc])[0].npRub,t.calcItem(averageSet,averageSet.items[0],t.calcSet(averageSet)).npAct);
+t.state.view='sets';t.state.q='';t.exportCsv();assert(exportedCsv.includes('Средний по году'));assert(exportedCsv.includes('25,0'));
+t.save();t.state.certificateType='physical';t.load();assert.equal(t.state.certificateType,'average');
+const snapshotMix=JSON.stringify(t.state.params);t.state.certificateType='electronic';formatResults();t.state.certificateType='physical';assert.equal(JSON.stringify(t.state.params),snapshotMix);
+console.log('PASS annual certificate mix: dates/leap year, quantity weighting, city/channel scope, unknowns and missing coverage, percent/ruble costs, zero-profit target, all pricing views, CSV and persistence');
+
+// Table percentages report the weighted cost, matching rubles and sort metrics.
+t.state.collapsed={};t.state.pmode.pack='pct';t.state.params.pack=4;t.state.certificateType='average';
+const weightedRow=t.calcSet(averageSet),weightedCells=t.financialCells(averageSet,weightedRow,{key:'set:'+averageSet.id,kind:'set'});
+assert.match(weightedCells,/data-price-component="packPct"[^>]*>1,0 %/);

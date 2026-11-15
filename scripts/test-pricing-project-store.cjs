@@ -109,6 +109,8 @@ function client(server,initial,storage=new MemoryStorage()){
  fb.get().certificateType='physical';fb.ctrl.record();await fb.ctrl.flush();await fa.ctrl.poll();
  assert.equal(fa.get().certificateType,'physical');assert.equal(fa.get().params.pack,300);assert.equal(fa.get().customSets[0].id,'format');
  const formatReload=client(formats);await formatReload.ctrl.connect(publicConn);assert.equal(formatReload.get().certificateType,'physical');
+ fb.get().certificateType='average';fb.ctrl.record();await fb.ctrl.flush();await fa.ctrl.poll();assert.equal(fa.get().certificateType,'average');
+ const mixedReload=client(formats);await mixedReload.ctrl.connect(publicConn);assert.equal(mixedReload.get().certificateType,'average');assert.equal(mixedReload.get().params.pack,300);
  console.log('PASS shared certificate format: legacy defaults, no write on read, two visitors, concurrent expense edits, restoration and reload');
  const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');assert(html.includes('projectController.record()'));assert(html.includes('data-setname'));assert(!html.includes(' · сохранены в этом браузере'));assert(html.includes('prProjectHistory'));assert(html.includes('prProjectDownload'));
  console.log('PASS page integration and truthful save status');

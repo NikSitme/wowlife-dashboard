@@ -2082,6 +2082,7 @@ window.__salesActSetData = function(newData){
   if (window.__opiuRerender) window.__opiuRerender();
   if (window.__wowSalesRerender) window.__wowSalesRerender();
   if (window.__leadCertRerender) window.__leadCertRerender();
+  if (window.__pricingFormatDataChanged) window.__pricingFormatDataChanged();
 };
 })();
 </script>
@@ -4100,6 +4101,7 @@ window.__salesActSetData = function(newData){
   .pr-tabs button.active:after { content: ""; position: absolute; height: 3px; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: var(--pr-accent); }
   .pr-tabs svg { width: 26px; height: 26px; fill: none; stroke: var(--pr-accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
   .pr-filters { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; margin-bottom: 22px; }
+  .pr-format-note { font-size:13px;line-height:1.5;margin:0;padding:12px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px; }
   .pr-filter-group { display: flex; flex-direction: column; gap: 10px; }
   .pr-filter-label { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
   .pr-commission-terms { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; width:240px; white-space:normal; text-align:left; font-size:13px; line-height:1.4; color:var(--text-muted); }
@@ -4363,13 +4365,14 @@ window.__salesActSetData = function(newData){
     <details class="pr-help"><summary>Активации за 12 месяцев · <span id="prActivationPeriod">период не загружен</span></summary><p>Одна активация — одна сделка, в которой клиент выбрал услугу, независимо от числа участников и стадии оплаты. Счётчики загружены из ручных таблиц и отражают 12 полных месяцев. Активируют конкретную услугу. В строке набора показано, сколько активаций услуг пришлось на сертификаты, купленные как этот набор; связь определяется по исходному товару в CRM. В составе — общий счётчик услуги во всех наборах и отдельных сертификатах; складывать его в итог набора нельзя.</p><p>Расчёт сверён с выгрузкой сертификатов Битрикса от 07.11.2026. Учтены однозначные совпадения названий и подтверждённые прежние названия. Из 10 538 активаций 649 не распределены по тарифам; у 10 сертификатов типа «Набор» не заполнен исходный товар, ещё в одной карточке указаны разные наборы — эти 11 карточек не распределены по наборам. Ноль означает, что в сопоставленной истории активаций не найдено. Обновление дашборда читает последний расчёт из таблиц.</p></details>
     <div class="pr-table-controls">
       <div class="pr-filter-line"><div class="pr-filter-group"><span class="pr-filter-label">Город</span><div class="seg" id="prCity" role="group" aria-label="Город"><button type="button" data-c="all" class="active">Все города</button><button type="button" data-c="Мск">Москва</button><button type="button" data-c="СПб">Петербург</button></div></div>
-        <div class="pr-filter-group"><span class="pr-filter-label">Сертификаты</span><div class="seg" id="prCertificateType" role="group" aria-label="Формат сертификатов"><button type="button" data-certificate-type="physical" class="active" aria-pressed="true">Физические</button><button type="button" data-certificate-type="electronic" aria-pressed="false">Электронные</button></div></div>
+        <div class="pr-filter-group"><span class="pr-filter-label">Сертификаты</span><div class="seg" id="prCertificateType" role="group" aria-label="Формат сертификатов"><button type="button" data-certificate-type="physical" class="active" aria-pressed="true">Физические</button><button type="button" data-certificate-type="electronic" aria-pressed="false">Электронные</button><button type="button" data-certificate-type="average" aria-pressed="false">Средний</button></div></div>
         <div class="pr-calculation" id="prModeGroup">
           <div class="pr-filter-group"><span class="pr-filter-label">Прогноз активаций</span><div class="pr-activation-field"><div class="seg" id="prUsageMode" role="group" aria-label="Прогноз активаций"><button type="button" data-usage="custom" class="active">Заданный %</button><button type="button" data-usage="full">100%</button></div><input type="number" id="prActivation" data-k="act" min="0" max="100" step="1" aria-label="Сколько сертификатов используют, %"><span>%</span></div></div>
           <div class="pr-filter-group" id="prPayoutGroup"><span class="pr-filter-label">Выплата за услугу в наборе</span><div class="seg" id="prMode" role="group" aria-label="Способ расчёта выплаты партнёру"><button type="button" data-m="avg" class="active">Средняя</button><button type="button" data-m="act">По активациям</button><button type="button" data-m="max">Максимальная</button></div></div>
           <span id="prForecastHint" class="muted" aria-live="polite"></span>
         </div>
       </div>
+      <p id="prCertificateMixHint" class="muted pr-format-note" aria-live="polite" hidden></p>
       <div class="pr-table-bar"><label class="pr-search"><span class="pr-filter-label">Поиск</span><span class="pr-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input type="search" id="prQ" placeholder="Название, партнёр или ID" aria-label="Поиск по названию, партнёру или ID"></span></label><nav class="pr-pagination" data-service-pagination aria-label="Страницы услуг сверху" hidden></nav></div>
     </div>
     <div class="pr-scroll" id="prTableWrap"></div>
@@ -5426,7 +5429,7 @@ window.__salesActSetData = function(newData){
       osG("Комиссии и логистика маркетплейсов", ["Расходы ВБ","Расходы ОЗОН","Расходы ЯМ","Расходы ФВ"], { neg: true }),
       osG("Эквайринг", ["Эквайринговая комиссия"], { neg: true }),
       osG("Банковские комиссии", ["Банковские комиссии"], { neg: true }),
-      osG("Упаковка и вложения", ["Коробки","Пакеты","Пакеты (списание)","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"], { neg: true, note: "закупки и расчётное списание по строкам Адеска" }),
+      osG("Упаковка и вложения", ["Коробки","Ложемент","Пакеты","Пакеты (списание)","Вкладыши","Конверты","Карточки","Шоколадки","Наклейки","Открытки","Упаковка для доставки","Подарочная упаковка"], { neg: true, note: "закупки и расчётное списание по строкам Адеска" }),
       osG("Упаковка маркетплейсов", ["Упаковка м-плейсы"], { neg: true }),
       osG("Доставка", ["Доставка","Доставка Далли","Доставка СДЭК","Доставка 5Post"], { neg: true })
     ]},
@@ -7333,6 +7336,7 @@ window.__salesActSetData = function(newData){
         if(b === "упаковка - коробки")out[1]="Коробки";
         if(b === "упаковка - шоколадка")out[1]="Шоколадки";
         if(b === "упаковка - Пакеты")out[1]="Пакеты (списание)";
+        if(b === "упаковка - Ложемент")out[1]="Ложемент";
         return out;
       });
     }
@@ -7357,6 +7361,7 @@ window.__salesActSetData = function(newData){
       if (!labelRowB["Пакеты"]) productLabels = productLabels.filter(function(name){return name !== "Пакеты";});
       productLabels.push("Пакеты (списание)");
     }
+    if(sourceV2 && labelRowB["Ложемент"])productLabels.push("Ложемент");
     function cell(r, c){ var row = rows[r - 1]; return row ? row[c - 1] : undefined; }
     function v(r, c){ if (!r) return 0; var x = cell(r, c); if (x === undefined || x === null || x === "") return 0; return Math.round(ruNum(x) * 100) / 100; }
     function rowByA(label){ var r = labelRowA[label]; if (!r) throw new Error("ОПиУ: не найдена строка «" + label + "» (колонка A) — структура листа изменилась?"); return r; }
@@ -8248,9 +8253,9 @@ window.__salesActSetData = function(newData){
 
 <link rel="stylesheet" href="./styles/pricing-projects.css?v=20261112">
 <script src="./scripts/pricing-project-config.js?v=20261112-public"></script>
-<script src="./scripts/pricing-project-store.js?v=20261113-certificate-format"></script>
+<script src="./scripts/pricing-project-store.js?v=20261115-certificate-mix"></script>
 <script src="./scripts/pricing-project-ui.js?v=20261112-public"></script>
-<script src="./scripts/pricing-model.js?v=20261113-certificate-format"></script>
+<script src="./scripts/pricing-model.js?v=20261115-certificate-mix"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/service-catalog.js?v=picker-profit-20261112"></script>
 <script src="./scripts/price-structure.js?v=20261103-unnamed-confirmed"></script>
@@ -8318,14 +8323,14 @@ window.__salesActSetData = function(newData){
     return {params:state.params,pmode:state.pmode,packaging:state.packaging,packagingVersion:state.packagingVersion,packagingLinked:state.packagingLinked,rowParams:state.rowParams,collapsed:state.collapsed,view:state.view,city:state.city,mode:state.mode,usageMode:state.usageMode,certificateType:state.certificateType,sort:state.sort,itemSort:state.itemSort,ov:state.ov,sov:state.sov,customSets:state.customSets,customServices:state.customServices,serviceSnapshots:state.serviceSnapshots};
   }
   function save(){if(projectController)return projectController.record();try{var raw=JSON.stringify(projectSnapshot());localStorage.setItem(STORE_KEY,raw);if(localStorage.getItem(STORE_KEY)!==raw)throw Error('Storage verification');return true;}catch(e){var bar=root.querySelector('#prProjectBar [role="status"]');if(bar)bar.textContent='Сохранение на устройстве недоступно. Подключите общий проект или скачайте копию.';return false;}}
-  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices","serviceSnapshots"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.certificateType = s.certificateType === "electronic" ? "electronic" : "physical"; state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s){ ["params","pmode","packaging","packagingVersion","packagingLinked","rowParams","collapsed","view","city","mode","sort","itemSort","ov","sov","customSets","customServices","serviceSnapshots"].forEach(function(k){ if (s[k] !== undefined && s[k] !== null) state[k] = s[k]; }); state.certificateType = MODEL.certificateType(s.certificateType); state.usageMode = s.usageMode === "full" || s.usageMode === "custom" ? s.usageMode : s.mode === "max" ? "full" : "custom"; } } catch (e) {} }
 
   // ---------- факт из ОПиУ для значений по умолчанию ----------
   function pick(arr, name){ var it = (arr || []).filter(function(x){ return x.name === name; })[0]; return it ? it.value : 0; }
   function factDefaults(){ return MODEL.defaults(window.__opiuData || []); }
   var FACT = null;
   function ensureParams(){
-    state.certificateType=state.certificateType==="electronic"?"electronic":"physical";
+    state.certificateType=MODEL.certificateType(state.certificateType);
     if (!FACT) FACT = factDefaults();
     if (!state.params) state.params = {};
     PARAM_DEFS.forEach(function(d){ if (state.params[d.k] === undefined) state.params[d.k] = FACT[d.k]; });
@@ -8495,11 +8500,22 @@ window.__salesActSetData = function(newData){
 
   // ---------- расчёт ----------
   function isElectronic(){return state.certificateType==="electronic";}
-  function certificateLabel(){return isElectronic()?"Электронные":"Физические";}
+  function certificateLabel(){return state.certificateType==="average"?"Средний по году":isElectronic()?"Электронные":"Физические";}
+  var mixCache=null,mixRows=null,mixCity=null,mixDay=null;
+  function formatMix(){
+    var source=window.__salesActData,rows=source&&source.purchaseRows,day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Moscow'}).format(new Date());
+    if(!mixCache||rows!==mixRows||state.city!==mixCity||day!==mixDay){mixCache=MODEL.certificateMix(source,state.city,day);mixRows=rows;mixCity=state.city;mixDay=day;}
+    return mixCache;
+  }
+  function mixDescription(){
+    var mix=formatMix(),period=mix.start.split('-').reverse().join('.')+'–'+mix.end.split('-').reverse().join('.');
+    if(!mix.available)return 'Средний расчёт недоступен: нет полной истории форматов за '+period+' для выбранного города. ЧП и целевая цена не рассчитываются.';
+    return 'По количеству сертификатов сайта и прямых продаж · '+period+' · '+(mix.city||'все города')+': физические '+fmtP(mix.physicalShare)+' ('+fmtN(mix.physical)+'), электронные '+fmtP(1-mix.physicalShare)+' ('+fmtN(mix.electronic)+'). Упаковка и логистика физического формата × '+fmtP(mix.physicalShare)+'.'+(mix.unknown?' Без указанного формата: '+fmtN(mix.unknown)+' — исключены из долей.':'');
+  }
   function physicalExpense(k){return k==="pack"||k==="logistics";}
   function isRub(k){ return state.pmode[k] === "rub"; }
   function usagePercent(){ return state.usageMode === "full" ? 100 : state.params.act; }
-  function P(key){ var row=state.rowParams[key]||{};return MODEL.parameters(Object.assign({},state.params,{disc:0,act:usagePercent()}),Object.assign({},state.pmode,{disc:"pct"}),{disc:row.disc,partner:row.partner},state.certificateType); }
+  function P(key){ var row=state.rowParams[key]||{};return MODEL.parameters(Object.assign({},state.params,{disc:0,act:usagePercent()}),Object.assign({},state.pmode,{disc:"pct"}),{disc:row.disc,partner:row.partner},state.certificateType,state.certificateType==="average"?formatMix().physicalShare:undefined); }
   function netPrice(price,p){ return MODEL.netPrice(price,p); }
   function targetPrice(cost,p){ return MODEL.targetPrice(cost,p); }
   function fixedOf(price, p){ return price * p.fP + p.fR; }
@@ -8580,7 +8596,7 @@ window.__salesActSetData = function(newData){
       return '<div class="pr-group"><h4>' + g.name + '</h4>' + g.items.map(function(d){
         var v = state.params[d.k], f = FACT[d.k], rub = isRub(d.k), ch = !rub && Math.abs(v - f) > 1e-9;
         var fact = rub ? "≈ " + String(Math.round(v / ref * 1000) / 10).replace(".", ",") + " % при средней цене " + fmtR(ref) : (d.k === "act" ? "история: ≤ 60 %" : d.k === "target" ? "" : (ch ? "факт ОПиУ: " + String(f).replace(".", ",") + " %" : "факт ОПиУ"));
-        return '<div class="pr-param' + (ch || rub ? " changed" : "") + '"><div><div class="lbl">' + d.lbl + '</div><div class="hint">' + esc(d.hint) + (fact ? " · " + fact : "") + '</div></div><div class="ctl"><input type="number" data-k="' + d.k + '" min="0" max="' + (rub ? 100000 : d.max) + '" step="' + (rub ? 10 : d.step) + '" value="' + v + '"'+(d.k==='target'?' readonly aria-readonly="true"':'')+'><span class="unit">' + (rub ? "₽" : "%") + '</span>' + (d.rub ? '<span class="pr-mode"><button type="button" data-pm="' + d.k + '" data-m="pct" class="' + (rub ? "" : "on") + '">%</button><button type="button" data-pm="' + d.k + '" data-m="rub" class="' + (rub ? "on" : "") + '">₽</button></span>' : "") + '</div></div>'+(d.k==='pack'?packagingMarkup():'');
+        return '<div class="pr-param' + (ch || rub ? " changed" : "") + '"><div><div class="lbl">' + d.lbl + '</div><div class="hint">' + esc(d.hint) + (state.certificateType==="average"&&physicalExpense(d.k)?" · на физический сертификат, в среднем — по доле физических":"") + (fact ? " · " + fact : "") + '</div></div><div class="ctl"><input type="number" data-k="' + d.k + '" min="0" max="' + (rub ? 100000 : d.max) + '" step="' + (rub ? 10 : d.step) + '" value="' + v + '"'+(d.k==='target'?' readonly aria-readonly="true"':'')+'><span class="unit">' + (rub ? "₽" : "%") + '</span>' + (d.rub ? '<span class="pr-mode"><button type="button" data-pm="' + d.k + '" data-m="pct" class="' + (rub ? "" : "on") + '">%</button><button type="button" data-pm="' + d.k + '" data-m="rub" class="' + (rub ? "on" : "") + '">₽</button></span>' : "") + '</div></div>'+(d.k==='pack'?packagingMarkup():'');
       }).join("") + '</div>';
     }).join("");
     updatePackagingUI();
@@ -8667,7 +8683,7 @@ window.__salesActSetData = function(newData){
     var structure=r.structure||STRUCTURE.unknown(r.price,'Комиссия не определена');
     function expense(k,mode){
       var source={value:state.params[k],mode:state.pmode[k]||'pct'};
-      var val=mode==='rub'?r.expenses[k]:(source.mode==='pct'?source.value:r.price>0?r.expenses[k]/r.price*100:null);
+      var val=mode==='rub'?r.expenses[k]:(p.formatAvailable===false&&physicalExpense(k)?null:source.mode==='pct'?p.costs[k].pct*100:r.price>0?r.expenses[k]/r.price*100:null);
       return mode==='rub'?fmtR(val):fmtP(val===null?null:val/100);
     }
     function cell(c,g){
@@ -8821,6 +8837,7 @@ window.__salesActSetData = function(newData){
 
   function renderForecastControls(){
     var services = state.view === "services";
+    var mixHint=root.querySelector("#prCertificateMixHint");mixHint.hidden=state.certificateType!=="average";mixHint.textContent=state.certificateType==="average"?mixDescription():"";
     root.querySelector("#prCertificateType").querySelectorAll("button").forEach(function(b){var selected=b.getAttribute("data-certificate-type")===state.certificateType;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
     root.querySelector("#prPayoutGroup").hidden = services;
     root.querySelector("#prMode").querySelectorAll("button").forEach(function(b){var selected=b.getAttribute("data-m")===state.mode;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
@@ -8925,7 +8942,7 @@ window.__salesActSetData = function(newData){
     if((b=t.closest("[data-resetrow]"))){delete state.rowParams[b.getAttribute("data-resetrow")];save();render();return;}
     if ((b = t.closest("#prView button"))){ state.view = b.getAttribute("data-v"); resetServicePage(); state.sort = { k: "name", d: 1 }; save(); render(); root.querySelector("#prTableWrap").scrollLeft = 0; root.querySelector("#prTableWrap").scrollTop = 0; return; }
     if ((b = t.closest("#prCity button"))){ state.city = b.getAttribute("data-c"); resetServicePage(); save(); render(); return; }
-    if ((b = t.closest("#prCertificateType button"))){ state.certificateType = b.getAttribute("data-certificate-type") === "electronic" ? "electronic" : "physical"; save(); render(); return; }
+    if ((b = t.closest("#prCertificateType button"))){ state.certificateType = MODEL.certificateType(b.getAttribute("data-certificate-type")); save(); render(); return; }
     if ((b = t.closest("#prUsageMode button"))){ state.usageMode = b.getAttribute("data-usage"); save(); render(); return; }
     if ((b = t.closest("#prMode button"))){ state.mode = b.getAttribute("data-m"); save(); if (state.mode === "act" && !ACT) loadAct(); render(); return; }
     if (t.closest("#prParamsReset")){ PARAM_DEFS.forEach(function(p){ state.params[p.k] = FACT[p.k]; }); state.pmode = {}; state.packaging=null; state.packagingLinked=false; save(); render(); return; }
@@ -9011,7 +9028,7 @@ window.__salesActSetData = function(newData){
   function exportCsv(){
     var rows=[['Наименование','Город','Цена на сайте (услуга: стоимость со скидкой / набор: текущая), ₽','Новая цена, ₽','Дополнительная скидка модели, ₽','Цена модели после доп. скидки, ₽','Комиссия, %','Комиссия, ₽','Условия комиссии CRM 29.10.2026','Наценка, ₽','Наценка, %','Себестоимость (до комиссии), ₽','Партнёру за активацию, ₽','Доля партнёра, %','Прогноз с учётом активации, ₽','МП, ₽','Маржа, %','Эквайринг, ₽','Налоги, ₽','Упаковка, ₽','Логистика, ₽','ЧП, ₽','ЧП, %','Целевая цена, ₽','Активации услуги за 12 мес.','Период активаций','Формат сертификатов']];
     var services=state.view==='services',list=services?filtered(allServices()):visibleSets();
-    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target,services?s.activations12m:null,services?s.activationPeriod:'',certificateLabel()]);});
+    list.forEach(function(s){var r=services?calcService(s):calcSet(s);rows.push([s.name,s.city,s.basePrice,s.price,r.discount,r.price,r.structure.rate===null?null:r.structure.rate*100,r.structure.commission,r.structure.terms,r.structure.markup,r.structure.markupShare===null?null:r.structure.markupShare*100,r.structure.open,r.exp,r.partnerShare===null?null:r.partnerShare*100,r.partnerForecast,r.mpAct,r.mAct===null?null:r.mAct*100,r.expenses.acq,r.expenses.tax,r.expenses.pack,r.expenses.logistics,r.npAct,r.nAct===null?null:r.nAct*100,r.target,services?s.activations12m:null,services?s.activationPeriod:'',certificateLabel()+(state.certificateType==='average'?' · '+mixDescription():'')]);});
     var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){if(v===null||v===undefined)return '';if(typeof v==='number')return String(Math.round(v*10000)/10000).replace('.',',');return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(state.view==='newsets'?'novye-nabory':state.view==='sets'?'nabory':'uslugi')+'-prais-'+state.certificateType+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
   }
@@ -9035,6 +9052,7 @@ window.__salesActSetData = function(newData){
       ensureParams();if(state.customSets.length)state.view='newsets';render();
     }});
   }
+  window.__pricingFormatDataChanged = function(){mixCache=null;if(state.certificateType==="average"&&!root.hidden)render();};
   window.__pricingRerender = function(){ loadCommissions(); FACT = null; ensureParams(); if (!started){ started = true; loadCrm(false); if (state.mode === "act") loadAct(); } render(); };
   if (!root.hidden) window.__pricingRerender();
   if(window.WowlifePricingProjects&&window.WowlifePricingProjects.parseLink(window.location.href)){var pricingTab=document.querySelector('[data-tab="pricing"]');if(pricingTab)pricingTab.click();}

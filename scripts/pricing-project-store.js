@@ -11,7 +11,7 @@
   function shared(s){var o={};FIELDS.forEach(function(k){if(s[k]!==undefined)o[k]=clean(clone(s[k]));});
     ['ov','sov','customServices','serviceSnapshots','rowParams','pmode'].forEach(function(k){if(!o[k]||Array.isArray(o[k])||typeof o[k]!=='object')o[k]={};});
     if(!Array.isArray(o.customSets))o.customSets=[];
-    o.certificateType=o.certificateType==='electronic'?'electronic':'physical';return o;}
+    o.certificateType=['electronic','average'].includes(o.certificateType)?o.certificateType:'physical';return o;}
   function stable(x){if(x===undefined)return 'undefined';if(Array.isArray(x))return '['+x.map(stable).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(function(k){return JSON.stringify(k)+':'+stable(x[k]);}).join(',')+'}';return JSON.stringify(x);}
   function equal(a,b){return stable(a)===stable(b);}
   function valuable(s){return !!((s.customSets||[]).length||Object.keys(s.ov||{}).length||Object.keys(s.sov||{}).length||Object.keys(s.customServices||{}).length);}

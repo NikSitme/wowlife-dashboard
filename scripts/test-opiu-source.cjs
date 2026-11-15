@@ -85,6 +85,22 @@ const lostWriteOff=writeOffOnly.map(r=>r.slice());
 lostWriteOff.find(r=>r[1]==='упаковка - Пакеты')[5]='0';
 assert.throws(()=>api.computeOpiu(lostWriteOff),/расхождение сверки/,'missing expense amounts must still fail reconciliation');
 
+
+// Nonzero insert write-offs must reconcile and belong to product creation exactly once.
+const withInsert=writeOffOnly.filter(r=>r[1]!=='упаковка - Ложемент').map(r=>r.slice());
+withInsert.splice(withInsert.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Ложемент','','','','-11400']);
+for(const label of ['переменные расходы','маржинальная прибыль','Операционная прибыль','чистая прибыль','прибыль после выплаты тела кредита и дивидендов']){
+ const r=withInsert.find(r=>r[0]===label);r[5]=String(num(r[5])-11400);
+}
+const insertMonth=api.computeOpiu(withInsert)[0];
+assert.equal(insertMonth.rows['Ложемент'],-11400);
+assert.equal(insertMonth.product_creation_breakdown.filter(r=>r.name==='Ложемент').length,1);
+assert.equal(insertMonth.product_creation_breakdown.find(r=>r.name==='Ложемент').value,11400);
+assert.equal(insertMonth.net_profit,writeOffMonth.net_profit-11400);
+const lostInsert=withInsert.map(r=>r.slice());lostInsert.find(r=>r[1]==='упаковка - Ложемент')[5]='0';
+assert.throws(()=>api.computeOpiu(lostInsert),/расхождение сверки/,'insert expenses cannot be dropped to make a stale snapshot pass');
+assert(html.includes('osG("Упаковка и вложения", ["Коробки","Ложемент"'));
+
 if(process.argv[2]){
   const live=api.parseCsv(fs.readFileSync(process.argv[2],'utf8'));
   for(const month of embedded){
