@@ -12,7 +12,7 @@ const cachedOpiu = [{label:'2026-09',revenue_total:september.revenue_total*4,sou
 let cached = {opiu:cachedOpiu,opiuTree:{old:['old']},ops:[['2026-09-01','old',1]]};
 let applied = false;
 const context = {
-  window:{__opiuData:cachedOpiu,__opiuSetData(){applied=true;},__marketingSetData(){}},
+  window:{__opiuData:cachedOpiu,__opiuSetData(){applied=true;},__marketingSetData(){},__leadActivitySetData(){return true;},__leadActivityError(){}},
   document:{readyState:'loading',addEventListener(){}},console,
   localStorage:{getItem(){return JSON.stringify(cached);},setItem(key,value){cached=JSON.parse(value);}},
   async fetch(url){return {ok:true,async text(){return url.includes('gid=1095006698') ? csv : 'header\nvalue';},async json(){return null;}};}

@@ -173,8 +173,28 @@
   }
   function mount(card){
     var data = null, updated = false, detailParent = null;
+    var usersData=null,usersKey='',usersStatus='',usersRequest=0,usersFetchedAt=0;
+    var requestUsers=window.MetrikaUsers?window.MetrikaUsers.client(fetch):null;
     var state = {sources:SOURCES.map(function(s){return s[0];}),city:'all',step:'month',preset:'year',from:'',to:''};
+    try{state.metrika=localStorage.getItem('rdMetrikaUsers')==='1';}catch(e){state.metrika=false;}
     var wrap=card.querySelector('#revYearWrap'), tip=card.querySelector('.rd-tooltip');
+    var metrikaToggle=card.querySelector('#rdMetrikaToggle'),metrikaStatus=card.querySelector('#rdMetrikaStatus'),metrikaRetry=card.querySelector('#rdMetrikaRetry');
+    metrikaToggle.checked=state.metrika;
+    metrikaToggle.addEventListener('change',function(){
+      state.metrika=metrikaToggle.checked;if(usersStatus==='error')usersKey='';
+      try{localStorage.setItem('rdMetrikaUsers',state.metrika?'1':'0');}catch(e){}
+      render();
+    });
+    metrikaRetry.addEventListener('click',function(){usersKey='';render();});
+    function loadUsers(){
+      var options={from:state.from,to:state.to,step:state.step},key=[options.from,options.to,options.step].join('|');
+      if(usersKey===key&&(usersStatus!=='ready'||Date.now()-usersFetchedAt<300000))return;
+      usersKey=key;usersData=null;usersStatus='loading';var request=++usersRequest;
+      if(!requestUsers){usersStatus='error';return;}
+      requestUsers(options).then(function(report){
+        if(request!==usersRequest)return;usersData=report;usersStatus='ready';usersFetchedAt=Date.now();if(state.metrika)render();
+      }).catch(function(){if(request!==usersRequest)return;usersStatus='error';if(state.metrika)render();});
+    }
     var navigation=card.querySelector('#rdMonthNavigation'),backButton=card.querySelector('#rdMonthBack'),viewLabel=card.querySelector('#rdMonthView');
     var hideHover=function(){tip.hidden=true;};
     function openMonth(value){
@@ -245,6 +265,12 @@
       navigation.hidden=!detailParent&&state.step!=='month';backButton.hidden=!detailParent;
       viewLabel.textContent=detailParent?MONTH_NAMES[+state.from.slice(5,7)-1]+' '+state.from.slice(0,4)+' · по дням':'Нажмите на месяц на графике, чтобы увидеть дни';
       var selected=keysFor(state.sources,state.city), points=detailParent?monthSeries(data,state):series(data,state), defined=points.filter(function(p){return p.current!==null;});
+      if(state.metrika)loadUsers();
+      var users=state.metrika&&usersData?window.MetrikaUsers.aligned(points,usersData):points.map(function(){return null;});
+      var hasUsers=users.some(function(n){return n!==null;});
+      card.querySelector('#rdUsersLegend').hidden=!state.metrika;
+      metrikaRetry.hidden=!state.metrika||usersStatus!=='error';
+      metrikaStatus.textContent=!state.metrika?'':usersStatus==='loading'?'Загружаю пользователей…':usersStatus==='error'?'Метрика не загрузилась. Выручка показана без изменений.':!hasUsers?'Нет данных Метрики за выбранный период.':'Весь сайт · все города · по '+shortDate(usersData.through)+' '+usersData.through.slice(0,4)+' · завершённые дни';
       var current=defined.reduce(function(a,p){return a+p.current;},0),compared=comparison(data,state);
       var names=SOURCES.filter(function(s){return state.sources.includes(s[0]);}).map(function(s){return s[1];}).join(' + ');
       card.querySelector('#rdTotal').textContent=selected.length ? (defined.length ? money(current) : 'Нет данных текущего периода') : 'Выберите источники';
@@ -258,21 +284,29 @@
       var previousTo=detailParent?monthEnd(shiftYear(state.to)):shiftYear(state.to);
       card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(previousTo)+' '+previousTo.slice(0,4);
       hideHover();
-      if(!selected.length || !points.some(function(p){return p.current!==null || p.previous!==null;})){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
+      if(!selected.length || !hasUsers&&!points.some(function(p){return p.current!==null || p.previous!==null;})){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
       var width=Math.max(560,wrap.clientWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
-      var height=285,left=18,right=86,top=24,bottom=45,pw=width-left-right,ph=height-top-bottom;
+      var height=285,left=hasUsers?72:18,right=86,top=hasUsers?30:24,bottom=45,pw=width-left-right,ph=height-top-bottom;
       var vals=[0]; points.forEach(function(p){if(p.current!==null)vals.push(p.current);if(p.previous!==null)vals.push(p.previous);});
       var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals); if(lo===hi)hi=lo+1;
       hi+=(hi-lo)*0.13; if(lo<0)lo-=(hi-lo)*0.07;
       function x(i){return left+pw*(points.length===1?0.5:i/(points.length-1));}
       function y(v){return top+ph-(v-lo)/(hi-lo)*ph;}
+      var usersHi=Math.max.apply(null,[1].concat(users.filter(function(n){return n!==null;})))*1.13;
+      function yu(v){return top+ph-v/usersHi*ph;}
       var svg=[],labelEvery=Math.max(1,Math.ceil(points.length/(Math.max(4,Math.floor(width/85)))));
       for(var g=0;g<4;g++){
         var v=lo+(hi-lo)*g/3,yy=y(v);
         svg.push('<line x1="'+left+'" x2="'+(width-right)+'" y1="'+yy+'" y2="'+yy+'" class="rd-grid"/><text x="'+(width-8)+'" y="'+(yy-7)+'" text-anchor="end" class="rd-axis">'+esc(axis(v))+'</text>');
+        if(hasUsers)svg.push('<text x="'+(left-12)+'" y="'+(top+ph-ph*g/3-7)+'" text-anchor="end" class="rd-axis rd-users-axis">'+esc(axis(usersHi*g/3))+'</text>');
       }
+      if(hasUsers)svg.push('<text x="0" y="12" class="rd-axis rd-users-axis">Пользователи</text><text x="'+(width-8)+'" y="12" text-anchor="end" class="rd-axis">₽</text>');
       var curPts=points.map(function(p,i){return p.current===null?null:[x(i),y(p.current)];}),prevPts=points.map(function(p,i){return p.previous===null?null:[x(i),y(p.previous)];});
       svg.push('<path class="rd-previous" d="'+linePath(prevPts)+'"/><path class="rd-current" d="'+linePath(curPts)+'"/>');
+      if(hasUsers){
+        svg.push('<path class="rd-users" d="'+linePath(users.map(function(n,i){return n===null?null:[x(i),yu(n)];}))+'"/>');
+        if(users.filter(function(n){return n!==null;}).length<3)users.forEach(function(n,i){if(n!==null)svg.push('<circle class="rd-active-users" cx="'+x(i)+'" cy="'+yu(n)+'" r="4"/>');});
+      }
       points.forEach(function(p,i){
         if(p.previous!==null && prevPts.filter(Boolean).length<3) svg.push('<circle cx="'+x(i)+'" cy="'+y(p.previous)+'" r="4" fill="var(--surface-1)" stroke="var(--rd-previous)" stroke-width="2"/>');
         if(p.current!==null) svg.push('<circle class="rd-point" cx="'+x(i)+'" cy="'+y(p.current)+'" r="'+(points.length>60?2.5:4.5)+'"/>');
@@ -280,14 +314,14 @@
           var label=p.label||(state.step==='month'?MONTHS[+p.from.slice(5,7)-1]+' '+p.from.slice(2,4):state.step==='year'?p.from.slice(0,4):shortDate(p.from));
           svg.push('<text x="'+x(i)+'" y="'+(height-15)+'" text-anchor="middle" class="rd-axis rd-period-label'+(state.step==='month'?' rd-month-target':'')+'" data-i="'+i+'"'+(state.step==='month'?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+'>'+esc(label)+'</text>');
         }
-        if(state.step==='month' || p.current!==null || p.previous!==null){
+        if(state.step==='month' || p.current!==null || p.previous!==null || users[i]!==null){
           var half=points.length===1?pw/2:pw/(points.length-1)/2;
           var monthly=state.step==='month',monthName=monthly?MONTH_NAMES[+p.from.slice(5,7)-1]+' '+p.from.slice(0,4):'';
-          svg.push('<rect class="rd-hover'+(monthly?' rd-month-target':'')+'" data-i="'+i+'"'+(monthly?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+' tabindex="0" role="'+(monthly?'button':'img')+'" aria-describedby="rdRevenueTooltip" aria-label="'+esc((monthly?monthName:p.label||shortDate(p.from))+': '+(p.current===null?'нет данных текущего периода':money(p.current))+(p.previous===null?'':', прошлый год '+money(p.previous))+(monthly?'. Открыть по дням':''))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
+          svg.push('<rect class="rd-hover'+(monthly?' rd-month-target':'')+'" data-i="'+i+'"'+(monthly?' data-rd-month="'+p.from.slice(0,7)+'-01"':'')+' tabindex="0" role="'+(monthly?'button':'img')+'" aria-describedby="rdRevenueTooltip" aria-label="'+esc((monthly?monthName:p.label||shortDate(p.from))+': '+(p.current===null?'нет данных текущего периода':money(p.current))+(p.previous===null?'':', прошлый год '+money(p.previous))+(users[i]===null?'':', пользователей сайта '+users[i].toLocaleString('ru-RU'))+(monthly?'. Открыть по дням':''))+'" x="'+Math.max(0,x(i)-half)+'" y="'+top+'" width="'+(half*2)+'" height="'+ph+'"/>');
         }
       });
-      svg.push('<g class="rd-crosshair" visibility="hidden" pointer-events="none"><line class="rd-guide" y1="'+top+'" y2="'+(top+ph)+'"/><circle class="rd-active-halo" r="11"/><circle class="rd-active-current" r="5"/><circle class="rd-active-previous" r="4.5"/></g>');
-      wrap.innerHTML='<svg role="group" aria-label="Динамика выручки: сплошная линия — текущий период, пунктир — прошлый год" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>';
+      svg.push('<g class="rd-crosshair" visibility="hidden" pointer-events="none"><line class="rd-guide" y1="'+top+'" y2="'+(top+ph)+'"/><circle class="rd-active-halo" r="11"/><circle class="rd-active-current" r="5"/><circle class="rd-active-previous" r="4.5"/><circle class="rd-active-users" r="4.5"/></g>');
+      wrap.innerHTML='<svg role="group" aria-label="Динамика выручки: сплошная линия — текущий период, пунктир — прошлый год'+(hasUsers?'; зелёная линия — пользователи сайта, отдельная шкала слева':'')+'" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>';
       var svgEl=wrap.querySelector('svg'),crosshair=svgEl.querySelector('.rd-crosshair');
       hideHover=function(){
         tip.hidden=true;crosshair.setAttribute('visibility','hidden');
@@ -305,6 +339,8 @@
           ['.rd-active-halo','.rd-active-current'].forEach(function(sel){var c=crosshair.querySelector(sel);c.setAttribute('visibility',p.current===null?'hidden':'visible');if(p.current!==null){c.setAttribute('cx',cx);c.setAttribute('cy',y(p.current));}});
           var prevDot=crosshair.querySelector('.rd-active-previous');prevDot.setAttribute('visibility',p.previous===null?'hidden':'visible');
           if(p.previous!==null){prevDot.setAttribute('cx',cx);prevDot.setAttribute('cy',y(p.previous));}
+          var userDot=crosshair.querySelector('.rd-active-users');userDot.setAttribute('visibility',users[i]===null?'hidden':'visible');
+          if(users[i]!==null){userDot.setAttribute('cx',cx);userDot.setAttribute('cy',yu(users[i]));}
           svgEl.querySelectorAll('.rd-period-label').forEach(function(label){label.classList.toggle('is-active',+label.dataset.i===i);});
           var comparisonOptions=p.from?Object.assign({},state,{from:p.from,to:p.to}):null,periodComparison=comparisonOptions?hoverComparison(data,comparisonOptions):null;
           var matched=periodComparison&&periodComparison.current!==null;
@@ -317,6 +353,7 @@
           tip.innerHTML='<div class="rd-tip-heading"><span>Сопоставимый период</span><span>Выручка</span></div>'+
             '<div class="rd-tip-row">'+tipLine(false)+'<div class="rd-tip-period"><small>Текущий период</small><span>'+esc(p.noCurrentDay?'Такого дня нет в текущем году':periodLabel(p.from,currentThrough || p.to))+'</span></div><strong>'+(currentValue===null?'нет данных':money(currentValue))+'</strong></div>'+
             '<div class="rd-tip-row">'+tipLine(true)+'<div class="rd-tip-period"><small>Прошлый год</small><span>'+esc(p.noPreviousDay?'Такого дня нет в прошлом году':periodLabel(p.previousFrom,previousThrough || shiftYear(p.to)))+'</span></div><strong>'+(previousValue===null?'нет данных':money(previousValue))+'</strong></div>'+
+            (users[i]===null?'':'<div class="rd-tip-row"><svg class="rd-tip-line" viewBox="0 0 32 14" aria-hidden="true"><path class="rd-users" d="M1 7 H31"/></svg><div class="rd-tip-period"><small>Пользователи сайта · Метрика</small><span>'+esc(periodLabel(p.from,p.to<usersData.through?p.to:usersData.through))+'</span></div><strong>'+users[i].toLocaleString('ru-RU')+' чел.</strong></div>')+
             (delta?'<div class="rd-tip-change"><span>К прошлому году · по '+esc(shortDate(periodComparison.through))+'</span>'+delta+'</div>':'')+
             (matched&&currentThrough===moscowDate()?'<div class="rd-tip-note">Включая сегодня (МСК): данные дня ещё обновляются</div>':'')+
             (p.partial?'<div class="rd-tip-note">Суммы и процент — за одинаковые доступные дни каждого источника</div>':'');

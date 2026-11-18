@@ -408,7 +408,7 @@
 
   footer { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; text-align: center; }
 
-.revenue-dynamics{position:relative;--rd-current:#2899ff;--rd-previous:#8c7bff;}
+.revenue-dynamics{position:relative;--rd-current:#2899ff;--rd-previous:#8c7bff;--rd-users:#15966d;}
 .rd-controls{display:flex;flex-direction:column;gap:18px;margin:22px 0 26px;max-width:920px;}
 .rd-filter-grid{display:grid;grid-template-columns:minmax(260px,1.6fr) minmax(160px,1fr) minmax(160px,1fr);gap:18px;}
 .rd-period-grid{display:grid;grid-template-columns:minmax(260px,1.6fr) minmax(160px,1fr) minmax(160px,1fr);gap:18px;}
@@ -445,7 +445,7 @@
 #revYearWrap svg{display:block;}
 .rd-grid{stroke:var(--border);stroke-dasharray:2 6;}
 .rd-axis{fill:var(--text-secondary);font-size:12px;}
-.rd-current,.rd-previous{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;}
+.rd-current,.rd-previous,.rd-users{fill:none;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;}
 .rd-current{stroke:var(--rd-current);}.rd-previous{stroke:var(--rd-previous);stroke-dasharray:5 6;}
 .rd-point{fill:var(--surface-1);stroke:var(--rd-current);stroke-width:2.5;}
 .rd-hover{fill:transparent;cursor:crosshair;}.rd-hover:focus{outline:none;}
@@ -460,6 +460,18 @@
 .rd-legend>span{display:flex;align-items:center;gap:9px;font-size:13px;}
 .rd-key{display:inline-block;width:25px;border-top:3px solid var(--rd-current);border-radius:3px;}
 .rd-key.previous{border-color:var(--rd-previous);border-top-style:dashed;}
+.rd-users{stroke:var(--rd-users);stroke-width:2.5;}
+.rd-users-axis{fill:var(--rd-users);}
+.rd-active-users{fill:var(--rd-users);stroke:var(--surface-1);stroke-width:2;}
+.rd-key.users{border-color:var(--rd-users);}
+.rd-legend>[hidden]{display:none;}
+.rd-metrika{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-top:18px;}
+.rd-metrika label{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.rd-metrika input{width:17px;height:17px;margin:0;accent-color:var(--rd-users);cursor:pointer;}
+.rd-metrika input:focus-visible{outline:2px solid var(--rd-users);outline-offset:3px;}
+.rd-metrika .cap{margin:0;font-size:12px;}
+.rd-metrika button{color:var(--s1);background:transparent;border:0;padding:2px;font:inherit;font-size:12px;cursor:pointer;}
+.rd-metrika button[hidden]{display:none;}
 .rd-tooltip{position:absolute;z-index:30;pointer-events:none;width:380px;max-width:calc(100% - 24px);padding:18px 20px;background:#243746;color:#f5f9fc;border:1px solid #405465;box-shadow:0 12px 36px #0003;border-radius:14px;font-size:14px;line-height:1.4;}
 .rd-tooltip:after{content:"";position:absolute;left:var(--rd-tip-arrow,50%);bottom:-7px;width:14px;height:14px;background:#243746;transform:translateX(-50%) rotate(45deg);border-right:1px solid #405465;border-bottom:1px solid #405465;}
 .rd-tooltip[hidden]{display:none;}
@@ -560,6 +572,8 @@
       <p>Источник — таблица «Никита». <b>Продажи</b> — сделки со стадией «Сделка успешна» по дате оплаты (лист «Маркетинг»), в штуках (сделки) и рублях. <b>Активации</b> — клиент активировал сертификат и выбрал услугу: уникальная сделка с корректной датой активации из листа «Активация», независимо от дальнейшей стадии. Сумма — себестоимость выбранной услуги. <b>Бэклог</b> — накопленная разница между проданными и активированными сертификатами с начала данных: расчётная разница числа продаж и активаций (сделки не связаны по номеру сертификата). Периоды — день, неделя (с понедельника), месяц.</p>
 
       <p><b>Динамика выручки</b> — сплошная линия показывает выбранный период, пунктир — те же даты прошлого года. По умолчанию выбран текущий год с шагом по месяцам. Источники (сайт без B2B, Ozon, Wildberries, Яндекс Маркет, Flowwow, отдельно B2B) выбираются чекбоксами в раскрывающемся списке; быстрый выбор «Только сайт» исключает B2B и маркетплейсы, «Только B2B» показывает корпоративные продажи по всем городам; меню остаётся открытым для выбора нескольких пунктов. «Все маркеты» выбирает четыре площадки. Город, шаг и период задаются отдельными компактными списками. Шаги: день, неделя с понедельника, месяц, год; период задаётся независимо. Сайт и B2B — положительные поступления по дате зачисления и статьям ОПиУ; маркетплейсы — розничная цена по дате продажи и городам МСК/СПБ. Неполный период сравнивается с такими же доступными днями каждого источника в прошлом году. Будущие даты и отсутствующая история не рисуются как нулевая выручка. Для 2025 года используется архив «маркетплейсы-25».</p>
+
+      <p><b>Яндекс Метрика</b> — галочка внизу динамики выручки включает зелёную линию пользователей сайта, счётчик 32072156, метрика ym:s:users. Слева — пользователи, справа — рубли; шкалы независимы. Период и шаг совпадают с графиком. Пользователи недели, месяца и года запрашиваются отдельной агрегацией Метрики, не суммируются из дней. Учитываются завершённые дни по Москве. Это аудитория всего сайта по всем городам: фильтры финансовых источников и города заказа меняют только выручку. При ошибке Метрики линия не заменяется нулями; выручка и её сравнение остаются прежними. Токен хранится только на сервере.</p>
 
       <h3 id="doc-ws">6. Вкладка «Аналитика продаж»</h3>
       <p><b>Единица объёма — сертификат.</b> По решению Никиты от 04.11 учитываются все основные товары xN успешных сделок CRM по дате оплаты, включая нулевую сумму. Одна сделка может содержать несколько сертификатов. Это правило используется для сайта, ОПиУ и маркетинга. В аналитике продаж и перекрестном сравнении маркетплейсов количество берётся из строк продаж вкладки «маркетплейсы» в «выгрузке адеск», возвраты уменьшают количество. Упаковка и доставка не добавляют сертификатов. Неизвестный город включён в общий итог и доступен отдельно. Средняя сумма CRM делится на количество сертификатов. Финансовая выручка сохраняет суммы и даты Адеска/маркетплейсов; в разрезах выручка на сертификат сопоставляет эти финансовые суммы с сертификатами CRM за тот же период.</p>
@@ -693,8 +707,9 @@
     <div class="rd-summary"><strong id="rdTotal"></strong><span id="rdDelta"></span></div>
     <div class="rd-month-navigation" id="rdMonthNavigation" hidden><button type="button" class="rd-month-back" id="rdMonthBack" hidden>← К месяцам</button><p class="cap" id="rdMonthView" aria-live="polite"></p></div>
     <div class="chart-wrap" id="revYearWrap"></div>
-    <div class="rd-legend"><span><i class="rd-key"></i><span id="rdCurrentLegend">Текущий период</span></span><span><i class="rd-key previous"></i><span id="rdPreviousLegend">Прошлый год</span></span></div>
+    <div class="rd-legend"><span><i class="rd-key"></i><span id="rdCurrentLegend">Текущий период</span></span><span><i class="rd-key previous"></i><span id="rdPreviousLegend">Прошлый год</span></span><span id="rdUsersLegend" hidden><i class="rd-key users"></i>Пользователи сайта</span></div>
     <p class="cap" id="rdCaption">Пунктир — показатели за прошлый год. Можно выбрать несколько источников.</p>
+    <div class="rd-metrika"><label><input type="checkbox" id="rdMetrikaToggle" aria-describedby="rdMetrikaStatus">Яндекс Метрика</label><span class="cap" id="rdMetrikaStatus" role="status"></span><button type="button" id="rdMetrikaRetry" hidden>Повторить</button></div>
     <div class="rd-tooltip" id="rdRevenueTooltip" role="tooltip" hidden></div>
   </div>
 
@@ -4780,7 +4795,8 @@ window.__salesActSetData = function(newData){
 </div>
 </div>
 
-<script src="scripts/revenue-dynamics.js?v=last-month-20261115"></script>
+<script src="scripts/metrika-users.js?v=20261118"></script>
+<script src="scripts/revenue-dynamics.js?v=metrika-20261118"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){

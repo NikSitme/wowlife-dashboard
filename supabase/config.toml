@@ -1,0 +1,6 @@
+project_id = "wowlife-dashboard"
+
+# Public dashboard reads only aggregated users of one fixed website counter.
+# OAuth is a server secret; no write operations, arbitrary counters or filters.
+[functions.metrika-users]
+verify_jwt = true
