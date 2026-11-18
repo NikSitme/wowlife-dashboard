@@ -2503,7 +2503,7 @@ window.__salesActSetData = function(newData){
 
   <section class="panel" id="ws-lead-activity" aria-labelledby="la-title">
     <div class="panel-head"><h2 class="panel-title" id="la-title">Когда приходят лиды</h2></div>
-    <p class="panel-note">Дни недели и часы создания лидов, по Москве. Все источники из вкладки «Лиды»; период этого блока выбирается отдельно. Общие фильтры продаж и города на него не влияют.</p>
+    <p class="panel-note">Дни недели и часы создания лидов. Все источники из вкладки «Лиды»; период этого блока выбирается отдельно. Общие фильтры продаж и города на него не влияют.</p>
     <div class="la-controls">
       <label>Период<select id="la-preset"><option value="annual">Последние 12 месяцев</option><option value="last_month">Прошлый месяц</option><option value="year">Текущий год</option><option value="custom">Свой диапазон</option></select></label>
       <label>С<input id="la-from" type="date" aria-label="Начало периода активности лидов"></label>
@@ -2514,12 +2514,12 @@ window.__salesActSetData = function(newData){
     <div class="la-kpis" id="la-kpis"></div>
     <h3>Активность по дням и часам</h3>
     <p class="panel-note">Среднее число лидов за этот час одного дня недели. Чем насыщеннее цвет, тем больше нагрузка. Так понедельники и вторники сравниваются при разном числе дней в периоде.</p>
-    <div class="la-scroll"><table class="la-heat" id="la-heat" aria-label="Среднее количество лидов по дням недели и часам МСК"></table></div>
+    <div class="la-scroll"><table class="la-heat" id="la-heat" aria-label="Среднее количество лидов по дням недели и часам"></table></div>
     <div class="la-legend"><span>Меньше</span><span class="la-gradient" aria-hidden="true"></span><span>Больше</span></div>
     <p class="la-tip" id="la-tip" aria-live="polite"></p>
     <div class="la-charts">
       <div><h3>По дням недели</h3><p class="panel-note">Лидов в среднем за день</p><div class="la-bars" id="la-weekdays" aria-label="Лиды по дням недели"></div></div>
-      <div><h3>По часам</h3><p class="panel-note">Всего лидов за период · МСК</p><div class="la-scroll"><div class="la-hour-chart" id="la-hours" aria-label="Лиды по часам"></div></div></div>
+      <div><h3>По часам</h3><p class="panel-note">Всего лидов за период</p><div class="la-scroll"><div class="la-hour-chart" id="la-hours" aria-label="Лиды по часам"></div></div></div>
     </div>
     <details><summary>Как считается</summary><p class="panel-note">Один уникальный ID — один лид. Берём дату создания, а не длительность обработки; текстовое время выгрузки переводим из UTC в МСК (+3 часа), включая смену даты. Все источники включены, без фильтра результата и менеджера. По умолчанию — 12 месяцев до вчерашнего дня. Дни без записей внутри доступного диапазона считаются нулевыми; это распределение записей выгрузки, а не подтверждение её полноты. Данные обновляются вместе с кнопкой «Обновить данные».</p><p class="panel-note" id="la-provenance"></p><a href="https://docs.google.com/spreadsheets/d/1vjVXyWcdbGmLJ5d9Zs9va0_2gMD1C8JdWUKssDvAQ8M/edit#gid=1782624462" target="_blank" rel="noopener">Открыть вкладку «Лиды» →</a></details>
   </section>
@@ -2657,7 +2657,7 @@ window.__salesActSetData = function(newData){
 <script src="scripts/sales-classifier.js?v=adesk-only-classification-20261118"></script>
 <script src="scripts/sales-analytics-model.js?v=adesk-only-classification-20261118"></script>
 <script src="scripts/lead-activity.js?v=20261118"></script>
-<script src="scripts/lead-activity-ui.js?v=20261118"></script>
+<script src="scripts/lead-activity-ui.js?v=20261118-labels"></script>
 <script>
 (() => {
   const DATASETS = {

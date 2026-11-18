@@ -16,7 +16,7 @@
     var warning=refreshError?refreshError+' Предыдущие данные сохранены. ':'';
     if(stats.partial)warning+='В источнике доступны даты '+date(data.coverageStart)+'–'+date(data.coverageEnd)+'. Расчёт ограничен доступным пересечением. ';
     el('la-warning').textContent=warning;el('la-warning').hidden=!warning;
-    el('la-scope').textContent='Создано '+nfmt.format(stats.total)+' лидов · '+(stats.days?date(stats.from)+'–'+date(stats.to)+' · '+stats.days+' дней':'в выбранном периоде нет доступных дат')+' · время МСК';
+    el('la-scope').textContent='Создано '+nfmt.format(stats.total)+' лидов · '+(stats.days?date(stats.from)+'–'+date(stats.to)+' · '+stats.days+' дней':'в выбранном периоде нет доступных дат');
     el('la-provenance').textContent='Источник: «Никита» → «Лиды», дата создания, все источники. Последний лид: '+date(data.latest.slice(0,10))+' '+data.latest.slice(11,16)+' МСК. Это время последней записи; полнота последующих часов не подтверждена.';
     var has=stats.total>0;
     el('la-kpis').innerHTML='<div class="la-card"><span>Самый активный день</span><strong>'+(has?model.WEEKDAYS[d.day]:'—')+'</strong><span>'+(has?avgfmt.format(d.average)+' лида в среднем за день':'Нет лидов за доступные даты')+'</span><p>'+(has?stats.topDays.map(function(x){return model.WEEKDAYS[x.day]+': '+avgfmt.format(x.average);}).join(' · '):'')+'</p></div>'+
