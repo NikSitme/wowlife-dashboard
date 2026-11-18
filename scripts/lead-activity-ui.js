@@ -36,6 +36,7 @@
     el('la-tip').textContent='Наведите на ячейку или столбец, чтобы увидеть количество и среднее.';
     if(window.WowlifeDatePicker)window.WowlifeDatePicker.refresh();
   }
+  if(window.DashboardRuntime)render=window.DashboardRuntime.register('leadActivity',render,function(){var panel=root.closest('[data-panel]'),body=root.closest('.wsale-root');return (!panel||!panel.hidden)&&(!body||!body.hidden);});
   window.__leadActivitySetData=function(next){
     model.validate(next);
     // A bundled snapshot arriving after a fresher cached/live response must not replace it.

@@ -1,5 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const model=require('./sales-analytics-model.js');
+const {readSnapshot}=require('./dashboard-snapshots.cjs');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function fn(name){const start=html.indexOf('  function '+name+'(');assert(start>=0,name);return html.slice(start,html.indexOf('\n  }',start)+4);}
 const dates=['2026-10-01','2026-10-02','2026-10-03'],range={start:dates[0],end:dates[2]};
@@ -24,7 +25,7 @@ assert.equal(model.comparisonSeries(rows,{...line,source:'B2B'},dates,'count',ra
 assert.equal(model.comparisonSeries(rows,{...line,source:'B2B'},dates,'revenue',range).hasData,true);
 const cancel=[{...rows[0],revenue:0}];assert.equal(model.comparisonSeries(cancel,line,dates,'revenue',range).hasData,true,'a recorded zero differs from missing data');
 assert.equal(model.comparisonSeriesKey('Набор: 60 минут')===model.comparisonSeriesKey('Набор'),false,'do not merge tariffs');
-const raw=JSON.parse(html.match(/<script[^>]+id="ws-dashboard-data"[^>]*>([\s\S]*?)<\/script>/)[1]).rows;
+const raw=readSnapshot(html,'ws-dashboard-data').rows;
 const oct={start:'2026-10-01',end:'2026-10-31'},sampleDates=['2026-10-01','2026-10-02','2026-10-31'];
 const names=[...new Set(raw.filter(r=>r.date>=oct.start&&r.date<=oct.end).map(r=>r.item))].slice(0,12);let checks=0;
 for(const source of ['all',...model.SOURCES])for(const city of ['all',...model.CITIES])for(const metric of ['revenue','count'])for(const name of names){

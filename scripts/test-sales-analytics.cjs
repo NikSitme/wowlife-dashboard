@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const model = require('./sales-analytics-model.js');
+const {readSnapshot}=require('./dashboard-snapshots.cjs');
 
 assert.equal(model.today(new Date('2026-10-08T21:30:00Z')), '2026-10-09');
 assert.equal(model.isoDate('29.02.2025'), null);
@@ -124,7 +125,7 @@ assert.equal(salesActFixture.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(datasets.activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(datasets.partners.activationMetric,model.ACTIVATION_METRIC);
 
-const embedded = id => JSON.parse(html.match(new RegExp('<script[^>]*id="'+id+'"[^>]*>([\\s\\S]*?)</script>'))[1]);
+const embedded = id => readSnapshot(html,id);
 const sales = embedded('ws-dashboard-data'), activations = embedded('ws-dashboard-data-activations'), partners = embedded('ws-dashboard-data-partners');
 const bodies = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 const opiu = JSON.parse(bodies.find(s=>s.includes('window.__opiuData = DATA;')).match(/var DATA = ([^\n]+);/)[1]);

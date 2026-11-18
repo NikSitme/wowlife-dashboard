@@ -19,20 +19,20 @@ function mount(url='https://niksitme.github.io/wowlife-dashboard/?tab=pricing'){
  const nodes={},selectors=['prProjectBar','prProjectDialog','prProjectName','prProjectAudience','prProjectOpen','prProjectShare','prProjectHistory','prProjectRetry','prProjectRemote','prProjectEmpty','prProjectDownload','prProjectImport','prProjectFile','prProjectLocal','prProjectClose'];
  selectors.forEach(k=>nodes['#'+k]=new Element());
  nodes['#prProjectBar'].nodes={'[role="status"]':new Element()};nodes['#prProjectDialog'].nodes={'.pr-project-body':new Element(),'h2':new Element()};
- const root=new Element();root.nodes=nodes;let state=A.shared({}),online=true;const storage=new Storage();
+ const root=new Element();root.nodes=nodes;let state=A.shared({}),online=true,reads=0;const storage=new Storage();
  class Journal{local(s){storage.setItem(A.STORE,JSON.stringify(s));return true;}async backup(){return true;}async list(){return [];}}
- const api={...A,Journal},events={},intervals=[],historyCalls=[];
+ const api={...A,Journal},events={},docEvents={},intervals=[],historyCalls=[];
  const window={WowlifePricingProjects:api,WOWLIFE_PROJECT_CONFIG:config,localStorage:storage,location:{href:url},confirm:()=>true,history:{replaceState(a,b,url){historyCalls.push(url);window.location.href=url;}},addEventListener(k,fn){events[k]=fn;},fetch:async(url,opts)=>{
    if(!online)throw Error('Offline');const args=JSON.parse(opts.body);assert.equal(args.p_id,config.defaultProjectId);assert.equal(args.p_key,null);
    const action=url.split('_').at(-1);let result;
-   if(action==='read')result=clone(project);
+   if(action==='read'){reads++;result=clone(project);}
    else if(action==='save'){if(args.p_revision!==project.revision)result={status:'conflict',project:clone(project)};else{project={...project,revision:project.revision+1,state:clone(args.p_state)};result={status:'saved',project:clone(project)};}}
    else throw Error('Unexpected action');return {ok:true,json:async()=>result};
  }};
- const context={window,document:{activeElement:null,addEventListener(){}},setInterval(fn){intervals.push(fn);return 1;},clearInterval(){},setTimeout,clearTimeout,URL,Blob,navigator:{clipboard:{writeText:async()=>{}}}};
+ const context={window,document:{activeElement:null,addEventListener(k,fn){docEvents[k]=fn;}},setInterval(fn){intervals.push(fn);return 1;},clearInterval(){},setTimeout,clearTimeout,URL,Blob,navigator:{clipboard:{writeText:async()=>{}}}};
  vm.runInNewContext(fs.readFileSync(__dirname+'/pricing-project-ui.js','utf8'),context);
  const ctrl=api.mount({root,get:()=>state,apply:s=>state=clone(s)});
- return {ctrl,nodes,intervals,events,window,historyCalls,get:()=>state,offline:()=>online=false,online:()=>online=true};
+ return {ctrl,nodes,intervals,events,docEvents,window,root,historyCalls,reads:()=>reads,get:()=>state,offline:()=>online=false,online:()=>online=true};
 }
 (async()=>{
  const a=mount(),b=mount();await a.ctrl.ready;await b.ctrl.ready;
@@ -50,6 +50,13 @@ function mount(url='https://niksitme.github.io/wowlife-dashboard/?tab=pricing'){
  assert.equal(recovery.window.location.href,opiuUrl);assert.equal(recovery.historyCalls.length,0,'Initial connection retry preserves route, version and hash');
  const linked=mount(opiuUrl.split('#')[0]+'#pricing-project='+config.defaultProjectId+'&key='+'a'.repeat(43));await linked.ctrl.ready;
  assert.equal(new URL(linked.window.location.href).searchParams.get('tab'),'pricing');assert.equal(new URL(linked.window.location.href).hash,'','Explicit project links still normalize to the public pricing link');
+ const hidden=mount(opiuUrl);await hidden.ctrl.ready;hidden.root.hidden=true;const readBefore=hidden.reads();
+ await hidden.intervals[0]();assert.equal(hidden.reads(),readBefore,'Clean hidden pricing does not poll the shared project');
+ hidden.get().customServices.hiddenEdit={id:'hiddenEdit',name:'Сохранённая правка',price:1200};hidden.ctrl.record();await hidden.intervals[0]();
+ assert.equal(project.state.customServices.hiddenEdit.price,1200,'Dirty shared edits still flush when pricing is hidden');
+ hidden.root.hidden=false;hidden.docEvents['dashboard:tabchange']({detail:{tab:'pricing'}});await hidden.intervals[0]();
+ assert(hidden.reads()>readBefore,'Returning to pricing resumes shared reads');
  console.log('PASS UI ordinary URL auto-connects, no private-link prompt, two isolated visitors see sets/services, initial retry and poll recovery');
  console.log('PASS background connection/retry preserves the active route; explicit project links retain their navigation behavior');
+ console.log('PASS hidden pricing pauses read polling, flushes dirty edits and synchronizes when shown');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,6 +1,7 @@
 // Rebuild sales and the matching P&L source snapshot without changing P&L formulas.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const model=require('./sales-analytics-model.js'),{parseCsv}=require('./build-revenue-timeline.cjs');
+const {readSnapshot,writeSnapshot}=require('./dashboard-snapshots.cjs');
 const directory=process.argv[2],root=path.join(__dirname,'..'),file=path.join(root,'index.html');
 if(!directory)throw Error('Usage: node scripts/build-sales-classification.cjs source-csv-directory [--write]');
 const html=fs.readFileSync(file,'utf8');
@@ -11,7 +12,7 @@ source=source.replace('  if (document.readyState === "loading")','  window.class
 const ctx={window:{SalesAnalytics:model},document:{readyState:'loading',addEventListener(){}},console};vm.runInNewContext(source,ctx);
 const sales=ctx.window.classificationBuilder.computeWowsales(catalog,bank,mp,[],crm,{salesOnly:true}).sales;
 // Preserve the separate, complete marketplace history for 2025.
-const match=html.match(/(<script[^>]*id="ws-dashboard-data"[^>]*>)([\s\S]*?)(<\/script>)/),old=JSON.parse(match[2]);
+const old=readSnapshot(html,'ws-dashboard-data',{root});
 sales.rows=sales.rows.filter(r=>r.channel!=='Маркетплейсы'||!r.date.startsWith('2025-')).concat(old.rows.filter(r=>r.channel==='Маркетплейсы'&&r.date.startsWith('2025-'))).sort((a,b)=>a.date.localeCompare(b.date));
 sales.period_start=sales.rows[0].date;sales.period_end=sales.rows.at(-1).date;sales.dates=Array.from({length:model.days(sales.period_start,sales.period_end)},(_,i)=>model.shift(sales.period_start,i));
 sales.marketplaceSource={spreadsheetId:'1kBgHBbX4wbvRCO6KCJO6YfGGZWI1dfbukViWOa6K_EM',current:'маркетплейсы',history:'previous verified 2025 snapshot',readAt:new Date().toISOString()};
@@ -24,7 +25,7 @@ const report={sourceRows:{bank:bank.length,mp:mp.length,crm:crm.length},metric:s
 fs.writeFileSync(path.join(directory,'classification-report.json'),JSON.stringify(report,null,2));
 fs.writeFileSync(path.join(directory,'classified-sales.json'),JSON.stringify(sales));
 if(process.argv.includes('--write')){
-  let next=html.replace(match[0],match[1]+JSON.stringify(sales).replace(/</g,'\\u003c')+match[3]);
+  let next=writeSnapshot(html,'ws-dashboard-data',sales,{root});
   // Source categories and credit dates can be corrected after the old snapshot.
   // Refresh P&L data from the same source without changing any P&L calculation.
   const opiu=ctx.window.classificationBuilder.computeOpiu(read('opiu'),read('marketplaces-2025'));

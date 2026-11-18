@@ -57,14 +57,16 @@
     }
     root.querySelector('#prProjectHistory').addEventListener('click',function(){history(false);});
     root.querySelector('#prProjectLocal').addEventListener('click',function(){history(true);});
-    async function sync(){if(ctrl.conn){if(ctrl.dirty)await ctrl.flush();else await ctrl.poll();}else if(targetConnection&&!opening){opening=true;try{await openProject(targetConnection,false);}finally{opening=false;}}}
-    root.querySelector('#prProjectRetry').addEventListener('click',sync);
+    function visible(){return !document.hidden&&!root.hidden;}
+    async function sync(force){if(ctrl.conn){if(ctrl.dirty)await ctrl.flush();else if(force===true||visible())await ctrl.poll();}else if(targetConnection&&!opening&&(force===true||visible())){opening=true;try{await openProject(targetConnection,false);}finally{opening=false;}}}
+    root.querySelector('#prProjectRetry').addEventListener('click',function(){return sync(true);});
     root.querySelector('#prProjectRemote').addEventListener('click',function(){if(window.confirm('Открыть общую версию? Ваши текущие правки останутся в «Копиях устройства».'))ctrl.useRemote().catch(fail);});
     root.querySelector('#prProjectEmpty').addEventListener('click',function(){if(window.confirm('Подтверждаете удаление всех новых наборов из общего проекта? Прежняя версия останется в истории.'))ctrl.confirmEmpty();});
     root.querySelector('#prProjectClose').addEventListener('click',function(){dialog.close();});
     window.addEventListener('online',sync);
     window.addEventListener('beforeunload',function(e){if(ctrl.dirty){e.preventDefault();e.returnValue='';}});
     document.addEventListener('visibilitychange',function(){if(document.hidden)ctrl.flush();else sync();});
+    document.addEventListener('dashboard:tabchange',function(event){if(event.detail&&event.detail.tab==='pricing')sync();});
     var targetConnection=null,opening=true;
     var interval=setInterval(sync,10000);
     window.addEventListener('pagehide',function(){clearInterval(interval);});

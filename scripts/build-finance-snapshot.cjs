@@ -4,6 +4,7 @@ const vm = require('node:vm');
 const model = require('./sales-analytics-model.js');
 const revenue = require('./revenue-dynamics.js');
 const { parseCsv } = require('./build-revenue-timeline.cjs');
+const { writeSnapshot } = require('./dashboard-snapshots.cjs');
 
 function computeSnapshots(directory, html) {
   let source = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].find(m => m[1].includes('var ADESK_SOURCE_ID'))[1];
@@ -37,8 +38,7 @@ if (require.main === module) {
   html = html.replace(/const DATA = ([^\n]+);/, () => 'const DATA = ' + inlineJson(data.salesact) + ';');
   html = html.replace(/  var DATA = ([^\n]+);/, () => '  var DATA = ' + inlineJson(data.opiu) + ';');
   for (const [id, key] of [['ws-dashboard-data', 'sales'], ['ws-dashboard-data-activations', 'activations'], ['ws-dashboard-data-partners', 'partners']]) {
-    const regex = new RegExp('(<script[^>]*id="' + id + '"[^>]*>)[\\s\\S]*?(</script>)');
-    html = html.replace(regex, (_, start, end) => start + inlineJson(data.wowsales[key]) + end);
+    html = writeSnapshot(html, id, data.wowsales[key], { root });
   }
   fs.writeFileSync(file, html);
   fs.writeFileSync(path.join(root, 'data', 'revenue-timeline.json'), JSON.stringify(data.revenueTimeline) + '\n');

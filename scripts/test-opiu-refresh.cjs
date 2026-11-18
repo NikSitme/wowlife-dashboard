@@ -13,10 +13,11 @@ let cached = {opiu:cachedOpiu,opiuTree:{old:['old']},ops:[['2026-09-01','old',1]
 let applied = false;
 const context = {
   window:{__opiuData:cachedOpiu,__opiuSetData(){applied=true;},__marketingSetData(){},__leadActivitySetData(){return true;},__leadActivityError(){}},
-  document:{readyState:'loading',addEventListener(){}},console,
+  document:{readyState:'loading',addEventListener(){}},console,setTimeout,clearTimeout,
   localStorage:{getItem(){return JSON.stringify(cached);},setItem(key,value){cached=JSON.parse(value);}},
   async fetch(url){return {ok:true,async text(){return url.includes('gid=1095006698') ? csv : 'header\nvalue';},async json(){return null;}};}
 };
+context.window.DashboardCache={async save(partial){cached={...cached,...JSON.parse(JSON.stringify(partial))};return {ok:true,storage:'indexedDB'};}};
 let updater=scripts.find(s=>s.includes('var ADESK_SOURCE_ID'));
 updater=updater.replace('  if (document.readyState === "loading")',
   '  window.refreshTest=runUpdate; computeMarketing=function(){return {deals:1,contacts:1,lastDate:"2026-10-01"};};\n  if (document.readyState === "loading")');

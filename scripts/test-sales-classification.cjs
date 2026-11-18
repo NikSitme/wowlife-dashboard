@@ -1,5 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const model=require('./sales-analytics-model.js'),classifier=require('./sales-classifier.js'),{parseCsv}=require('./build-revenue-timeline.cjs');
+const {readSnapshot}=require('./dashboard-snapshots.cjs');
 const catalog=[[],[],[],[],...Array.from({length:300},(_,i)=>['','Тестовая категория','Подкатегория','Услуга '+i]),
  ['','Наборы впечатлений','Премиум','Подарочный набор «Премиум»'],['','Наборы впечатлений','Для женщин','Подарочный набор «Релакс»'],['','Наборы впечатлений','Для женщин','Подарочный набор «Женское счастье»'],['','Наборы впечатлений','Для двоих','Подарочный набор «Рай для двоих»'],['','Наборы впечатлений','Для мужчин','Подарочный набор «Время побед»'],
  ['','Прочее','Упаковка','Упаковочная бумага (Премиум, цветы)'],['','Красота и здоровье','СПА','СПА-программа «Ариан Релакс»'],['','Красота и здоровье','Массаж','Тайский оил-массаж']];
@@ -37,7 +38,7 @@ const directory=process.argv[2];
 if(directory){
  const read=n=>parseCsv(fs.readFileSync(path.join(directory,n+'.csv'),'utf8').replace(/^\uFEFF/,''));
  const rawBank=read('transactions'),rawMp=read('marketplaces'),mkt=read('marketing'),html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- const sales=JSON.parse(html.match(/<script[^>]*id="ws-dashboard-data"[^>]*>([\s\S]*?)<\/script>/)[1]);
+ const sales=readSnapshot(html,'ws-dashboard-data');
  let months=0;for(const mo of [...new Set(rawBank.slice(1).map(r=>model.isoDate(r[1])).filter(Boolean).filter(d=>d.startsWith('2026-')).map(d=>d.slice(0,7)))]){
   const bankTotal=rawBank.slice(1).filter(r=>model.isoDate(r[1])?.startsWith(mo)&&['Wowlife СПБ Выручка','Wowlife МСК выручка','Выручка','B2B выручка'].includes(r[7])&&model.number(r[2])>0).reduce((s,r)=>s+model.number(r[2]),0);
   const mpTotal=rawMp.filter(r=>model.isoDate(r[0])?.startsWith(mo)).reduce((s,r)=>s+model.number(r[1]),0);

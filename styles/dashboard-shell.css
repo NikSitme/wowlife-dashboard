@@ -1,0 +1,273 @@
+/* Shared page chrome: controls have a place in the header instead of covering charts. */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.viz-root .dashboard-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px 24px;
+  margin-bottom: 18px;
+}
+
+.viz-root .dashboard-heading {
+  min-width: 0;
+}
+
+.viz-root .dashboard-heading .sub {
+  margin-bottom: 0;
+}
+
+.viz-root .dashboard-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+  max-width: 420px;
+}
+
+.viz-root .dashboard-actions .theme-switch {
+  position: static;
+  flex: 0 0 auto;
+  box-shadow: none;
+}
+
+.viz-root .dashboard-update {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.viz-root .dashboard-update-button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  background: var(--s1, #2a78d6);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.viz-root .dashboard-update-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.viz-root .dashboard-update-button:disabled {
+  cursor: progress;
+  opacity: .75;
+}
+
+.viz-root .dashboard-update-button:focus-visible {
+  outline: 2px solid var(--s1, #2a78d6);
+  outline-offset: 3px;
+}
+
+.viz-root .dashboard-update-status {
+  max-width: 100%;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted, #898781);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .viz-root .dashboard-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .viz-root .dashboard-actions {
+    max-width: none;
+    justify-content: space-between;
+  }
+
+  .viz-root .dashboard-update {
+    align-items: flex-start;
+  }
+
+  .viz-root .dashboard-update-status {
+    text-align: left;
+  }
+}
+
+.dashboard-load-state {
+  padding: 20px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+.dashboard-load-state[hidden] { display: none; }
+.dashboard-load-state button { margin-left: 12px; }
+
+@media (max-width: 480px) {
+  .viz-root { padding: 12px; }
+  .viz-root > .wrap { padding: 12px 0 40px; }
+  .viz-root [data-panel="opiu"] .row2,
+  .viz-root [data-panel="opiu"] .row3,
+  .viz-root [data-panel="opiu"] .card { min-width: 0; }
+  .viz-root [data-panel="opiu"] .hbar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .viz-root [data-panel="opiu"] .hbar-row .name {
+    width: auto;
+    white-space: normal;
+  }
+  .viz-root [data-panel="opiu"] .hbar-row .track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .viz-root [data-panel="opiu"] .hbar-row .amt { width: auto; }
+  .viz-root [data-panel="opiu"] .rev-row { flex-wrap: wrap; }
+  .viz-root [data-panel="opiu"] .rev-row .rname {
+    flex-basis: calc(100% - 20px);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .viz-root [data-panel="opiu"] .rev-row .rpct { width: auto; margin-left: auto; }
+}
+
+/* Keep narrow layouts within the page; dense tables/charts scroll in their own blocks. */
+@media (max-width: 480px) {
+  .viz-root [data-panel="salesact"] .filter-group {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="salesact"] .seg {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="salesact"] .card,
+  .viz-root [data-panel="salesact"] .two-col > *,
+  .viz-root [data-panel="wowsales"] .panel {
+    min-width: 0;
+  }
+
+  .viz-root #ws-lead-activity .la-controls,
+  .viz-root #ws-lead-activity .la-kpis,
+  .viz-root #ws-lead-activity .la-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .viz-root #ws-lead-activity .la-charts > div,
+  .viz-root #ws-lead-activity .la-scroll,
+  .viz-root #ws-lead-activity .la-bars {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .viz-root #ws-lead-activity .la-bar-row {
+    grid-template-columns: 32px minmax(0, 1fr) 54px;
+    gap: 8px;
+  }
+
+  .viz-root [data-panel="marketing"] .mk-grid,
+  .viz-root [data-panel="finmodel"] .fm-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .viz-root [data-panel="marketing"] .mk-grid > *,
+  .viz-root [data-panel="marketing"] .card,
+  .viz-root [data-panel="finmodel"] .fm-grid > *,
+  .viz-root [data-panel="finmodel"] .fm-group,
+  .viz-root [data-panel="finmodel"] .card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="marketing"] .card > .mk-table,
+  .viz-root [data-panel="marketing"] .mk-grid > .mk-table,
+  .viz-root [data-panel="finmodel"] #fmTable {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .viz-root [data-panel="marketing"] .mk-svg {
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="marketing"] .mk-kpis,
+  .viz-root [data-panel="finmodel"] .fm-kpis,
+  .viz-root [data-panel="pricing"] .pr-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .viz-root [data-panel="finmodel"] .fm-ctl,
+  .viz-root [data-panel="finmodel"] .fm-kid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lbl" "val" "sl" "base";
+    row-gap: 7px;
+  }
+
+  .viz-root [data-panel="finmodel"] .fm-ctl .val,
+  .viz-root [data-panel="finmodel"] .fm-kid .kval {
+    justify-content: flex-start;
+  }
+
+  .viz-root [data-panel="finmodel"] .fm-group h3,
+  .viz-root [data-panel="finmodel"] .fm-ctl .base {
+    flex-wrap: wrap;
+  }
+
+  .viz-root [data-panel="finmodel"] .fm-ctl .lbl,
+  .viz-root [data-panel="finmodel"] .fm-kid .klbl {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .viz-root [data-panel="pricing"] .pr .card {
+    padding: 16px;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-group,
+  .viz-root [data-panel="pricing"] .pr-param,
+  .viz-root [data-panel="pricing"] .pr-filter-group {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-param {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-param .ctl,
+  .viz-root [data-panel="pricing"] .pr-packaging-list label,
+  .viz-root [data-panel="pricing"] .pr-packaging-total,
+  .viz-root [data-panel="pricing"] .pr .seg {
+    flex-wrap: wrap;
+  }
+
+  .viz-root [data-panel="pricing"] .pr .seg {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-filter-line > .pr-filter-group {
+    flex-shrink: 1;
+  }
+
+  .viz-root [data-panel="pricing"] .pr-tools input[type="search"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

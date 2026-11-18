@@ -10,8 +10,11 @@ assert.equal(september.source_version,2);
 assert.equal(september.source_sheet,'сборка ОПиУ_2');
 assert.equal(september.rows['Коробки'],-38380);
 assert.equal(september.rows['Шоколадки'],-4545);
-assert.equal(september.gross_profit,2478165.54);
-assert.equal(september.net_profit,-498978.25);
+// The published September snapshot includes package/insert write-offs added in November.
+assert.equal(september.rows['Пакеты (списание)'],-3000);
+assert.equal(september.rows['Ложемент'],-11400);
+assert.equal(september.gross_profit,2463765.54);
+assert.equal(september.net_profit,-513378.25);
 assert.equal(september.source_warnings.length,0);
 assert.equal(embedded.filter(m=>m.source_warnings.some(w=>w.code==='packaging_positive')).length,12);
 const num = raw => Number(String(raw||'0').replace(/\s/g,'').replace(',','.'));
@@ -39,8 +42,8 @@ for(const item of september.source_pl) rows.push([item.heading?item.label:'',ite
 rows.find(r=>r[0]==='Возвраты')[1]='Возвраты';
 const parsed=api.computeOpiu(rows)[0];
 assert.equal(parsed.rows['Коробки'],-38380);
-assert.equal(parsed.gross_profit,2478165.54);
-assert.equal(parsed.net_profit,-498978.25);
+assert.equal(parsed.gross_profit,2463765.54);
+assert.equal(parsed.net_profit,-513378.25);
 const changed=rows.map(r=>r.slice());changed.find(r=>r[1]==='упаковка - коробки')[5]='-48 380,00';
 assert.throws(()=>api.computeOpiu(changed),/расхождение сверки/,'unreconciled edits must not silently become a fresh snapshot');
 const alteredSigns=rows.map(r=>r.slice());
@@ -65,14 +68,15 @@ assert.throws(()=>api.computeOpiu(missingRequiredTax),/не найдена ст�
 const withPackages=withoutLegacyTax.map(r=>r.slice());
 if(!withPackages.some(r=>r[1]==='Пакеты')) withPackages.push(['','Пакеты','','','','0']);
 const packageRow=withPackages.find(r=>r[1]==='упаковка - Пакеты');
+const packageDelta=-500-(packageRow?num(packageRow[5]):0);
 if(packageRow)packageRow[5]='-500';
 else withPackages.splice(withPackages.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Пакеты','','','','-500']);
 for(const label of ['переменные расходы','маржинальная прибыль','Операционная прибыль','чистая прибыль','прибыль после выплаты тела кредита и дивидендов']){
-  const r=withPackages.find(r=>r[0]===label);r[5]=String(num(r[5])-500);
+  const r=withPackages.find(r=>r[0]===label);r[5]=String(num(r[5])+packageDelta);
 }
 const packageMonth=api.computeOpiu(withPackages)[0];
 assert.equal(packageMonth.product_creation_breakdown.find(r=>r.name==='Пакеты (списание)').value,500);
-assert.equal(packageMonth.net_profit,september.net_profit-500);
+assert.equal(packageMonth.net_profit,september.net_profit+packageDelta);
 assert.equal(packageMonth.rows['Пакеты (списание)'],-500);
 
 const writeOffOnly=withPackages.filter(r=>r[1]!=='Пакеты');
@@ -86,17 +90,21 @@ lostWriteOff.find(r=>r[1]==='упаковка - Пакеты')[5]='0';
 assert.throws(()=>api.computeOpiu(lostWriteOff),/расхождение сверки/,'missing expense amounts must still fail reconciliation');
 
 
-// Nonzero insert write-offs must reconcile and belong to product creation exactly once.
+// Replace an existing nonzero write-off: adjust totals by its change, not its full amount.
+// Reinsert the source row to exercise alias placement and count the component exactly once.
+const insertAmount=12000;
+const previousInsert=writeOffOnly.find(r=>r[1]==='упаковка - Ложемент');
+const insertDelta=-insertAmount-(previousInsert?num(previousInsert[5]):0);
 const withInsert=writeOffOnly.filter(r=>r[1]!=='упаковка - Ложемент').map(r=>r.slice());
-withInsert.splice(withInsert.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Ложемент','','','','-11400']);
+withInsert.splice(withInsert.findIndex(r=>r[0]==='маржинальная прибыль'),0,['','упаковка - Ложемент','','','',String(-insertAmount)]);
 for(const label of ['переменные расходы','маржинальная прибыль','Операционная прибыль','чистая прибыль','прибыль после выплаты тела кредита и дивидендов']){
- const r=withInsert.find(r=>r[0]===label);r[5]=String(num(r[5])-11400);
+ const r=withInsert.find(r=>r[0]===label);r[5]=String(num(r[5])+insertDelta);
 }
 const insertMonth=api.computeOpiu(withInsert)[0];
-assert.equal(insertMonth.rows['Ложемент'],-11400);
+assert.equal(insertMonth.rows['Ложемент'],-insertAmount);
 assert.equal(insertMonth.product_creation_breakdown.filter(r=>r.name==='Ложемент').length,1);
-assert.equal(insertMonth.product_creation_breakdown.find(r=>r.name==='Ложемент').value,11400);
-assert.equal(insertMonth.net_profit,writeOffMonth.net_profit-11400);
+assert.equal(insertMonth.product_creation_breakdown.find(r=>r.name==='Ложемент').value,insertAmount);
+assert.equal(insertMonth.net_profit,writeOffMonth.net_profit+insertDelta);
 const lostInsert=withInsert.map(r=>r.slice());lostInsert.find(r=>r[1]==='упаковка - Ложемент')[5]='0';
 assert.throws(()=>api.computeOpiu(lostInsert),/расхождение сверки/,'insert expenses cannot be dropped to make a stale snapshot pass');
 assert(html.includes('osG("Упаковка и вложения", ["Коробки","Ложемент"'));

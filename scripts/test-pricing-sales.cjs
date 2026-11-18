@@ -25,6 +25,7 @@ let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]
 body=body.replace('\n  load();\n','\n window.test={salesInfo,salesCell,pricingHead,collectionRow,colCount,renderSetItems,financialGetters,serviceOf,allSets,setData:function(d,c){SALES=d;CRM=c;},state};return;\n load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 const context={window:{addEventListener(){},WowlifePricingSales:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifePricing:require('./pricing-model'),WowlifePriceStructure:require('./price-structure')},document:{querySelector(){return stub;},addEventListener(){}}};
+context.window.DashboardRuntime=require('./dashboard-runtime').create({schedule:()=>0,cancel(){}});
 vm.runInNewContext(body,context);const t=context.window.test;
 t.setData(data,{activationPeriod:period,catalog:{[id]:{...service,city:'СПб',price:1000,cost:500,activationPeriod:period}},sets:[]});
 assert.equal(t.serviceOf(id).sales12m,data.services[id]);

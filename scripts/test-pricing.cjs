@@ -49,6 +49,7 @@ body=body.replace('\n  load();\n','\n  window.pricingTest={state,load,save,usage
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='',savedPricing=null;
 const context={localStorage:{getItem(){return savedPricing;},setItem(k,v){savedPricing=v;}},Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{addEventListener(){},WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingSales:require('./pricing-sales'),WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
+context.window.DashboardRuntime=require('./dashboard-runtime').create({schedule:()=>0,cancel(){}});
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
