@@ -235,7 +235,9 @@ chartContext.state.metricCat='revenue';chartContext.renderChart({},sales.rows);
 assert.equal(chartContext.services,sales.rows);
 chartContext.state.view='activations';chartContext.renderChart({'Наборы впечатлений':{revenue:1,count:2}},sales.rows);
 assert.equal(chartContext.rendered[3][0][0],'Наборы впечатлений','the activation chart retains its own original scope');
-assert.equal(chartContext.rendered[4].foldTop10,true);
+assert.equal(chartContext.rendered[4].scroll,false,'all activation categories stay visible without folding');
+chartContext.state.view='partners';chartContext.renderChart({'Партнёр':{revenue:1,count:2}},sales.rows);
+assert.equal(chartContext.rendered[4].scroll,true,'long partner lists use a scrollable full list');
 console.log('Service category chart: all categories, service-only scope, both metrics, zero-price certificates and unchanged detail/activation scopes passed.');
 
 // Parent bars and their concrete services share exactly the same filtered rows.
@@ -269,7 +271,7 @@ for(const period of [{start:'2026-10-01',end:'2026-10-31'},{start:'2025-01-01',e
 // Real renderer: escaping, metric sorting, totals and remembered disclosure state.
 const nodes={},listeners=[];
 const uiContext={window:{SalesAnalytics:model},state:{metricCat:'revenue',expandedServiceCategories:new Set(['A'])},
- document:{getElementById(id){return nodes[id]||(nodes[id]={innerHTML:'',textContent:'',querySelectorAll(){return listeners;}});}},
+ document:{getElementById(id){return nodes[id]||(nodes[id]={innerHTML:'',textContent:'',classList:{remove(){}},querySelectorAll(){return listeners;}});}},
  metricFmt(m){return v=>String(v)+(m==='revenue'?' ₽':' шт');},metricNoun(){return 'выручке';},fmtMoney(v){return String(v)+' ₽';},fmtInt(v){return String(v);},
  escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}};
 vm.runInNewContext(html.match(/  function renderServiceCategories\(rows\)\{[\s\S]*?\n  \}/)[0],uiContext);
@@ -288,6 +290,45 @@ element.toggle();assert(!uiContext.state.expandedServiceCategories.has('A'));
 element.open=true;element.toggle();assert(uiContext.state.expandedServiceCategories.has('A'));
 element.isConnected=false;element.open=false;element.toggle();assert(uiContext.state.expandedServiceCategories.has('A'),'discarded DOM cannot erase new disclosure state');
 uiContext.renderServiceCategories([]);assert(nodes['ws-barchart'].innerHTML.includes('Нет услуг'));
+
+// Full bar lists must expose every named row rather than merging the tail.
+const barNodes={};
+const barContext={
+  document:{getElementById(id){return barNodes[id]||(barNodes[id]={innerHTML:'',textContent:'',tabIndex:-1,scrollTop:80,
+    classList:{toggle(name,value){this[name]=value;}}});}},
+  metricFmt:metric=>value=>String(value)+(metric==='count'?' шт':' ₽'),
+  metricNoun:metric=>metric==='count'?'количеству активаций':'себестоимости',
+  escapeHtml:uiContext.escapeHtml,shortItem:value=>value,
+};
+vm.runInNewContext(html.match(/  function renderBarPanel\([\s\S]*?\n  \}/)[0],barContext);
+const fullPartners=Array.from({length:169},(_,i)=>['Партнёр '+String(i+1).padStart(3,'0'),{revenue:169-i,count:i+1}]);
+const fullPartnersBefore=JSON.stringify(fullPartners);
+for(const metric of ['revenue','count']){
+  barContext.renderBarPanel('bars','more','note',fullPartners,{metric,scroll:true,catLabel:'Партнёры'});
+  const node=barNodes.bars;
+  assert.equal((node.innerHTML.match(/class="bar-row"/g)||[]).length,169);
+  fullPartners.forEach(([name])=>assert(node.innerHTML.includes('>'+name+'</div>'),name+' must remain individually visible'));
+  assert(!node.innerHTML.includes('Прочие'));
+  assert.equal(barNodes.more.textContent,'');
+  assert.equal(node.classList.scroll,true);
+  assert.equal(node.tabIndex,0,'the complete list is reachable by keyboard');
+  assert.equal(node.scrollTop,0,'new sorting/filter results start at the first row');
+  assert(barNodes.note.textContent.includes('169'));
+  const first=metric==='count'?'Партнёр 169':'Партнёр 001';
+  assert(node.innerHTML.indexOf('>'+first+'</div>')<node.innerHTML.indexOf('>'+fullPartners[84][0]+'</div>'));
+  assert(node.innerHTML.includes('width:100%'),'scale uses the largest individual partner');
+}
+assert.equal(JSON.stringify(fullPartners),fullPartnersBefore,'rendering preserves source order and values');
+barContext.renderBarPanel('bars','more','note',fullPartners.slice(0,17),{metric:'count',scroll:false,catLabel:'Категории'});
+assert.equal((barNodes.bars.innerHTML.match(/class="bar-row"/g)||[]).length,17);
+assert.equal(barNodes.bars.classList.scroll,false,'all categories fit without an inner scroll box');
+assert.equal(barNodes.bars.tabIndex,-1);
+barContext.renderBarPanel('bars','more','note',[['<Партнёр>',{revenue:0,count:1}]],{metric:'revenue',scroll:true});
+assert(barNodes.bars.innerHTML.includes('&lt;Партнёр&gt;'));
+assert.equal(barNodes.bars.classList.scroll,false,'a short filtered list does not retain scrolling');
+barContext.renderBarPanel('bars','more','note',[],{metric:'count',scroll:true});
+assert(barNodes.bars.innerHTML.includes('Нет данных'));
+console.log('Full bar lists: all 169 partners, all categories, both metrics, correct scale, filters and keyboard scrolling passed.');
 
 // Site-only panel must ignore the global source selection, not period or cities.
 for(const sources of ['all',[],['Сайт'],['Ozon'],['B2B'],model.SOURCES]){

@@ -2240,7 +2240,10 @@ window.__salesActSetData = function(newData){
 
 /* bar chart */
 .wsale-root .barchart{display:flex; flex-direction:column; gap:9px; margin-top:6px;}
-.wsale-root .barchart.scroll{max-height:400px; overflow-y:auto; padding-right:6px; scrollbar-width:thin; scrollbar-color:var(--ink-faint) transparent;}
+.wsale-root .barchart.scroll{max-height:min(560px,65vh); overflow-y:auto; overscroll-behavior-y:contain; padding:4px 12px 4px 0; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:var(--ink-faint) transparent;}
+.wsale-root .barchart.scroll:focus-visible{outline:2px solid var(--accent-deep); outline-offset:5px; border-radius:6px;}
+.wsale-root .barchart > .bar-row{flex-shrink:0; min-height:28px;}
+.wsale-root .barchart > .bar-row .bar-name{white-space:normal; overflow-wrap:anywhere; line-height:1.4;}
 .wsale-root .bar-row{display:grid; grid-template-columns:180px 1fr 92px; align-items:center; gap:10px;}
 .wsale-root .bar-name{font-size:12.5px; color:var(--ink-soft); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .wsale-root .bar-track{background:var(--bar-track); border-radius:4px; height:20px; position:relative; overflow:hidden;}
@@ -2546,7 +2549,7 @@ window.__salesActSetData = function(newData){
       </div>
     </div>
     <p class="panel-note" id="ws-chart-note">Категории первого уровня, отсортированы по выручке за выбранный период.</p>
-    <div class="barchart" id="ws-barchart"></div>
+    <div class="barchart" id="ws-barchart" role="region" aria-labelledby="ws-panel-title-cat"></div>
     <div class="bar-more" id="ws-bar-more"></div>
   </div>
 
@@ -2559,7 +2562,7 @@ window.__salesActSetData = function(newData){
       </div>
     </div>
     <p class="panel-note" id="ws-chart-note-sub">Отсортировано по выручке за выбранный период.</p>
-    <div class="barchart scroll" id="ws-barchart-sub"></div>
+    <div class="barchart scroll" id="ws-barchart-sub" role="region" aria-labelledby="ws-panel-title-sub" tabindex="0"></div>
   </div>
 
   <div class="panel" id="ws-panel-item">
@@ -2571,7 +2574,7 @@ window.__salesActSetData = function(newData){
       </div>
     </div>
     <p class="panel-note" id="ws-chart-note-item">Отсортировано по выручке за выбранный период.</p>
-    <div class="barchart scroll" id="ws-barchart-item"></div>
+    <div class="barchart scroll" id="ws-barchart-item" role="region" aria-labelledby="ws-panel-title-item" tabindex="0"></div>
   </div>
 
   <div class="panel">
@@ -3056,35 +3059,28 @@ window.__salesActSetData = function(newData){
   }
 
   function renderBarPanel(containerId, moreId, noteId, entries, opts){
-    const {metric, foldTop10, nounPlural, catLabel} = opts;
+    const {metric, scroll, catLabel} = opts;
     const fmt = metricFmt(metric);
-    const sorted = entries.slice().sort((a,b) => b[1][metric]-a[1][metric]);
-    let shown = sorted, restInfo = null;
-    if(foldTop10 && sorted.length>10){
-      const top = sorted.slice(0,10);
-      const rest = sorted.slice(10);
-      const restRevenue = rest.reduce((s,e)=>s+e[1].revenue,0);
-      const restCount = rest.reduce((s,e)=>s+e[1].count,0);
-      shown = top.concat([[`Прочие ${nounPlural}`, {revenue:restRevenue, count:restCount}]]);
-      restInfo = {n: rest.length, val: metric==="revenue" ? restRevenue : restCount};
-    }
-    const max = Math.max(1, ...shown.map(e=>e[1][metric]));
-    const html = shown.map(([name,v]) => `
+    const sorted = entries.slice().sort((a,b) => b[1][metric]-a[1][metric] || a[0].localeCompare(b[0],"ru"));
+    const scrolling = !!scroll && sorted.length>12;
+    const max = Math.max(1, ...sorted.map(e=>e[1][metric]));
+    const html = sorted.map(([name,v]) => `
       <div class="bar-row">
         <div class="bar-name" title="${escapeHtml(name)}">${escapeHtml(shortItem(name))}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${Math.max(1,(v[metric]/max)*100)}%"></div></div>
         <div class="bar-value">${fmt(v[metric])}</div>
       </div>
     `).join("");
-    document.getElementById(containerId).innerHTML = html || `<div style="padding:14px 2px;color:var(--ink-faint);font-size:13px;">Нет данных за выбранный период и фильтры</div>`;
-    if(moreId){
-      document.getElementById(moreId).textContent = restInfo ? `+ ещё ${restInfo.n} ${nounPlural} на ${fmt(restInfo.val)} — раскрыты в таблице ниже` : "";
-    }
+    const container = document.getElementById(containerId);
+    container.classList.toggle("scroll", scrolling);
+    container.tabIndex = scrolling ? 0 : -1;
+    container.scrollTop = 0;
+    container.innerHTML = html || `<div style="padding:14px 2px;color:var(--ink-faint);font-size:13px;">Нет данных за выбранный период и фильтры</div>`;
+    if(moreId)document.getElementById(moreId).textContent = "";
     if(noteId){
-      const scrollHint = !foldTop10 && sorted.length>10 ? " Список длинный — прокрутите блок." : "";
-      document.getElementById(noteId).textContent = foldTop10
-        ? `${catLabel || "Категории первого уровня"}, отсортированы по ${metricNoun(metric)} за выбранный период.`
-        : `Отсортировано по ${metricNoun(metric)} за выбранный период.${scrollHint}`;
+      const scrollHint = scrolling ? " Все позиции доступны при прокрутке списка." : "";
+      const total = sorted.length ? `${catLabel || "Позиций"}: ${sorted.length}. ` : "";
+      document.getElementById(noteId).textContent = `${total}Отсортировано по ${metricNoun(metric)} за выбранный период.${scrollHint}`;
     }
   }
 
@@ -3094,6 +3090,8 @@ window.__salesActSetData = function(newData){
     const categories = window.SalesAnalytics.serviceCategories(rows).sort(compare);
     const max = Math.max(1,...categories.map(c => c[metric]));
     const container = document.getElementById("ws-barchart");
+    container.classList.remove("scroll");
+    container.tabIndex = -1;
     container.innerHTML = categories.map(c => {
       const cells = v => `<td class="num">${fmtMoney(v.revenue)}</td><td class="num">${fmtInt(v.count)}</td>`;
       return `<details class="service-category" data-category="${escapeHtml(c.name)}"${state.expandedServiceCategories.has(c.name)?" open":""}>
@@ -3123,17 +3121,17 @@ window.__salesActSetData = function(newData){
   function renderChart(tree, rows){
     if(state.view === "sales"){renderServiceCategories(rows);return;}
     const entries = Object.entries(tree).map(([name,n]) => [name, {revenue:n.revenue, count:n.count}]);
-    renderBarPanel("ws-barchart", "ws-bar-more", "ws-chart-note", entries, {metric: state.metricCat, foldTop10:true, nounPlural: PROFILE.catNounPlural, catLabel: PROFILE.catTopLabel});
+    renderBarPanel("ws-barchart", "ws-bar-more", "ws-chart-note", entries, {metric: state.metricCat, scroll:state.view==="partners", catLabel: PROFILE.catTopLabel});
   }
 
   function renderSubChart(rows){
     const entries = flatAgg(rows, r => r.subgroup || null);
-    renderBarPanel("ws-barchart-sub", null, "ws-chart-note-sub", entries, {metric: state.metricSub, foldTop10:false});
+    renderBarPanel("ws-barchart-sub", null, "ws-chart-note-sub", entries, {metric: state.metricSub, scroll:true, catLabel:"Подкатегорий"});
   }
 
   function renderItemChart(rows){
     const entries = flatAgg(rows, r => r.item || null);
-    renderBarPanel("ws-barchart-item", null, "ws-chart-note-item", entries, {metric: state.metricItem, foldTop10:false});
+    renderBarPanel("ws-barchart-item", null, "ws-chart-note-item", entries, {metric: state.metricItem, scroll:true, catLabel:"Услуг"});
   }
 
   function computeAndRenderCharts(){
