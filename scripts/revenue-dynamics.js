@@ -171,13 +171,37 @@
     points.forEach(function(p){ if(p) run.push(p); else flush(); }); flush();
     return chunks.join(' ');
   }
+  var SELECTION_KEY='rdRevenueSelection';
+  function validRange(from,to){return typeof from==='string'&&typeof to==='string'&&isoDate(from)===from&&isoDate(to)===to&&from<=to&&(Date.parse(to)-Date.parse(from))/86400000<=3660;}
+  function restoreSelection(raw){
+    try{
+      var saved=typeof raw==='string'?JSON.parse(raw):raw;
+      if(!saved||saved.version!==1||!Array.isArray(saved.sources)||saved.sources.length>SOURCES.length||!saved.sources.every(function(key){return SOURCES.some(function(s){return s[0]===key;});})||new Set(saved.sources).size!==saved.sources.length)return null;
+      if(!['all','msk','spb'].includes(saved.city)||!['day','week','month','year'].includes(saved.step)||!['year','last_month','30','90','all','custom'].includes(saved.preset))return null;
+      if(saved.preset==='custom'&&!validRange(saved.from,saved.to))return null;
+      var result={sources:saved.sources.slice(),city:saved.city,step:saved.step,preset:saved.preset,from:saved.preset==='custom'?saved.from:'',to:saved.preset==='custom'?saved.to:'',parent:null};
+      var p=saved.parent,month=saved.from&&monthRange(saved.from);
+      if(p&&saved.step==='day'&&saved.preset==='custom'&&month&&saved.from===month.from&&saved.to===month.to&&p.step==='month'&&['year','last_month','30','90','all','custom'].includes(p.preset)&&validRange(p.from,p.to)&&p.month===month.from)result.parent={from:p.from,to:p.to,step:'month',preset:p.preset,month:p.month};
+      return result;
+    }catch(e){return null;}
+  }
   function mount(card){
     var data = null, updated = false, detailParent = null;
     var usersData=null,usersKey='',usersStatus='',usersRequest=0,usersFetchedAt=0;
     var requestUsers=window.MetrikaUsers?window.MetrikaUsers.client(fetch):null;
     var state = {sources:SOURCES.map(function(s){return s[0];}),city:'all',step:'month',preset:'year',from:'',to:''};
+    try{var savedSelection=restoreSelection(localStorage.getItem(SELECTION_KEY));if(savedSelection){detailParent=savedSelection.parent;delete savedSelection.parent;Object.assign(state,savedSelection);}}catch(e){}
     try{state.metrika=localStorage.getItem('rdMetrikaUsers')==='1';}catch(e){state.metrika=false;}
     var wrap=card.querySelector('#revYearWrap'), tip=card.querySelector('.rd-tooltip');
+    var lastChartWidth=0,resizeFrame=null;
+    if(typeof ResizeObserver==='function')new ResizeObserver(function(){
+      var width=wrap.clientWidth;
+      if(!width){lastChartWidth=0;return;}
+      if(width!==lastChartWidth&&resizeFrame===null)resizeFrame=requestAnimationFrame(function(){resizeFrame=null;render();});
+    }).observe(wrap);
+    function saveSelection(){
+      try{localStorage.setItem(SELECTION_KEY,JSON.stringify({version:1,sources:state.sources,city:state.city,step:state.step,preset:state.preset,from:state.from,to:state.to,parent:detailParent}));}catch(e){}
+    }
     var metrikaToggle=card.querySelector('#rdMetrikaToggle'),metrikaStatus=card.querySelector('#rdMetrikaStatus'),metrikaRetry=card.querySelector('#rdMetrikaRetry');
     metrikaToggle.checked=state.metrika;
     metrikaToggle.addEventListener('change',function(){
@@ -249,7 +273,8 @@
     });
     function render(){
       if (!data){wrap.innerHTML='<p class="cap">Загружаю выручку…</p>';return;}
-      if (!state.from) setPreset('year');
+      if (!state.from) setPreset(state.preset);
+      saveSelection();
       var all=state.sources.length===SOURCES.length;
       SOURCES.forEach(function(s){sourceInputs[s[0]].checked=state.sources.includes(s[0]);});
       allInput.checked=all; allInput.indeterminate=!all && state.sources.length>0;
@@ -284,8 +309,13 @@
       var previousTo=detailParent?monthEnd(shiftYear(state.to)):shiftYear(state.to);
       card.querySelector('#rdPreviousLegend').textContent='Прошлый год: '+shortDate(shiftYear(state.from))+' '+shiftYear(state.from).slice(0,4)+' — '+shortDate(previousTo)+' '+previousTo.slice(0,4);
       hideHover();
+      // Hidden tabs report width zero. Wait for the visible layout instead of
+      // leaving a fallback-sized SVG until the next network refresh.
+      var containerWidth=wrap.clientWidth;
+      if(!containerWidth){lastChartWidth=0;return;}
+      lastChartWidth=containerWidth;
       if(!selected.length || !hasUsers&&!points.some(function(p){return p.current!==null || p.previous!==null;})){wrap.innerHTML='<p class="cap rd-empty">'+(!selected.length?'Выберите хотя бы один источник':'Нет данных за выбранный период')+'</p>';return;}
-      var width=Math.max(560,wrap.clientWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
+      var width=Math.max(560,containerWidth,points.length*(state.step==='day'?18:state.step==='week'?30:70));
       var height=285,left=hasUsers?72:18,right=86,top=hasUsers?30:24,bottom=45,pw=width-left-right,ph=height-top-bottom;
       var vals=[0]; points.forEach(function(p){if(p.current!==null)vals.push(p.current);if(p.previous!==null)vals.push(p.previous);});
       var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals); if(lo===hi)hi=lo+1;
@@ -383,5 +413,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,presetRange:presetRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,presetRange:presetRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,restoreSelection:restoreSelection,mount:mount};
 });

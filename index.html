@@ -4796,7 +4796,7 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
-<script src="scripts/revenue-dynamics.js?v=metrika-20261118"></script>
+<script src="scripts/revenue-dynamics.js?v=startup-20261118"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){
@@ -6231,6 +6231,8 @@ window.__salesActSetData = function(newData){
       tabBtns.forEach(function(b){ b.classList.toggle("active", b === btn); });
       var target = btn.getAttribute("data-tab");
       tabPanels.forEach(function(p){ p.hidden = p.getAttribute("data-panel") !== target; });
+      try{var tabUrl=new URL(location.href);tabUrl.searchParams.set('tab',target);history.replaceState(null,'',tabUrl.href);}catch(e){}
+      if (target === "opiu" && window.__opiuRerender) window.__opiuRerender();
       if (target === "salesact" && window.__salesActRerender) window.__salesActRerender();
       if (target === "wowsales" && window.__wowSalesRerender) window.__wowSalesRerender();
       if (target === "wowsales" && window.__leadCertRerender) window.__leadCertRerender();
@@ -8272,7 +8274,7 @@ window.__salesActSetData = function(newData){
 <link rel="stylesheet" href="./styles/pricing-projects.css?v=20261112">
 <script src="./scripts/pricing-project-config.js?v=20261112-public"></script>
 <script src="./scripts/pricing-project-store.js?v=20261115-certificate-mix"></script>
-<script src="./scripts/pricing-project-ui.js?v=20261112-public"></script>
+<script src="./scripts/pricing-project-ui.js?v=20261118-route"></script>
 <script src="./scripts/pricing-model.js?v=20261115-certificate-mix"></script>
 <script src="./scripts/pricing-catalog.js?v=20261107-activations"></script>
 <script src="./scripts/pricing-sales.js?v=20261118"></script>

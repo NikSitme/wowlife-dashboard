@@ -181,3 +181,18 @@ assert.deepEqual(model.presetRange('30','2026-11-15','2025-01-01'),{from:'2026-1
 assert.deepEqual(model.presetRange('90','2026-11-15','2025-01-01'),{from:'2026-08-18',to:'2026-11-15'});
 assert.deepEqual(model.presetRange('all','2026-11-15','2025-01-01'),{from:'2025-01-01',to:'2026-11-15'});
 console.log('PASS previous-month preset: full calendar month, January boundary, leap/non-leap February and unchanged year/rolling/all presets');
+
+const savedView={version:1,sources:['site'],city:'spb',step:'day',preset:'custom',from:'2026-11-01',to:'2026-11-30',parent:{from:'2026-01-01',to:'2026-12-31',step:'month',preset:'year',month:'2026-11-01'}};
+const restored=model.restoreSelection(JSON.stringify(savedView));
+const {version,...expectedView}=savedView;assert.deepEqual(restored,expectedView);
+assert.equal(model.series(fullPriorYear,restored).length,30,'Restored drill-down keeps daily month comparison');
+for(const preset of ['year','last_month','30','90','all']){
+ const relative=model.restoreSelection({...savedView,preset,parent:null});
+ assert.equal(relative.from,'');assert.equal(relative.to,'','Relative presets resolve against the fresh data date');
+ assert.equal(relative.preset,preset);assert.equal(relative.city,'spb');assert.deepEqual(relative.sources,['site']);
+}
+assert.deepEqual(model.restoreSelection({...savedView,sources:[]}).sources,[],'Empty source selection remains empty');
+for(const invalid of [null,'{',{}, {...savedView,version:2},{...savedView,sources:['unknown']},{...savedView,sources:['site','site']},{...savedView,city:'unknown'},{...savedView,step:'hour'},{...savedView,preset:'unknown'},{...savedView,from:'2026-02-31'},{...savedView,from:'01.11.2026'},{...savedView,from:'2026-12-01'},{...savedView,from:'2000-01-01'}])assert.equal(model.restoreSelection(invalid),null,'Ignore corrupt/unsupported saved selections');
+assert.equal(model.restoreSelection({...savedView,parent:{...savedView.parent,month:'2026-10-01'}}).parent,null,'Invalid back-navigation state is discarded without losing filters');
+assert.equal(JSON.stringify(savedView),JSON.stringify({version:1,...expectedView}),'Restoration never mutates stored settings');
+console.log('PASS saved chart view: source/city/step/custom dates and month return; relative presets recompute; invalid storage falls back safely');
