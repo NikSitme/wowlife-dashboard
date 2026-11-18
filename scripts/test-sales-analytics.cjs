@@ -144,8 +144,8 @@ assert.equal(activations.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(partners.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(salesAct.activationMetric,model.ACTIVATION_METRIC);
 assert.equal(model.sum(model.filter(activations.rows,selection)).count,869);
-assert.equal(model.sum(model.filter(activations.rows,{...selection,start:'2026-10-01',end:'2026-10-29'})).count,693);
-assert.equal(salesAct.daily.act.dates.reduce((total,d,i)=>total+(d.startsWith('2026-10-')?salesAct.daily.act.count[i]:0),0),738);
+assert.equal(model.sum(model.filter(activations.rows,{...selection,start:'2026-10-01',end:'2026-10-29'})).count,694);
+assert.equal(salesAct.daily.act.dates.reduce((total,d,i)=>total+(d.startsWith('2026-10-')?salesAct.daily.act.count[i]:0),0),739);
 assert.equal(salesAct.crmMetric,model.CRM_METRIC);
 assert.deepEqual(model.sum(model.filter(activations.rows,selection)),model.sum(model.filter(partners.rows,selection)));
 // Old browser caches may contain the former five-stage metric. Reject their
@@ -192,11 +192,11 @@ for(const month of [...new Set(salesAct.purchaseRows.map(r=>r.date.slice(0,7)))]
 }
 const oct={...selection,start:'2026-10-01',end:'2026-10-31',sources:['Сайт']};
 const octSite=model.purchaseStats(model.purchases(salesAct.purchaseRows,oct));
-assert.equal(octSite.quantity,730);
+assert.equal(octSite.quantity,732);
 assert.equal(octSite.types['Электронный'].quantity,430);
-assert.equal(octSite.types['Физический'].quantity,300);
-assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,{...oct,cities:['Москва','Санкт-Петербург']})).quantity,727);
-assert.equal(Object.values(salesAct.revenueByTypeMonth['2026-10']).reduce((n,r)=>n+r.count,0),730,'OPiU includes unknown-city certificates too');
+assert.equal(octSite.types['Физический'].quantity,302);
+assert.equal(model.purchaseStats(model.purchases(salesAct.purchaseRows,{...oct,cities:['Москва','Санкт-Петербург']})).quantity,729);
+assert.equal(Object.values(salesAct.revenueByTypeMonth['2026-10']).reduce((n,r)=>n+r.count,0),732,'OPiU includes unknown-city certificates too');
 console.log('Sales analytics: certificate quantities, zero-sum deals, baskets, category/source/city/timeline consistency, caches and financial reconciliation passed.');
 
 // The service category chart must not present sets, nominal certificates or
@@ -293,16 +293,16 @@ uiContext.renderServiceCategories([]);assert(nodes['ws-barchart'].innerHTML.incl
 for(const sources of ['all',[],['Сайт'],['Ozon'],['B2B'],model.SOURCES]){
   const selection={...oct,sources},before=JSON.stringify(selection);
   const stats=model.purchaseStats(model.sitePurchases(salesAct.purchaseRows,selection));
-  assert.equal(stats.quantity,730);assert.equal(stats.types['Электронный'].quantity,430);assert.equal(stats.types['Физический'].quantity,300);
+  assert.equal(stats.quantity,732);assert.equal(stats.types['Электронный'].quantity,430);assert.equal(stats.types['Физический'].quantity,302);
   assert.equal(JSON.stringify(selection),before);
 }
-assert.equal(model.purchaseStats(model.sitePurchases(salesAct.purchaseRows,{...oct,sources:['Ozon'],cities:['Москва','Санкт-Петербург']})).quantity,727);
+assert.equal(model.purchaseStats(model.sitePurchases(salesAct.purchaseRows,{...oct,sources:['Ozon'],cities:['Москва','Санкт-Петербург']})).quantity,729);
 assert.equal(model.sitePurchases(salesAct.purchaseRows,{...oct,start:'2099-01-01',end:'2099-01-31'}).length,0);
 const panels={},panelContext={window:{__wowSalesSelection:{...oct,view:'sales',sources:['Ozon']},__salesActData:salesAct},model,
  document:{getElementById(id){return panels[id]||(panels[id]={});}},renderPackagingPanel(){},money(v){return String(v);}};
 vm.runInNewContext(html.match(/  function card\(label,value,total\)\{[^\n]+/)[0]+'\n'+html.match(/  function renderPurchasePanels\(\)\{[\s\S]*?\n  \}/)[0],panelContext);
 panelContext.renderPurchasePanels();
-assert(panels['ws-cert-stat'].innerHTML.includes('Всего по сайту: 730'));
+assert(panels['ws-cert-stat'].innerHTML.includes('Всего по сайту: 732'));
 assert(panels['ws-lead-stat'].innerHTML.includes('Нет сертификатов сайта'),'unrelated panels still respect global source selection');
 console.log(`Service disclosures: ${reconciled} category totals reconciled; service sorting, state, escaping and site-only certificate panel with period/city filters passed.`);
 
@@ -369,5 +369,5 @@ assert.equal(model.marketplaceQuantity(['','100','','Продажи','Доста
 assert.equal(model.marketplaceQuantity(['','100','','Продажи','Конная прогулка: Полный пакет']),1);
 assert(!sales.rows.some(r=>r.channel==='Маркетплейсы'&&r.recordKind!=='marketplace'));
 const octMp=model.sum(sales.rows.filter(r=>r.channel==='Маркетплейсы'&&r.date.startsWith('2026-10')));
-assert.equal(octMp.count,672);assert.equal(octMp.revenue,3172948);
-console.log('Marketplace ledger: signed quantity, real repeated sales, zero price, compensation, extras, source/city/date, cache migration and October 672 / 3,172,948 passed.');
+assert.equal(octMp.count,671);assert.equal(octMp.revenue,3172948);
+console.log('Marketplace ledger: signed quantity, real repeated sales, zero price, compensation, extras, source/city/date, cache migration and October 671 / 3,172,948 passed.');

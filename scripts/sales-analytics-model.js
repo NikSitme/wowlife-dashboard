@@ -1,10 +1,11 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.SalesAnalytics=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
+  var classifier=typeof module==='object'&&module.exports?require('./sales-classifier.js'):globalThis.WowlifeSalesClassifier;
   var CITIES=['Москва','Санкт-Петербург','Не определён'];
   var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','Мегамаркет','B2B'];
   var ACTIVATION_METRIC='certificate-selection-v1';
-  var CRM_METRIC='certificates-all-successful-v3';
-  var SALES_METRIC='site-crm-marketplace-ledger-v1';
+  var CRM_METRIC='certificates-without-technical-v4';
+  var SALES_METRIC='site-crm-marketplace-classified-v3';
   function number(s){var n=Number(String(s==null?'':s).replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0;}
   function iso(s){s=String(s||'').trim();var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),value;
     if(m)value=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
@@ -37,7 +38,7 @@
   function serviceCategoryRows(rows){
     return rows.filter(function(r){
       var group=String(r.group||'').trim().toLowerCase().replace(/ё/g,'е');
-      if(!group||/^(?:наборы(?:\s|$)|номинальн|доплат|доп[ ._-]*услуг|не классифицировано|без категории|не определено|—$)/.test(group))return false;
+      if(!group||/^(?:наборы(?:\s|$)|номинальн|доплат|доп[ ._-]*услуг|технические позиции|не классифицировано|без категории|не определено|—$)/.test(group))return false;
       var name=String(r.item||'').trim();
       return !/\((?:Add|Box)\)/i.test(name)&&!/^(?:подарочн(?:ый|ые)\s+набор|п\/н(?:\s|$)|набор(?:ы)?\s+впечатлен|номинальн|услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата|тест(?:\s|$))/i.test(name);
     });
@@ -47,7 +48,7 @@
   function marketplaceQuantity(row){
     var name=String(row[4]||row[2]||'').trim(),operation=String(row[3]||'').trim();
     if(!name||/компенсац|достав|комисси|удержан|штраф|хранени/i.test(operation))return 0;
-    if(/\((?:Add|Box)\)/i.test(name)||/^(?:услуги доставки|доставка|упаковоч|упаковка|подарочная упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата)/i.test(name))return 0;
+    if(classifier.extra(name)||classifier.extra(String(row[2]||''))||classifier.technical(name)||classifier.technical(row[2]))return 0;
     if(operation&&!/^(?:продаж[аи]?|оплачено клиентом|возврат(?:\s|$))/i.test(operation))return 0;
     return /возврат/i.test(operation)||number(row[1])<0?-1:1;
   }
@@ -55,10 +56,12 @@
     var platforms={'ВБ':'Wildberries','ОЗОН':'Ozon','ЯМ':'Яндекс Маркет','Flowwow_СПБ':'Flowwow','Flowwow_МСК':'Flowwow'},groups=new Map();
     (rows||[]).forEach(function(row){
       var d=iso(row[0]);if(!d||row[1]===undefined||row[1]===null||row[1]==='')return;
-      var raw=String(row[6]||'').trim().replace(/^"(.*)"\(\)$/, '$1'),platform=platforms[raw]||raw||'—',c=city(row[5]);
-      var name=String(row[4]||'').trim(),cls=classify(name),g=cls?cls[0]:'Не классифицировано',sg=cls?cls[1]:name||'—',item=cls?cls[2]:name||'—';
+      var raw=String(row[6]||'').trim().replace(/^"(.*)"\(\)$/, '$1'),platform=platforms[raw]||raw||'—',c=city(row[5]),opiuExcluded=c==='Не определён'||!platforms[raw];
+      var name=classifier.valid(row[4])?String(row[4]).trim():String(row[2]||'').trim(),cls=classify(name),g=cls?cls[0]:'Не классифицировано',sg=cls?cls[1]:name||'—',item=cls?cls[2]:name||'—';
+      if(classifier.extra(name)||classifier.extra(row[2])){g='Доп услуги';sg='Упаковка и доставка';item=name;}
+      if(c==='Не определён'){if(/(?:,\s*|_)москва(?:\s|\(|$)/i.test(row[2]||'')||raw==='Flowwow_МСК')c='Москва';else if(/(?:,\s*|_)санкт[ -]петербург(?:\s|\(|$)/i.test(row[2]||'')||raw==='Flowwow_СПБ')c='Санкт-Петербург';}
       var key=JSON.stringify([d,platform,c,g,sg,item]),r=groups.get(key);
-      if(!r){r={date:d,channel:'Маркетплейсы',platform:platform,city:c,group:g,subgroup:sg,item:item,opiuExcluded:c==='Не определён'||!platforms[raw],revenue:0,count:0,sourceRecords:0,recordKind:'marketplace'};groups.set(key,r);}
+      if(!r){r={date:d,channel:'Маркетплейсы',platform:platform,city:c,group:g,subgroup:sg,item:item,opiuExcluded:opiuExcluded,revenue:0,count:0,sourceRecords:0,recordKind:'marketplace'};groups.set(key,r);}
       r.revenue+=number(row[1]);r.count+=marketplaceQuantity(row);r.sourceRecords++;
     });
     return Array.from(groups.values()).map(function(r){r.revenue=Math.round(r.revenue*100)/100;return r;});
@@ -151,6 +154,7 @@
       var m=line.trim().match(/^(.*?)\s+[xх×](\d+)\s*[—–-]/i);if(!m)return;
       parsed++;
       var name=m[1].trim();
+      if(classifier.technical(name))return;
       if(/\((?:Add|Box)\)/i.test(name)||/^(?:услуги доставки|доставка|упаковоч|упаковка|пакеты?(?:\s|\(|$)|премиум пакет|коробк|подарочная коробка|доплата)/i.test(name))return;
       var quantity=Number(m[2]);if(quantity>0)items.push({name:name,quantity:quantity});
     });
@@ -186,5 +190,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,SALES_METRIC:SALES_METRIC,marketplaceQuantity:marketplaceQuantity,marketplaceSales:marketplaceSales,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,SALES_METRIC:SALES_METRIC,marketplaceQuantity:marketplaceQuantity,marketplaceSales:marketplaceSales,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging,taxonomy:classifier.taxonomy,financialProducts:classifier.financialProducts,financialAllocations:classifier.allocations,financialBasket:classifier.financialBasket,CLASSIFICATION_METRIC:classifier.METRIC};
 });

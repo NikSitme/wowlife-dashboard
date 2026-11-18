@@ -19,7 +19,7 @@ const baseline = management(base);
 const withPackages = JSON.parse(JSON.stringify(base));
 withPackages.rows['Пакеты (списание)'] = -4700;
 const changed = management(withPackages);
-assert.equal(changed.value, baseline.value - 4700, 'package write-offs must reduce management profit as well as native P&L');
+assert.equal(changed.value, baseline.value - 4700 - (base.rows['Пакеты (списание)'] || 0), 'package write-offs must reduce management profit as well as native P&L');
 assert.equal(changed.unallocated.includes('Пакеты (списание)'), false);
 for (const month of embedded) assert.ok(Math.abs(management(month).value - (month.net_profit - month.dev_services)) <= 0.51, 'management net reconciles with the source and agreed service adjustment: ' + month.label);
 console.log('Management P&L: all source months reconcile; package write-offs enter profit once.');
