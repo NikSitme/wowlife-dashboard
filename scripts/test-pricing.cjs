@@ -48,7 +48,7 @@ let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]
 body=body.replace('\n  load();\n','\n  window.pricingTest={state,load,save,usagePercent,ensureParams,packagingSummary,syncPackaging,packagingMarkup,targetProposal,targetCell,useTargetPrice,P,calcService,calcSet,calcItem,catalogCandidateRows,allSets,serviceOf,financialCells,pricingHead,colCount,exportCsv,rowParameterValue,tableMarkup,collectionRow,financialGetters,sortBy,setCommissions:function(rows,prices){commissionIndex=STRUCTURE.index(rows,prices);},setData:function(c,a){CRM=c;ACT=a;}};return;\n  load();\n');
 const stub={addEventListener(){},querySelector(){return stub;}};
 let exportedCsv='',savedPricing=null;
-const context={localStorage:{getItem(){return savedPricing;},setItem(k,v){savedPricing=v;}},Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{addEventListener(){},WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
+const context={localStorage:{getItem(){return savedPricing;},setItem(k,v){savedPricing=v;}},Blob:class{constructor(parts){exportedCsv=parts.join('');}},URL:{createObjectURL(){return 'blob:test';},revokeObjectURL(){}},setTimeout(fn){fn();},window:{addEventListener(){},WowlifePriceStructure:require('./price-structure'),WowlifePricing:model,WowlifePricingSales:require('./pricing-sales'),WowlifePricingCatalog:require('./pricing-catalog'),WowlifeServiceCatalog:require('./service-catalog'),__opiuData:[]},document:{querySelector(){return stub;},addEventListener(){},createElement(){return {click(){}};}},console};
 vm.runInNewContext(body,context);
 const t=context.window.pricingTest;
 t.state.params={...defaults};t.state.pmode={...modes,ret:'rub'};t.ensureParams();
@@ -76,10 +76,10 @@ t.state.sov.a={price:2500,cost:1200};assert.equal(t.serviceOf('a').basePrice,200
 // Group headers, body cells and composition use exactly the same column count.
 set=t.allSets()[0];calc=t.calcSet(set);
 const cells=t.financialCells(set,calc,{key:'set:x',kind:'set'});
-assert.equal((cells.match(/<td /g)||[]).length+4,t.colCount());
+assert.equal((cells.match(/<td /g)||[]).length+5,t.colCount());
 assert.equal((t.pricingHead('set').match(/data-tip=/g)||[]).length,0);
 assert(t.pricingHead('set').includes('Активации<small>12 мес.</small>'));
-t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+4,t.colCount());
+t.state.collapsed.price=true;assert.equal((t.financialCells(set,calc,{key:'set:x',kind:'set'}).match(/<td /g)||[]).length+5,t.colCount());
 t.state.sov.a.cost=0;assert.equal(t.calcService(t.serviceOf('a')).exp,0);assert.notEqual(t.calcService(t.serviceOf('a')).mpAct,null);
 t.state.mode='avg';near(t.calcSet(t.allSets()[0]).exp,250);
 // Forecast applies to standalone services too, without a parallel worst column.
@@ -103,7 +103,7 @@ near(structureSvc.structure.open,1500);near(structureSvc.structure.markup,1000);
 near(structureSvc.structure.price,structureSvc.structure.markup+structureSvc.structure.commission+structureSvc.exp);
 console.log('PASS structure integration: inherited commissions do not change activation forecasts or profit');
 
-t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,27);assert.equal(exportLines[1].split(';').length,27);console.log('PASS pricing CSV: full filtered selection and 27 aligned columns');
+t.state.view='services';t.exportCsv();const exportLines=exportedCsv.trim().split('\n');assert.equal(exportLines.length,3);assert.equal(exportLines[0].split(';').length,30);assert.equal(exportLines[1].split(';').length,30);console.log('PASS pricing CSV: full filtered selection and 30 aligned columns');
 
 const commissionsData=require('../data/partner-commissions.json'),confirmedPrices=require('../data/partner-open-prices.json');
 t.setCommissions(commissionsData.companies,confirmedPrices.prices);const trainer=commissionsData.companies.find(c=>c.id==='372').name;
@@ -383,11 +383,11 @@ for(const format of ['physical','electronic'])for(const collapsed of [{},{price:
  const s=t.allSets()[0],r=t.calcSet(s),head=t.pricingHead('set');
  assert.equal(head.includes('data-prgroup="pack"'),format==='physical');
  assert.equal(head.includes('data-prgroup="logistics"'),format==='physical');
- assert.equal((t.financialCells(s,r,{key:'set:format',kind:'set'}).match(/<td /g)||[]).length+4,t.colCount());
+ assert.equal((t.financialCells(s,r,{key:'set:format',kind:'set'}).match(/<td /g)||[]).length+5,t.colCount());
  assert.equal((t.collectionRow('set').match(/<td/g)||[]).length,t.colCount());
  t.state.view='sets';t.state.city='all';t.state.q='';t.exportCsv();
  const csv=exportedCsv.trim().split('\n').map(line=>line.split(';'));
- assert(csv.every(row=>row.length===27));assert(csv[1].at(-1).includes(format==='electronic'?'Электронные':'Физические'));
+ assert(csv.every(row=>row.length===30));assert(csv[1].at(-1).includes(format==='electronic'?'Электронные':'Физические'));
  for(const field of ['Упаковка','Логистика']){const col=csv[0].findIndex(x=>x.includes(field));assert.equal(Number(csv[1][col].replace(',','.'))===0,format==='electronic');}
 }
 t.state.certificateType='electronic';t.save();t.state.certificateType='physical';t.load();assert.equal(t.state.certificateType,'electronic');

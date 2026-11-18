@@ -11,6 +11,7 @@
     var f=selection||{},q=norm(f.q),min=f.min===''||f.min==null?null:Number(f.min),max=f.max===''||f.max==null?null:Number(f.max);
     var spec=sortSpec(f.sort);
     function value(row){
+      if(spec.key==='sales')return Number.isSafeInteger(row.sales12m)&&row.sales12m>=0?row.sales12m:null;
       if(spec.key==='activations')return Number.isSafeInteger(row.activations12m)&&row.activations12m>=0?row.activations12m:null;
       if(spec.key==='cost')return Number.isFinite(row.cost)&&(row.cost>0||row.cost===0&&row.costKnown===true)?row.cost:null;
       if(spec.key==='price')return Number.isFinite(row.price)?row.price:null;
@@ -26,7 +27,7 @@
     });
   }
   function sortSpec(value){
-    var match=String(value||'name').match(/^(name|category|partner|activations|price|cost|npRub|npPct|inSet)(?:-(asc|desc))?$/);
+    var match=String(value||'name').match(/^(name|category|partner|activations|sales|price|cost|npRub|npPct|inSet)(?:-(asc|desc))?$/);
     return match?{key:match[1],dir:match[2]||'asc'}:{key:'name',dir:'asc'};
   }
   function matchesQuery(row,query){

@@ -1,0 +1,37 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const model=require('./pricing-sales'),catalog=require('./service-catalog');
+const data=model.validate(require('../data/pricing-sales.json')),period=model.period(data);
+assert.equal(period,'01.11.2025–31.10.2026');
+const total=Object.values(data.services).concat(Object.values(data.sets)).reduce((a,b)=>a+b,0);
+assert.equal(total,data.coverage.matchedUnits);
+assert.equal(total+data.coverage.unmatchedUnits,data.coverage.certificateUnits);
+const id=Object.keys(data.services).find(id=>data.services[id]>0),service={sid:id,name:'Переименовано',price:1};
+assert.equal(model.info(data,service,period).count,data.services[id]);
+assert.equal(model.info(data,{sid:'999999999'},period).count,null);
+assert.equal(model.info(data,{...service,custom:true},period).count,null);
+assert.equal(model.info(data,service,'01.12.2025–30.11.2026').count,null);
+assert.equal(model.info(null,service,period).count,null);
+const zeroId=Object.keys(data.services).find(id=>data.services[id]===0);
+assert.equal(model.info(data,{sid:zeroId},period).count,0);
+const setId=Object.keys(data.sets).find(id=>data.sets[id]>0);
+assert.equal(model.info(data,{id:setId,items:[service,service]},period).count,data.sets[setId]);
+for(const value of [-1,1.5,null,'2'])assert.throws(()=>model.validate({...data,services:{1:value}}));
+for(const dir of ['asc','desc']){
+ const rows=catalog.filter([{sid:'1',city:'СПб',sales12m:3},{sid:'2',city:'СПб',sales12m:0},{sid:'3',city:'СПб',sales12m:null}],'СПб',{sort:'sales-'+dir});
+ assert.deepEqual(rows.map(r=>r.sid),dir==='asc'?['2','1','3']:['1','2','3']);
+}
+const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+let body=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).find(s=>s.includes('var STORE_KEY = "wowlife-pricing-v1"'));
+body=body.replace('\n  load();\n','\n window.test={salesInfo,salesCell,pricingHead,collectionRow,colCount,renderSetItems,financialGetters,serviceOf,allSets,setData:function(d,c){SALES=d;CRM=c;},state};return;\n load();\n');
+const stub={addEventListener(){},querySelector(){return stub;}};
+const context={window:{addEventListener(){},WowlifePricingSales:model,WowlifePricingCatalog:require('./pricing-catalog'),WowlifePricing:require('./pricing-model'),WowlifePriceStructure:require('./price-structure')},document:{querySelector(){return stub;},addEventListener(){}}};
+vm.runInNewContext(body,context);const t=context.window.test;
+t.setData(data,{activationPeriod:period,catalog:{[id]:{...service,city:'СПб',price:1000,cost:500,activationPeriod:period}},sets:[]});
+assert.equal(t.serviceOf(id).sales12m,data.services[id]);
+t.state.sov[id]={name:'Новое название',price:5000};assert.equal(t.serviceOf(id).sales12m,data.services[id]);
+for(const kind of ['service','set','item'])assert(t.pricingHead(kind).includes('data-'+(kind==='item'?'item-':'')+'s="sales12m"'));
+assert(t.salesCell(service).includes('>'+data.services[id]+'</td>'));
+assert.equal((t.collectionRow('set').match(/<td/g)||[]).length,t.colCount());
+assert(html.includes('+activationCell(it)+salesCell(it)'),'Composition renders the same sales column');
+assert(html.includes('data-catalog-sort="sales"')&&html.includes("+'</td>'+salesCell(s)"),'Picker header and body include sales');
+console.log('PASS pricing sales: period, ID persistence, set isolation, zero/unknown, malformed data, both sorts, headers, composition, picker and total conservation');
