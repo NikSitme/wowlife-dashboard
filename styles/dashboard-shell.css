@@ -108,6 +108,33 @@ body {
 .dashboard-load-state[hidden] { display: none; }
 .dashboard-load-state button { margin-left: 12px; }
 
+/* Intrinsic table widths must not widen either column of the marketing grid. */
+.viz-root [data-panel="marketing"] .mk-grid > *,
+.viz-root [data-panel="marketing"] .card {
+  min-width: 0;
+  max-width: 100%;
+}
+.viz-root [data-panel="marketing"] .card > .mk-table,
+.viz-root [data-panel="marketing"] .mk-grid > .mk-table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.viz-root #ws-lead-activity .la-charts > div,
+.viz-root [data-panel="finmodel"] .fm-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.viz-root [data-panel="finmodel"] .fm-ctl,
+.viz-root [data-panel="finmodel"] .fm-kid {
+  grid-template-columns: minmax(0, 1fr) 120px;
+}
+.viz-root [data-panel="finmodel"] #fmTable {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 @media (max-width: 480px) {
   .viz-root { padding: 12px; }
   .viz-root > .wrap { padding: 12px 0 40px; }
