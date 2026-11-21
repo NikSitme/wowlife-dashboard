@@ -5,6 +5,7 @@
   var SOURCES=['Сайт','Ozon','Wildberries','Яндекс Маркет','Flowwow','Мегамаркет','B2B'];
   var ACTIVATION_METRIC='certificate-selection-v1';
   var CRM_METRIC='certificates-without-technical-v4';
+  var ORDER_METRIC='paid-certificate-orders-v1';
   var SALES_METRIC='site-crm-marketplace-classified-v3';
   function number(s){var n=Number(String(s==null?'':s).replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0;}
   function iso(s){s=String(s||'').trim();var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),value;
@@ -141,9 +142,20 @@
       var items=certificateLines(r[index['описание']]);out.push({id:id,date:d,city:city(r[index['город']]),source:source(r[index['источник']]),type:type,lead:String(r[index['из лида']]||'').trim()==='Y',revenue:number(r[index['сумма']]),quantity:items.reduce(function(n,item){return n+item.quantity;},0),items:items});
     });return out;}
   function crm(rows){var groups=new Map();successful(rows).forEach(function(r){
-      var key=JSON.stringify([r.date,r.city,r.source,r.type,r.lead]),g=groups.get(key);if(!g){g={date:r.date,city:r.city,source:r.source,type:r.type,lead:r.lead,revenue:0,orders:0,quantity:0};groups.set(key,g);}g.revenue+=r.revenue;g.orders++;g.quantity+=r.quantity;});
-    return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
+      var key=JSON.stringify([r.date,r.city,r.source,r.type,r.lead]),g=groups.get(key);if(!g){g={date:r.date,city:r.city,source:r.source,type:r.type,lead:r.lead,revenue:0,orders:0,quantity:0,paidOrderRevenue:0,paidOrders:0};groups.set(key,g);}g.revenue+=r.revenue;g.orders++;g.quantity+=r.quantity;
+      // Use the whole discounted basket once, irrespective of certificate count.
+      // Extras-only, technical and zero-sum deals are not paid checks.
+      if(r.revenue>0&&r.quantity>0){g.paidOrderRevenue+=r.revenue;g.paidOrders++;}});
+    return Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;g.paidOrderRevenue=Math.round(g.paidOrderRevenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date);});}
   function purchases(rows,s){return(rows||[]).filter(function(r){return r.date>=s.start&&r.date<=s.end&&selected(s.cities,r.city)&&selected(s.sources,r.source);});}
+  function orderStats(data,selection){
+    var empty={available:false,revenue:null,orders:null,avg:null};
+    if(!data||data.orderMetric!==ORDER_METRIC||!Array.isArray(data.purchaseRows))return empty;
+    var rows=purchases(data.purchaseRows,selection),out={available:true,revenue:0,orders:0,avg:null};
+    if(rows.some(function(r){return !Number.isFinite(r.paidOrderRevenue)||r.paidOrderRevenue<0||!Number.isSafeInteger(r.paidOrders)||r.paidOrders<0;}))return empty;
+    rows.forEach(function(r){out.revenue+=r.paidOrderRevenue;out.orders+=r.paidOrders;});
+    out.revenue=Math.round(out.revenue*100)/100;out.avg=out.orders?out.revenue/out.orders:null;return out;
+  }
   // Certificate delivery types always describe the Site channel. Only period
   // and cities come from the common filters; marketplace selections do not apply.
   function sitePurchases(rows,s){return purchases(rows,{start:s.start,end:s.end,cities:s.cities,sources:['Сайт']});}
@@ -190,5 +202,5 @@
     dates.sort();
     return{schemaVersion:1,generated_at:new Date().toISOString(),sourceStart:dates[0]||null,sourceEnd:dates[dates.length-1]||null,rows:Array.from(groups.values()).map(function(g){g.revenue=Math.round(g.revenue*100)/100;return g;}).sort(function(a,b){return a.date.localeCompare(b.date)||a.article.localeCompare(b.article)||a.city.localeCompare(b.city)||a.source.localeCompare(b.source);})};
   }
-  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,SALES_METRIC:SALES_METRIC,marketplaceQuantity:marketplaceQuantity,marketplaceSales:marketplaceSales,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging,taxonomy:classifier.taxonomy,financialProducts:classifier.financialProducts,financialAllocations:classifier.allocations,financialBasket:classifier.financialBasket,CLASSIFICATION_METRIC:classifier.METRIC};
+  return{CITIES:CITIES,SOURCES:SOURCES,ACTIVATION_METRIC:ACTIVATION_METRIC,CRM_METRIC:CRM_METRIC,ORDER_METRIC:ORDER_METRIC,orderStats:orderStats,SALES_METRIC:SALES_METRIC,marketplaceQuantity:marketplaceQuantity,marketplaceSales:marketplaceSales,activations:activations,isoDate:iso,number:number,today:today,city:city,source:source,shift:shift,days:days,preset:preset,previous:previous,filter:filter,serviceCategoryRows:serviceCategoryRows,serviceCategories:serviceCategories,comparisonKey:comparisonKey,comparisonSeriesKey:comparisonSeriesKey,comparisonSeries:comparisonSeries,namedComparisonItem:namedComparisonItem,comparisonIdIndex:comparisonIdIndex,comparisonSearch:comparisonSearch,sum:sum,successful:successful,crm:crm,purchases:purchases,sitePurchases:sitePurchases,purchaseStats:purchaseStats,certificateLines:certificateLines,certificateQuantity:certificateQuantity,packaging:packaging,taxonomy:classifier.taxonomy,financialProducts:classifier.financialProducts,financialAllocations:classifier.allocations,financialBasket:classifier.financialBasket,CLASSIFICATION_METRIC:classifier.METRIC};
 });
