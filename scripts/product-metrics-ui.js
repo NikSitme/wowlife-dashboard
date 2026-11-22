@@ -2,7 +2,7 @@
   'use strict';
   var root=document.getElementById('productMetrics');if(!root)return;
   var model=window.ProductMetrics,data=null,report=null,started=false,loading=false,requestId=0,reportKey='',error='',storageKey='wowlife-product-metrics-v1';
-  var metrics=[{id:'users',label:'Пользователи',unit:'count',color:'#2871d9'},{id:'buyers',label:'Buyers',unit:'count',color:'#f4773b'},{id:'payments',label:'Payments',unit:'count',color:'#16a085'},{id:'avgPrice',label:'Av. price',unit:'money',color:'#ad6bc7'},{id:'revenue',label:'Revenue',unit:'money',color:'#d49a24'},{id:'c1',label:'C1',unit:'percent',color:'#e05f83'}];
+  var metrics=[{id:'users',label:'Пользователи',unit:'count',color:'#2871d9'},{id:'buyers',label:'Платящие пользователи',unit:'count',color:'#f4773b'},{id:'payments',label:'Payments',unit:'count',color:'#16a085'},{id:'avgPrice',label:'Av. price',unit:'money',color:'#ad6bc7'},{id:'revenue',label:'Revenue',unit:'money',color:'#d49a24'},{id:'c1',label:'C1',unit:'percent',color:'#e05f83'}];
   var state={selected:['users','revenue'],from:null,to:null,mode:'values'},points=[],getReport=window.MetrikaUsers.client(function(url,options){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},30000);return fetch(url,Object.assign({},options,{signal:controller.signal})).finally(function(){clearTimeout(timer);});});
   try{var saved=JSON.parse(localStorage.getItem(storageKey)||'null');if(saved){state.selected=Array.isArray(saved.selected)?saved.selected.filter(function(id){return metrics.some(function(m){return m.id===id;});}):state.selected;state.from=/^\d{4}-\d{2}$/.test(saved.from)?saved.from:null;state.to=/^\d{4}-\d{2}$/.test(saved.to)?saved.to:null;state.mode=saved.mode==='index'?'index':'values';}}catch(ignored){}
   function $(id){return document.getElementById(id);}
@@ -18,9 +18,9 @@
   function draw(){
     if(!data)return;bounds();points=model.series(data,state.from,state.to,report);
     $('pmMeta').textContent='Сайт и прямые продажи · CRM по '+dateLabel(data.sourceEnd)+' · месяцы по Москве';
-    $('pmTableBody').innerHTML=points.map(function(p){var partial=p.from!==p.month+'-01'||p.to!==model.monthEnd(p.month);return '<tr><td>'+label(p.month)+(partial?'<small>по '+dateLabel(p.to)+'</small>':'')+'</td>'+['users','buyers','payments','avgPrice','revenue','c1'].map(function(id){return '<td'+(id==='c1'?' title="Новые покупатели: '+format(p.newBuyers,'buyers')+'"':'')+'>'+format(p[id],id)+'</td>';}).join('')+'</tr>';}).join('');
+    $('pmTableBody').innerHTML=points.map(function(p){var partial=p.from!==p.month+'-01'||p.to!==model.monthEnd(p.month);return '<tr><td>'+label(p.month)+(partial?'<small>по '+dateLabel(p.to)+'</small>':'')+'</td>'+['users','buyers','payments','avgPrice','revenue','c1'].map(function(id){return '<td'+(id==='c1'?' title="Новые покупатели: '+format(p.newBuyers,'buyers')+'"':'')+'>'+format(p[id],id)+(id==='buyers'&&p.missingContacts?'<small>'+p.missingContacts+' заказ'+(p.missingContacts===1?'':'ов')+' без ID контакта</small>':'')+'</td>';}).join('')+'</tr>';}).join('');
     var gaps=points.reduce(function(n,p){return n+p.missingContacts;},0);
-    $('pmCoverage').textContent=gaps?'В '+gaps+' заказах нет ID контакта: Buyers и C1 за затронутые месяцы не рассчитаны.':'';
+    $('pmCoverage').textContent=gaps?'В '+gaps+' заказах нет ID контакта: каждый учтён как один платящий пользователь. Возможные повторы не распознаны; C1 в этих месяцах пока неизвестна.':'';
     $('pmMetrikaStatus').textContent=loading?'Загружаю пользователей из Яндекс.Метрики…':error?'Пользователи и C1 недоступны: '+error:report?'Метрика: уникальные посетители каждого месяца · обновлено '+new Date(report.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow'}):'Пользователи и C1 загружаются отдельно от заказов.';
     $('pmRetry').hidden=!error;chart();
   }

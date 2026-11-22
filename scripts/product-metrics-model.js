@@ -18,11 +18,11 @@
     var sourceStart=all[0].date,sourceEnd=all[all.length-1].date,months={};
     for(var ym=sourceStart.slice(0,7);ym<=sourceEnd.slice(0,7);ym=add(ym,1)){
       var g=groups[ym]||{payments:0,cents:0,contacts:new Set(),newContacts:new Set(),missingContacts:0},revenue=g.cents/100;
-      months[ym]={from:ym===sourceStart.slice(0,7)?sourceStart:ym+'-01',to:ym===sourceEnd.slice(0,7)?sourceEnd:end(ym),buyers:g.missingContacts?null:g.contacts.size,knownBuyers:g.contacts.size,newBuyers:g.missingContacts?null:g.newContacts.size,missingContacts:g.missingContacts,payments:g.payments,revenue:revenue,avgPrice:g.payments?revenue/g.payments:null};
+      months[ym]={from:ym===sourceStart.slice(0,7)?sourceStart:ym+'-01',to:ym===sourceEnd.slice(0,7)?sourceEnd:end(ym),buyers:g.contacts.size+g.missingContacts,knownBuyers:g.contacts.size,newBuyers:g.missingContacts?null:g.newContacts.size,missingContacts:g.missingContacts,payments:g.payments,revenue:revenue,avgPrice:g.payments?revenue/g.payments:null};
     }
-    return {version:1,orderMetric:sales.ORDER_METRIC,scope:'website-direct',sourceStart:sourceStart,sourceEnd:sourceEnd,through:through,generated_at:generatedAt||new Date().toISOString(),months:months};
+    return {version:2,orderMetric:sales.ORDER_METRIC,scope:'website-direct',sourceStart:sourceStart,sourceEnd:sourceEnd,through:through,generated_at:generatedAt||new Date().toISOString(),months:months};
   }
-  function valid(data){return !!data&&data.version===1&&data.orderMetric===sales.ORDER_METRIC&&data.scope==='website-direct'&&!!data.months&&sales.isoDate(data.sourceStart)&&sales.isoDate(data.sourceEnd);}
+  function valid(data){return !!data&&data.version===2&&data.orderMetric===sales.ORDER_METRIC&&data.scope==='website-direct'&&!!data.months&&sales.isoDate(data.sourceStart)&&sales.isoDate(data.sourceEnd);}
   function series(data,start,finish,report){
     if(!valid(data))return[];
     var points=[];for(var ym=start;ym<=finish;ym=add(ym,1)){var m=data.months[ym];if(m)points.push(Object.assign({month:ym,users:null,c1:null},m));}
