@@ -413,5 +413,5 @@
     fetch('data/revenue-timeline.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(next){if(!updated || next.asOf>data.asOf)setData(next);}).catch(function(){if(!data)wrap.innerHTML='<p class="cap">Данные выручки не загрузились. Нажмите «Обновить данные».</p>';});
     return {render:render,setData:setData};
   }
-  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,presetRange:presetRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,restoreSelection:restoreSelection,mount:mount};
+  return {sources:SOURCES,isoDate:isoDate,fromRows:fromRows,keysFor:keysFor,buckets:buckets,series:series,shiftYear:shiftYear,monthRange:monthRange,presetRange:presetRange,monthSeries:monthSeries,moscowDate:moscowDate,comparison:comparison,hoverComparison:hoverComparison,restoreSelection:restoreSelection,linePath:linePath,mount:mount};
 });

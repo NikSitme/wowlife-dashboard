@@ -40,7 +40,7 @@
   }
 
   var records=new Set(),lookup=new WeakMap(),active=null,panel=null,view='',cursor='',mode='days',monthOrigin='',started=false;
-  var selector='[data-panel="opiu"] input[type="date"], .wsale-root input[type="date"]';
+  var selector='[data-panel="opiu"] input[type="date"], .wsale-root input[type="date"], #productMetrics input[type="date"]';
   var labels={fromDate:'Начало периода ОПиУ',toDate:'Конец периода ОПиУ',yearFromDate:'Начало периода динамики выручки',yearToDate:'Конец периода динамики выручки'};
   var calendarIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 14h1m3 0h1m3 0h1M8 17h1m3 0h1m3 0h1"/></svg>';
   function today(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
@@ -119,11 +119,11 @@
   function drawMonths(focusMonth){
     if(!active)return;
     var min=active.source.min,max=active.source.max,year=+view.slice(0,4),selected=active.source.value.slice(0,7),current=today().slice(0,7),months=yearMonths(year,min,max);
-    panel.innerHTML='<div class="dp-heading"><button type="button" class="dp-nav" data-move="-1" aria-label="Предыдущий год"'+(year<=1||min&&year-1<+min.slice(0,4)?' disabled':'')+'>←</button><h3 aria-live="polite">'+year+'</h3><button type="button" class="dp-nav" data-move="1" aria-label="Следующий год"'+(year>=9999||max&&year+1>+max.slice(0,4)?' disabled':'')+'>→</button></div><div class="dp-month-grid" role="grid" aria-label="Месяцы '+year+'">'+Array.from({length:4},function(_,row){return '<div class="dp-month-row" role="row">'+months.slice(row*3,row*3+3).map(function(m){return '<button type="button" role="gridcell" class="dp-month" data-month="'+m.month+'" aria-label="'+m.label+' '+year+'" aria-selected="'+(m.month===selected)+'"'+(m.month===current?' aria-current="date"':'')+' tabindex="'+(m.month===view&&!m.disabled?'0':'-1')+'"'+(m.disabled?' disabled':'')+'>'+m.label+'</button>';}).join('')+'</div>';}).join('')+'</div><p class="dp-month-hint">Выберите месяц, затем день</p>';
+    panel.innerHTML='<div class="dp-heading"><button type="button" class="dp-nav" data-move="-1" aria-label="Предыдущий год"'+(year<=1||min&&year-1<+min.slice(0,4)?' disabled':'')+'>←</button><h3 aria-live="polite">'+year+'</h3><button type="button" class="dp-nav" data-move="1" aria-label="Следующий год"'+(year>=9999||max&&year+1>+max.slice(0,4)?' disabled':'')+'>→</button></div><div class="dp-month-grid" role="grid" aria-label="Месяцы '+year+'">'+Array.from({length:4},function(_,row){return '<div class="dp-month-row" role="row">'+months.slice(row*3,row*3+3).map(function(m){return '<button type="button" role="gridcell" class="dp-month" data-month="'+m.month+'" aria-label="'+m.label+' '+year+'" aria-selected="'+(m.month===selected)+'"'+(m.month===current?' aria-current="date"':'')+' tabindex="'+(m.month===view&&!m.disabled?'0':'-1')+'"'+(m.disabled?' disabled':'')+'>'+m.label+'</button>';}).join('')+'</div>';}).join('')+'</div><p class="dp-month-hint">'+(active.source.dataset.monthOnly==='true'?'Выберите месяц':'Выберите месяц, затем день')+'</p>';
     position();if(focusMonth){var button=panel.querySelector('[data-month="'+view+'"]');if(!button||button.disabled)button=panel.querySelector('[data-month]:not(:disabled)');if(button)button.focus({preventScroll:true});}
   }
   function open(r){
-    close(false);refresh();active=r;mode='days';
+    close(false);refresh();active=r;mode=r.source.dataset.monthOnly==='true'?'months':'days';
     cursor=clamp(isoDate(r.source.value)||today(),r.source.min,r.source.max);view=cursor.slice(0,7);
     panel.hidden=false;panel.setAttribute('aria-label','Календарь: '+r.text.getAttribute('aria-label').toLowerCase());r.toggle.setAttribute('aria-expanded','true');draw(true);
   }
@@ -137,7 +137,7 @@
       var move=e.target.closest('[data-move]'),day=e.target.closest('[data-date]'),month=e.target.closest('[data-month]'),title=e.target.closest('[data-choose-month]');
       if(!active)return;
       if(title){monthOrigin=view;mode='months';draw(true);}
-      else if(month&&!month.disabled){cursor=dateInMonth(cursor,month.dataset.month,active.source.min,active.source.max);view=month.dataset.month;mode='days';draw(true);}
+      else if(month&&!month.disabled){cursor=dateInMonth(cursor,month.dataset.month,active.source.min,active.source.max);view=month.dataset.month;if(active.source.dataset.monthOnly==='true'){commit(active,cursor,true);return;}mode='days';draw(true);}
       else if(move&&!move.disabled){
         var direction=+move.dataset.move;
         if(mode==='months')view=String(+view.slice(0,4)+direction).padStart(4,'0')+view.slice(4);
@@ -147,7 +147,7 @@
       else if(day&&!day.disabled)commit(active,day.dataset.date,true);
     });
     panel.addEventListener('keydown',function(e){
-      if(e.key==='Escape'){e.preventDefault();if(mode==='months'){view=monthOrigin;mode='days';draw(false);panel.querySelector('[data-choose-month]').focus({preventScroll:true});}else close(true);return;}
+      if(e.key==='Escape'){e.preventDefault();if(mode==='months'&&active.source.dataset.monthOnly!=='true'){view=monthOrigin;mode='days';draw(false);panel.querySelector('[data-choose-month]').focus({preventScroll:true});}else close(true);return;}
       if(e.target.matches('[data-month]')){
         var offsets={ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3,PageUp:-12,PageDown:12},offset=offsets[e.key];
         if(e.key==='Home')offset=1-Number(view.slice(5));else if(e.key==='End')offset=12-Number(view.slice(5));

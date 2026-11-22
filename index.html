@@ -14,10 +14,10 @@
 })();
 </script>
 <link rel="stylesheet" href="./styles/dashboard-shell.css?v=20261119">
-<link rel="stylesheet" href="./styles/product-metrics.css?v=20261122b">
+<link rel="stylesheet" href="./styles/product-metrics.css?v=20261122c">
 <link rel="stylesheet" href="./scripts/date-picker.css?v=month-grid-20261115">
 <link rel="stylesheet" href="./scripts/lead-activity.css?v=20261118">
-<script src="./scripts/date-picker.js?v=month-grid-20261115" defer></script>
+<script src="./scripts/date-picker.js?v=product-month-20261122" defer></script>
 <script src="./scripts/dashboard-runtime.js?v=20261118"></script>
 <script src="./scripts/dashboard-cache.js?v=20261118"></script>
 <style>
@@ -4001,16 +4001,17 @@ window.__salesActSetData = function(newData){
   <section class="card pm-card" id="productMetrics" aria-labelledby="pmTitle">
     <h2 id="pmTitle">Маркетинг и продукт</h2>
     <p class="pm-subtitle">Пользователи, покупки и выручка сайта в динамике</p>
-    <div class="pm-toolbar">
-      <label>Диапазон<select id="pmPreset"><option value="12m">Последние 12 месяцев</option><option value="year">Этот год</option><option value="all">Вся история</option><option value="custom">Свой диапазон</option></select></label>
-      <label>С месяца<input id="pmFrom" type="month" aria-label="Начальный месяц"></label>
-      <label>По месяц<input id="pmTo" type="month" aria-label="Конечный месяц"></label>
+    <div class="pm-toolbar rd-period-grid">
+      <label class="rd-field"><span class="rd-label">Период</span><select id="pmPreset" disabled><option value="12m">Последние 12 месяцев</option><option value="year">Текущий год</option><option value="last_month">Прошлый месяц</option><option value="all">Всё время</option><option value="custom">Свой диапазон</option></select></label>
+      <label class="rd-field"><span class="rd-label">С</span><input id="pmFrom" type="date" disabled data-month-only="true" aria-label="Начало периода продуктовых метрик"></label>
+      <label class="rd-field"><span class="rd-label">По</span><input id="pmTo" type="date" disabled data-month-only="true" aria-label="Конец периода продуктовых метрик"></label>
     </div>
+    <p class="pm-help">Помесячная динамика · выбранные месяцы целиком</p>
     <p class="pm-meta" id="pmMeta" aria-live="polite">Загружаю показатели…</p>
     <div class="pm-table-wrap"><table class="pm-table"><thead><tr>
       <th scope="col">Месяц</th><th scope="col">Пользователи<small>Яндекс.Метрика</small></th><th scope="col">Платящие пользователи<small>Покупатели оплаченных заказов</small></th><th scope="col">Payments<small>Оплаченные заказы</small></th><th scope="col">Av. price<small>Средний чек заказа</small></th><th scope="col">Revenue<small>Выручка заказов CRM</small></th><th scope="col">C1<small>В первую покупку</small></th>
     </tr></thead><tbody id="pmTableBody"></tbody></table></div>
-    <p class="pm-status" id="pmCoverage"></p>
+    <p class="pm-status" id="pmCoverage" hidden></p>
     <div class="pm-status"><span id="pmMetrikaStatus" aria-live="polite"></span><button id="pmRetry" type="button" hidden>Повторить</button></div>
     <h3>Динамика показателей</h3>
     <div id="pmChecks" class="pm-checks" role="group" aria-label="Метрики на графике"></div>
@@ -4908,8 +4909,8 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
-<script src="scripts/product-metrics-ui.js?v=20261122b"></script>
-<script src="scripts/revenue-dynamics.js?v=startup-20261118"></script>
+<script src="scripts/product-metrics-ui.js?v=20261122c"></script>
+<script src="scripts/revenue-dynamics.js?v=product-style-20261122"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){
