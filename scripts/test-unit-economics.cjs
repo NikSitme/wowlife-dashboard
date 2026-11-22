@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict');
+const model=require('./unit-economics-model.js');
+const presets=require(process.env.UNIT_PRESETS||'../data/unit-economics-presets.json').presets;
+const near=(a,b)=>assert.ok(Math.abs(a-b)<.00001,`${a} != ${b}`);
+for(const p of presets){const r=model.calculate(p.input);assert.equal(r.valid,true);for(const k of ['buyers','payments','revenue','grossProfit','profit','cogsTotal','margin'])near(r[k],p.expected[k]);near(r.profit,r.revenue-r.cogsTotal-r.acquisition-r.fixed);}
+const b=presets[0].input,r=model.calculate(b);
+near(model.edit(b,'users',b.users*2).result.revenue,r.revenue*2);
+near(model.edit(b,'buyers',r.buyers*2).result.conversion,b.conversion*2);
+near(model.edit(b,'payments',r.payments*2).result.frequency,b.frequency*2);
+near(model.edit(b,'revenue',r.revenue*2).result.avgPrice,b.avgPrice*2);
+near(model.edit(b,'profit',500000).result.profit,500000);
+near(model.edit(b,'cogs',40).result.margin,60);
+near(model.edit(b,'margin',40).result.cogs,60);
+near(model.edit(b,'cac',500).result.acquisition,500*r.buyers);
+near(model.edit(b,'cpu',10).result.acquisition,10*r.users);
+assert.equal(model.edit(b,'conversion',101).valid,false);
+assert.equal(model.edit(b,'frequency',.5).valid,false);
+assert.equal(model.edit(b,'partners',-1).valid,false);
+assert.equal(model.edit(b,'fixed','').valid,false);
+const zero=model.edit(b,'users',0).input,z=model.calculate(zero);assert.equal(z.cac,null);assert.equal(z.cpu,null);assert.equal(z.profitPercent,null);assert.equal(model.edit(zero,'profit',0).valid,false);assert.equal(model.edit(zero,'payments',1).valid,false);
+const loss=model.edit(b,'cogs',120);assert.equal(loss.valid,true);assert.equal(loss.result.breakEvenRevenue,null);assert.ok(loss.result.grossProfit<0);
+const original=JSON.stringify(b);model.edit(b,'profit',100);model.sensitivity(b);assert.equal(JSON.stringify(b),original);
+for(const s of model.sensitivity(b))assert.ok(s.delta>0);
+console.log(JSON.stringify({passed:true,sourcePresetsReconciled:presets.length,firstPresetProfit:r.profit,checks:['all source formulas and amounts','inverse editing','zero denominators','loss-making margin','target profit','sensitivity','input immutability']},null,2));

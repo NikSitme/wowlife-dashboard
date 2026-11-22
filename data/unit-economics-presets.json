@@ -1,0 +1,35 @@
+{
+  "presets": [
+    {
+      "id": "example",
+      "label": "Учебный пример",
+      "input": {
+        "users": 10000,
+        "conversion": 2,
+        "frequency": 1.1,
+        "avgPrice": 5000,
+        "acquisition": 100000,
+        "fixed": 300000,
+        "costs": {
+          "packaging": 1,
+          "vat": 0,
+          "usn": 0,
+          "bank": 0,
+          "acquiring": 2,
+          "partners": 45,
+          "delivery": 2,
+          "other": 0
+        }
+      },
+      "expected": {
+        "buyers": 200,
+        "payments": 220,
+        "revenue": 1100000,
+        "grossProfit": 550000,
+        "profit": 150000,
+        "cogsTotal": 550000,
+        "margin": 50
+      }
+    }
+  ]
+}
