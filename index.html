@@ -14,6 +14,7 @@
 })();
 </script>
 <link rel="stylesheet" href="./styles/dashboard-shell.css?v=20261119">
+<link rel="stylesheet" href="./styles/product-metrics.css?v=20261122">
 <link rel="stylesheet" href="./scripts/date-picker.css?v=month-grid-20261115">
 <link rel="stylesheet" href="./scripts/lead-activity.css?v=20261118">
 <script src="./scripts/date-picker.js?v=month-grid-20261115" defer></script>
@@ -523,7 +524,7 @@
     <button class="tabbtn active" data-tab="opiu" type="button">ОПиУ</button>
     <button class="tabbtn" data-tab="salesact" type="button">Продажи и активации</button>
     <button class="tabbtn" data-tab="wowsales" type="button">Аналитика продаж</button>
-    <button class="tabbtn" data-tab="marketing" type="button">Маркетинг</button>
+    <button class="tabbtn" data-tab="marketing" type="button">Маркетинг и продукт</button>
     <button class="tabbtn" data-tab="kreditorka" type="button">Кредиторка</button>
     <button class="tabbtn" data-tab="fot" type="button">ФОТ</button>
     <button class="tabbtn" data-tab="finmodel" type="button">Финмодель</button>
@@ -539,7 +540,7 @@
         <button type="button" class="chip" id="docsClose">Закрыть</button>
       </div>
       <nav class="docs-nav">
-        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-mkt">Маркетинг</a><a href="#doc-pricing">Ценообразование</a><a href="#doc-known">Особенности</a>
+        <a href="#doc-how">Как устроен</a><a href="#doc-src">Источники</a><a href="#doc-common">Общие правила</a><a href="#doc-opiu">ОПиУ</a><a href="#doc-sales">Продажи и активации</a><a href="#doc-ws">Аналитика продаж</a><a href="#doc-kred">Кредиторка</a><a href="#doc-fot">ФОТ</a><a href="#doc-fm">Финмодель</a><a href="#doc-mkt">Маркетинг и продукт</a><a href="#doc-pricing">Ценообразование</a><a href="#doc-known">Особенности</a>
       </nav>
       <div class="docs-body">
 
@@ -607,7 +608,8 @@
       <p><b>Режимы.</b> Процентный рычаг считается как доля от базы канала (вся выручка, сайт или маркетплейсы) и растёт вместе с ней; режим «₽ в месяц» фиксирует сумму. Возвраты и активации по умолчанию в рублях, как в ОПиУ. У рычагов со стрелкой есть разбивка по статьям Адеска: целое всегда равно сумме статей, правка статьи меняет целое, правка целого масштабирует статьи пропорционально. Разбивка ФОТ — по группам Адеска, а отделы продукта, заботы (ФОТ ОЗ) и продаж (ФОТ ОП) раскрыты до людей; закупка рекламы в маркетинге раскрыта по каналам (Яндекс Директ, Таргет ВК, посевы, блогеры и другие). Детализация до людей и каналов появляется после первого обновления данных.</p>
       <p><b>Расчёт.</b> Чистая выручка = выручка − возвраты. Маржинальная прибыль = чистая выручка − переменные. Операционная = маржа − постоянные. Чистая = операционная − налоги − проценты. Остаток = чистая − тело кредита − дивиденды. Точка безубыточности — выручка при той же структуре каналов, при которой чистая прибыль равна нулю; рычаги в режиме «₽» считаются постоянными. Чувствительность — пересчёт модели при сдвиге одного рычага. Изменённые рычаги хранятся в браузере, «Сбросить рычаги к базе» очищает их; смена базы тоже сбрасывает.</p>
 
-      <h3 id="doc-mkt">10. Вкладка «Маркетинг»</h3>
+      <h3 id="doc-mkt">10. Вкладка «Маркетинг и продукт»</h3>
+      <p>Продуктовая таблица и график: уникальные пользователи Метрики, платящие Buyers, оплаченные заказы Payments, средний чек заказа, выручка этих заказов CRM и C1 (новые платящие / пользователи). Диапазон общий для таблицы и графика; по умолчанию включены пользователи и выручка. Для сравнения изменений разных масштабов есть индекс «начало = 100».</p>
       <p>Только сайт (МСК + СПБ), маркетплейсы исключены. Главный элемент — выбор месяца; изменения считаются к предыдущему месяцу и, в скобках, к тому же месяцу прошлого года.</p>
       <ul>
         <li><b>Заказы и клиенты</b> — таблица «Никита», лист «Маркетинг»: сделки «Сделка успешна» по дате оплаты с источником не маркетплейса. Покупатель — id контакта CRM (сделка без контакта считается отдельным покупателем). Новый покупатель — первая успешная сделка контакта в этом месяце. Канал заказа — по utm_source и источнику: платный поиск (utm yandex…), блогеры и соцсети (bloger_*, instagram, tg, followish), email (unisender), ВКонтакте, звонки/мессенджеры/офис (источники Звонок, Офис, Wazzup, CRM-форма, Квиз, MAX, Telegram), органика и прямые заходы (google, direct, пустой utm).</li>
@@ -2685,7 +2687,8 @@ window.__salesActSetData = function(newData){
 <script id="ws-dashboard-data-partners" type="application/json" data-src="data/dashboard-partners.json?v=f88b4d6612b57101">{}</script>
 </div>
 <script src="scripts/sales-classifier.js?v=adesk-only-classification-20261118"></script>
-<script src="scripts/sales-analytics-model.js?v=order-check-20261121"></script>
+<script src="scripts/sales-analytics-model.js?v=product-20261122"></script>
+<script src="scripts/product-metrics-model.js?v=20261122"></script>
 <script src="scripts/lead-activity.js?v=20261118"></script>
 <script src="scripts/lead-activity-ui.js?v=20261118-labels"></script>
 <script>
@@ -3995,7 +3998,33 @@ window.__salesActSetData = function(newData){
   .mk-legend .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
   .mk-cohort td.mat { color: var(--text-muted); }
 </style>
+  <section class="card pm-card" id="productMetrics" aria-labelledby="pmTitle">
+    <h2 id="pmTitle">Маркетинг и продукт</h2>
+    <p class="pm-subtitle">Пользователи, покупки и выручка сайта в динамике</p>
+    <div class="pm-toolbar">
+      <label>Диапазон<select id="pmPreset"><option value="12m">Последние 12 месяцев</option><option value="year">Этот год</option><option value="all">Вся история</option><option value="custom">Свой диапазон</option></select></label>
+      <label>С месяца<input id="pmFrom" type="month" aria-label="Начальный месяц"></label>
+      <label>По месяц<input id="pmTo" type="month" aria-label="Конечный месяц"></label>
+    </div>
+    <p class="pm-meta" id="pmMeta" aria-live="polite">Загружаю показатели…</p>
+    <div class="pm-table-wrap"><table class="pm-table"><thead><tr>
+      <th scope="col">Месяц</th><th scope="col">Пользователи<small>Яндекс.Метрика</small></th><th scope="col">Buyers<small>Платящие покупатели</small></th><th scope="col">Payments<small>Оплаченные заказы</small></th><th scope="col">Av. price<small>Средний чек заказа</small></th><th scope="col">Revenue<small>Выручка заказов CRM</small></th><th scope="col">C1<small>В первую покупку</small></th>
+    </tr></thead><tbody id="pmTableBody"></tbody></table></div>
+    <p class="pm-status" id="pmCoverage"></p>
+    <div class="pm-status"><span id="pmMetrikaStatus" aria-live="polite"></span><button id="pmRetry" type="button" hidden>Повторить</button></div>
+    <h3>Динамика показателей</h3>
+    <div id="pmChecks" class="pm-checks" role="group" aria-label="Метрики на графике"></div>
+    <div class="pm-chart-controls"><p id="pmScaleNote"></p><label><select id="pmMode" aria-label="Масштаб графика"><option value="values">Значения</option><option value="index">Динамика · начало = 100</option></select></label></div>
+    <div class="pm-chart" id="pmChart"></div>
+    <details class="pm-definitions"><summary>Как считаются показатели</summary>
+      <p>Пользователи — уникальные посетители всего сайта за каждый месяц, без суммирования дней. Buyers — уникальные ID контактов с оплаченной покупкой за месяц. Payments — уникальные успешные заказы с сертификатами и положительной суммой. Revenue — сумма этих заказов после скидок, включая позиции корзины. Av. price = Revenue / Payments. Маркетплейсы и B2B исключены.</p>
+      <p>C1 = новые покупатели / пользователи сайта. Новый покупатель — клиент с первой оплаченной покупкой сайта или прямых каналов в доступной истории CRM с января 2024 года; покупки до начала истории неизвестны. Прямые продажи входят в покупателей, но трафик Метрики учитывает только сайт. Поэтому C1 — общая конверсия сайта и прямых продаж относительно трафика сайта, без сквозной привязки посетителя к покупке. Покупатели и пользователи уникальны внутри месяца: итоги месяцев не складываются в число уникальных людей за весь диапазон.</p>
+      <p>Данные заказов — CRM, трафика — Метрика; оба источника обрезаются одной датой. Неполный месяц отмечен датой. Прочерк означает отсутствие данных или невозможность расчёта. Кассовые поступления Адеска могут отличаться от выручки заказов по дате и составу.</p>
+    </details>
+  </section>
 
+
+  <p class="pm-help">Маркетинговые отчёты ниже используют все успешные сделки, включая бесплатные сертификаты. Их контакты и когорты отличаются от платящих покупателей в продуктовой таблице.</p>
   <div class="card">
     <div class="mk-head">
       <label>Месяц</label>
@@ -4035,8 +4064,8 @@ window.__salesActSetData = function(newData){
 
   <div class="mk-grid" style="margin-top:16px">
     <div class="card">
-      <h2>Новые и повторные покупатели</h2>
-      <p class="cap">По месяцам за последний год · покупатель — id контакта CRM, новый — первая успешная сделка в этом месяце</p>
+      <h2>Новые и повторные контакты успешных сделок</h2>
+      <p class="cap">По месяцам за последний год · включая бесплатные сделки; контакт — ID CRM, при его отсутствии — отдельная сделка. Новый — первая успешная сделка в истории</p>
       <div class="mk-legend"><span><span class="k" style="background:var(--s1)"></span>Новые</span><span><span class="k" style="background:var(--s4)"></span>Повторные</span></div>
       <svg class="mk-svg" id="mkBuyersSvg" viewBox="0 0 440 200"></svg>
     </div>
@@ -4879,6 +4908,7 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
+<script src="scripts/product-metrics-ui.js?v=20261122"></script>
 <script src="scripts/revenue-dynamics.js?v=startup-20261118"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
@@ -7066,7 +7096,7 @@ window.__salesActSetData = function(newData){
   function ymDiff(a, b){ return (parseInt(b.slice(0,4),10) - parseInt(a.slice(0,4),10)) * 12 + (parseInt(b.slice(5,7),10) - parseInt(a.slice(5,7),10)); }
   function opiuMonth(ym){ return (window.__opiuData || []).filter(function(m){ return m.label === ym; })[0] || null; }
 
-  window.__marketingSetData = function(d){ if(d.salesMetric !== window.SalesAnalytics.CRM_METRIC)return; MK = d; if (!state.month || !MK.months[state.month]) state.month = defaultMonth(); render(); };
+  window.__marketingSetData = function(d){ if(d.salesMetric !== window.SalesAnalytics.CRM_METRIC)return; MK = d; if(d.product&&window.__productMetricsSetData)window.__productMetricsSetData(d.product); if (!state.month || !MK.months[state.month]) state.month = defaultMonth(); render(); };
   window.__marketingSetMetrika = function(d){ MET = d && d.months ? d : null; render(); };
   window.__marketingSetContent = function(d){ CT = d && d.months ? d : null; render(); };
   function defaultMonth(){ var now = new Date(); var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0"); var prev = addMonths(cur, -1); return MK && MK.months[prev] ? prev : (MK ? MK.range[1] : cur); }
@@ -7137,9 +7167,9 @@ window.__salesActSetData = function(newData){
       kpi("Расходы на маркетинг", ex ? fmtR(ex.total) : "—", ex ? ex.total : null, g(prev, "exp") && prev.exp.total, g(yoy, "exp") && yoy.exp.total, ex ? "реклама " + fmtN(ex.advT) + " · ФОТ " + fmtN(ex.fotT) + " · прочее " + fmtN(ex.otherT) : "нет ОПиУ за месяц", true) +
       kpi("Визиты", cur.visits !== null ? fmtN(cur.visits) : "—", cur.visits, g(prev, "visits"), g(yoy, "visits"), cur.visits !== null ? "Метрика, счётчик 32072156" : "Метрика не подключена") +
       kpi("Сертификаты на 100 визитов", fmtP(cur.conv, 2), cur.conv, g(prev, "conv"), g(yoy, "conv"), "сертификаты сайта ÷ визиты") +
-      kpi("CAC", money(cur.cac), cur.cac, g(prev, "cac"), g(yoy, "cac"), "реклама ÷ новые покупатели (" + fmtN(cur.newBuyers) + ")" + (cur.cacFull !== null ? " · полный с ФОТ " + fmtN(cur.cacFull) : ""), true) +
+      kpi("CAC", money(cur.cac), cur.cac, g(prev, "cac"), g(yoy, "cac"), "реклама ÷ новые контакты успешных сделок (" + fmtN(cur.newBuyers) + ")" + (cur.cacFull !== null ? " · полный с ФОТ " + fmtN(cur.cacFull) : ""), true) +
       kpi("ROMI", fmtP(cur.romi, 0), cur.romi, g(prev, "romi"), g(yoy, "romi"), cur.margin !== null ? "маржа сайта " + fmtN(cur.margin) + " ₽" : "нет ОПиУ за месяц") +
-      kpi("Сертификаты сайта", fmtN(cur.orders), cur.orders, g(prev, "orders"), g(yoy, "orders"), fmtR(cur.revenue) + " · покупателей " + fmtN(cur.buyers)) +
+      kpi("Сертификаты сайта", fmtN(cur.orders), cur.orders, g(prev, "orders"), g(yoy, "orders"), fmtR(cur.revenue) + " · контактов успешных сделок " + fmtN(cur.buyers)) +
       kpi("Расходы на сертификат", money(cur.cpo), cur.cpo, g(prev, "cpo"), g(yoy, "cpo"), "реклама ÷ сертификаты сайта", true) +
       kpi("Retention", fmtP(cur.retShare, 0), cur.retShare, g(prev, "retShare"), g(yoy, "retShare"), "доля сертификатов повторных покупателей") +
       kpi("LTV 12 мес", money(cur.ltv), cur.ltv, g(prev, "ltv"), g(yoy, "ltv"), cur.ltvInfo ? "выручка на клиента · когорты " + lab(cur.ltvInfo.from) + " – " + lab(cur.ltvInfo.to) : "когорты ещё не созрели") +
@@ -7248,7 +7278,7 @@ window.__salesActSetData = function(newData){
     list.reverse().forEach(function(k){ var o = document.createElement("option"); o.value = k; o.textContent = lab(k); sel.appendChild(o); });
     sel.value = state.month;
     var m = MK.months[state.month], partial = MK.lastDate && MK.lastDate.slice(0, 7) === state.month;
-    root.querySelector("#mkHeadNote").textContent = (m ? fmtN(m.orders) + " сертификатов, " + fmtN(m.buyers) + " покупателей" : "нет сделок") + (partial ? " · данные по " + MK.lastDate.slice(8, 10) + "." + MK.lastDate.slice(5, 7) + ", месяц неполный" : "");
+    root.querySelector("#mkHeadNote").textContent = (m ? fmtN(m.orders) + " сертификатов, " + fmtN(m.buyers) + " контактов успешных сделок" : "нет сделок") + (partial ? " · данные по " + MK.lastDate.slice(8, 10) + "." + MK.lastDate.slice(5, 7) + ", месяц неполный" : "");
   }
   function render(){
     if (!MK) return;
@@ -8164,7 +8194,7 @@ window.__salesActSetData = function(newData){
       co.all.repeaters = Object.keys(co.all.rep).length; delete co.all.rep;
     });
     var keys = Object.keys(months).sort();
-    return { salesMetric: window.SalesAnalytics.CRM_METRIC, certificates: deals.reduce(function(n,d){return n+d.qty;},0), months: months, cohorts: cohorts, range: [keys[0], keys[keys.length - 1]], lastDate: deals[deals.length - 1].d, deals: deals.length, contacts: Object.keys(first).length };
+    return { product: window.ProductMetrics ? window.ProductMetrics.fromRows(mktRows,window.SalesAnalytics.shift(window.SalesAnalytics.today(),-1)) : null, salesMetric: window.SalesAnalytics.CRM_METRIC, certificates: deals.reduce(function(n,d){return n+d.qty;},0), months: months, cohorts: cohorts, range: [keys[0], keys[keys.length - 1]], lastDate: deals[deals.length - 1].d, deals: deals.length, contacts: Object.keys(first).length };
   }
 
   var updateInFlight=null;
@@ -8287,7 +8317,7 @@ window.__salesActSetData = function(newData){
       try {
         mkData = computeMarketing(fetches.nikitaMarketing, fetches.nikitaActivation);
         window.__marketingSetData(mkData);
-        results.marketing = "Маркетинг: " + mkData.certificates + " сертификатов сайта, " + mkData.contacts + " клиентов, по " + mkData.lastDate;
+        results.marketing = "Маркетинг и продукт: " + mkData.certificates + " сертификатов сайта, " + mkData.contacts + " клиентов, по " + mkData.lastDate;
       } catch (e) { errors.push(e.message); }
     }
 
@@ -8351,7 +8381,7 @@ window.__salesActSetData = function(newData){
     btn.textContent = originalText;
     if (statusEl){
       statusEl.textContent = okParts.length ? ("Обновлено " + fmtTime(new Date())) + (errors.length ? " (частично)" : "") : "Обновление не удалось";
-      var partNames = {opiu:"ОПиУ",salesact:"Продажи и активации",wowsales:"Аналитика продаж",kreditorka:"Кредиторка",marketing:"Маркетинг",leads:"Активность лидов"};
+      var partNames = {opiu:"ОПиУ",salesact:"Продажи и активации",wowsales:"Аналитика продаж",kreditorka:"Кредиторка",marketing:"Маркетинг и продукт",leads:"Активность лидов"};
       var missingParts = Object.keys(results).filter(function(key){return !results[key];});
       if (missingParts.length) statusEl.textContent += ". Не обновлено: " + missingParts.map(function(key){return partNames[key];}).join(", ");
       statusEl.title = [].concat(okParts, errors).join("\n");

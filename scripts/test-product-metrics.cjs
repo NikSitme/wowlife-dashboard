@@ -1,0 +1,19 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const model=require('./product-metrics-model.js'),sales=require('./sales-analytics-model.js');
+const h=['id сделки','стадия','id контакта','тип товара','город','дата оплаты','сумма','источник','из лида','описание'];
+const row=(id,contact,date,amount,src='Web-site',desc='Подарок x2 — 1000 руб.')=>[id,'Сделка успешна',contact,'Электронный','СПб',date,amount,src,'N',desc];
+const raw=[h,row('1','a','2025-12-01',2000),row('2','a','2026-01-01',3000),row('3','a','2026-01-02',4000),row('4','b','2026-01-03',5000),row('5','b','2026-02-01',6000),row('6','c','2026-02-01',0),row('7','d','2026-02-01',100,'Web-site','Доплата x1 — 100 руб.'),row('8','e','2026-02-01',300,'Ozon'),row('9','f','2026-03-01',500)];
+raw.push(raw[2],row('bad','z','2026-02-30',100));
+const d=model.fromRows(raw,'2026-02-28','2026-03-01T00:00:00Z');
+assert.equal(d.months['2026-01'].buyers,2);assert.equal(d.months['2026-01'].newBuyers,1);assert.equal(d.months['2026-01'].payments,3);assert.equal(d.months['2026-01'].revenue,12000);assert.equal(d.months['2026-01'].avgPrice,4000);
+assert.equal(d.months['2026-02'].buyers,1);assert.equal(d.months['2026-02'].newBuyers,0);assert.equal(d.months['2026-02'].payments,1);assert(!d.months['2026-03']);
+assert.equal(d.sourceEnd,'2026-02-01');
+const report={version:1,metric:'ym:s:users',step:'month',points:[{from:'2026-01-01',to:'2026-01-31',users:100},{from:'2026-02-01',to:'2026-02-01',users:20}]};
+const series=model.series(d,'2026-01','2026-02',report);assert.equal(series[0].c1,.01);assert.equal(series[1].c1,0);assert.equal(series[1].users,20);
+assert.equal(model.series(d,'2026-01','2026-02',{...report,points:[{from:'2026-01-01',to:'2026-01-30',users:100}]})[0].users,null,'No substitution of daily sums or mismatched ranges');
+const missing=model.fromRows([h,row('1','','2026-01-01',100)],'2026-02-28');assert.equal(missing.months['2026-01'].buyers,null);assert.equal(missing.months['2026-01'].newBuyers,null);assert.equal(missing.months['2026-01'].payments,1);
+const real=JSON.parse(fs.readFileSync('data/product-metrics.json','utf8'));assert(model.valid(real));assert.equal(real.months['2026-10'].buyers,639);assert.equal(real.months['2026-10'].newBuyers,510);assert.equal(real.months['2026-10'].payments,664);assert.equal(real.months['2026-10'].revenue,4846421);
+assert(!JSON.stringify(real).includes('id контакта'));assert(!JSON.stringify(real).includes('contacts":'));
+const {parseCsv}=require('./build-revenue-timeline.cjs');const source=process.argv[2];let checks=0;if(source){const rows=parseCsv(fs.readFileSync(source,'utf8')),agg=sales.crm(rows),rebuilt=model.fromRows(rows,'2026-11-21');for(const m of Object.values(rebuilt.months)){const expected=sales.orderStats({orderMetric:sales.ORDER_METRIC,purchaseRows:agg},{start:m.from,end:m.to,sources:['Сайт'],cities:sales.CITIES});assert.equal(m.payments,expected.orders);assert.equal(m.revenue,expected.revenue);assert.equal(m.avgPrice,expected.avg);checks++;}}
+const ui=fs.readFileSync('scripts/product-metrics-ui.js','utf8');assert(ui.includes("selected:['users','revenue']"));assert(ui.includes('id!==requestId'));assert(ui.includes('report=null'));assert(ui.includes('setTimeout(function(){controller.abort();},30000)'));assert(ui.includes("saved.mode==='index'"));
+console.log(JSON.stringify({passed:true,monthlyReconciliations:checks,october:real.months['2026-10'],checks:['buyer deduplication','first paid customer from historical orders','basket counts not certificates','duplicates/zero/extras/marketplace/future excluded','missing contacts unknown','exact audience ranges and C1','only aggregated public data']},null,2));
