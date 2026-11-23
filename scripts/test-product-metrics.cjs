@@ -23,3 +23,6 @@ assert(!ui.includes("id==='buyers'&&p.missingContacts"),'no per-value technical 
 
 const anonC1=model.series(missing,'2026-01','2026-01',{version:1,metric:'ym:s:users',step:'month',points:[{from:'2026-01-01',to:'2026-01-01',users:100}]});assert.equal(anonC1[0].c1,.01);
 for(const m of Object.values(real.months)){assert(Number.isInteger(m.newBuyers));assert.equal(m.newBuyers,m.knownNewBuyers+m.missingContacts);assert(m.newBuyers<=m.buyers);}
+
+assert.deepEqual(model.rangeStats(raw,'2026-01-01','2026-02-28'),{buyers:2,payments:4,revenue:18000});
+assert.deepEqual(model.rangeStats([h,row('a','','2026-01-01',100),row('b','','2026-02-01',200)],'2026-01-01','2026-02-28'),{buyers:2,payments:2,revenue:300});

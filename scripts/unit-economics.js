@@ -49,27 +49,47 @@
   root.addEventListener('click',function(e){var btn=e.target.closest('[data-step]');if(!btn)return;var x=fields.find(function(x){return x.key===btn.dataset.step;}),r=M.calculate(current),v=r[x.key]+Number(btn.dataset.direction)*x.step;if(x.key==='frequency')v=Math.max(1,v);else if(x.key==='conversion')v=Math.max(0,Math.min(100,v));else if(x.key==='margin')v=Math.min(100,v);else if(x.key!=='profit')v=Math.max(0,v);apply(x.key,v);});
   $('ueReset').addEventListener('click',function(){current=M.copy(initial);$('ueError').textContent='';render();save();});
   function mountPeriods(){
-    var P=window.WowlifeUnitPeriods,periodData=null,kind='month';
+    var P=window.WowlifeUnitPeriods,periodData=null,kind='month',requestId=0;
+
     function monthLabel(ym){return new Date(ym+'-01T00:00:00Z').toLocaleDateString('ru-RU',{month:'long',year:'numeric',timeZone:'UTC'});}
     function rangeLabel(from,to){return from===to?monthLabel(from):monthLabel(from)+' — '+monthLabel(to);}
     function choices(){
       if(!periodData)return;
+      requestId++;$('ueApplyPeriod').disabled=false;
       var custom=kind==='custom',year=$('uePeriodYear').value;
       $('ueYearWrap').hidden=custom;$('uePeriodWrap').hidden=custom;$('uePeriodFromWrap').hidden=!custom;$('uePeriodToWrap').hidden=!custom;
       root.querySelectorAll('[data-ue-period]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.uePeriod===kind));});
       var options=P.options(periodData,kind,year);$('uePeriodChoice').replaceChildren();options.forEach(function(p){$('uePeriodChoice').add(new Option(p.label+(p.partial?' · '+rangeLabel(p.from,p.to):''),p.id));});
       if(options.length)$('uePeriodChoice').value=options[options.length-1].id;
-      $('uePeriodStatus').textContent='Средний месяц выбранного периода · данные юнитки: '+rangeLabel(P.months(periodData)[0].month,P.months(periodData).slice(-1)[0].month);
+      $('uePeriodStatus').textContent='Итог за выбранный период · данные юнитки: '+rangeLabel(P.months(periodData)[0].month,P.months(periodData).slice(-1)[0].month);
     }
     root.querySelectorAll('[data-ue-period]').forEach(function(b){b.addEventListener('click',function(){kind=b.dataset.uePeriod;choices();});});
+    function cancelPending(){requestId++;if($('ueApplyPeriod').disabled&&periodData)$('uePeriodStatus').textContent='Сценарий изменён. Для загрузки периода нажмите «Подставить значения».';$('ueApplyPeriod').disabled=!periodData;}
+    root.addEventListener('input',function(e){if(e.target.dataset.unitInput)cancelPending();});
+    $('ueReset').addEventListener('click',cancelPending);$('ueCases').addEventListener('change',cancelPending);
+    root.addEventListener('click',function(e){if(e.target.closest('[data-step]'))cancelPending();});
     $('uePeriodYear').addEventListener('change',choices);
-    $('ueApplyPeriod').addEventListener('click',function(){
+    ['uePeriodChoice','uePeriodFrom','uePeriodTo'].forEach(function(id){$(id).addEventListener('change',function(){requestId++;$('ueApplyPeriod').disabled=false;});});
+    $('ueApplyPeriod').addEventListener('click',async function(){
       if(!periodData)return;var from,to;
       if(kind==='custom'){from=$('uePeriodFrom').value;to=$('uePeriodTo').value;}
       else{var choice=P.options(periodData,kind,$('uePeriodYear').value).find(function(p){return p.id===$('uePeriodChoice').value;});if(!choice)return;from=choice.from;to=choice.to;}
-      var result=P.build(periodData,from,to);if(!result.valid){$('uePeriodStatus').textContent=result.error;return;}
+      var result=P.build(periodData,from,to),id=++requestId;
+      if(result.needsAudience){
+        $('ueApplyPeriod').disabled=true;$('uePeriodStatus').textContent='Загружаю уникальных пользователей за период…';
+        var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},30000);
+        try{
+          var toDate=new Date(Date.UTC(Number(to.slice(0,4)),Number(to.slice(5)),0)).toISOString().slice(0,10);
+          var report=await window.MetrikaUsers.client(function(url,options){return window.fetch(url,Object.assign({},options,{signal:controller.signal}));})({from:from+'-01',to:toDate,step:'year'});
+          if(id!==requestId)return;
+          var users=report.sampled===false&&report.timezone==='Europe/Moscow'&&report.points.length===1&&report.points[0].from===from+'-01'&&report.points[0].to===toDate?report.points[0].users:null;
+          result=P.build(periodData,from,to,users);
+        }catch(e){if(id!==requestId)return;result={valid:false,error:'Не удалось получить аудиторию периода. Повторите подстановку.'};}
+        finally{clearTimeout(timer);if(id===requestId)$('ueApplyPeriod').disabled=false;}
+      }
+      if(!result.valid){$('uePeriodStatus').textContent=result.error;return;}
       initial=M.copy(result.input);current=M.copy(result.input);root.querySelectorAll('[aria-invalid=true]').forEach(function(x){x.removeAttribute('aria-invalid');});$('ueError').textContent='';$('ueCases').value='';
-      var name=(result.count===1?'': 'Средний месяц · ')+rangeLabel(from,to);$('ueCaseName').value=name;render();save();
+      var name=rangeLabel(from,to);$('ueCaseName').value=name;render();save();
       $('uePeriodStatus').textContent='Подставлено: '+name+(result.count>1?' · '+result.count+' мес.':'')+' · можно менять показатели и сохранить кейс.';
     });
     fetch('data/unit-economics-periods.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('Не удалось загрузить значения юнитки.');return r.json();}).then(function(d){

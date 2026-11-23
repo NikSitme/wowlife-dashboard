@@ -2,16 +2,25 @@
   'use strict';
   function end(ym){return new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),0)).toISOString().slice(0,10);}
   function add(ym,n){return new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7)-1+n,1)).toISOString().slice(0,7);}
-  function fromRows(rows,through,generatedAt){
-    if(!sales.isoDate(through))throw Error('Product metrics: invalid cutoff');
+  function websiteHistory(rows,through){
     var h=rows[0]||[],ci=h.indexOf('id контакта'),di=h.indexOf('id сделки'),si=h.indexOf('стадия'),ti=h.indexOf('дата оплаты');
     if(ci<0)throw Error('Product metrics: missing contact column');
     var contacts=new Map(),seen=new Set();
     rows.slice(1).forEach(function(r){if(!r)return;var id=String(r[di]||'').trim();if(!id||seen.has(id)||r[si]!=='Сделка успешна'||!sales.isoDate(r[ti]))return;seen.add(id);contacts.set(id,String(r[ci]||'').trim());});
-    var all=sales.successful(rows).filter(function(r){return r.source==='Сайт'&&r.date<=through;}).sort(function(a,b){return a.date.localeCompare(b.date);});
+    return sales.successful(rows).filter(function(r){return r.source==='Сайт'&&r.date<=through;}).map(function(r){return Object.assign({contact:contacts.get(r.id)},r);}).sort(function(a,b){return a.date.localeCompare(b.date);});
+  }
+  function rangeStats(rows,from,to){
+    if(!sales.isoDate(from)||!sales.isoDate(to)||from>to)throw Error('Product metrics: invalid range');
+    var paid=websiteHistory(rows,to).filter(function(r){return r.date>=from&&sales.isPaidOrder(r);}),buyers=new Set(),cents=0;
+    paid.forEach(function(r){buyers.add(r.contact?'contact:'+r.contact:'order:'+r.id);cents+=Math.round(r.revenue*100);});
+    return {buyers:buyers.size,payments:paid.length,revenue:cents/100};
+  }
+  function fromRows(rows,through,generatedAt){
+    if(!sales.isoDate(through))throw Error('Product metrics: invalid cutoff');
+    var all=websiteHistory(rows,through);
     if(!all.length)throw Error('Product metrics: no website history');
     var first=new Map(),groups={},daily={};
-    all.filter(sales.isPaidOrder).forEach(function(r){var contact=contacts.get(r.id),ym=r.date.slice(0,7);if(contact&&!first.has(contact))first.set(contact,r.date);
+    all.filter(sales.isPaidOrder).forEach(function(r){var contact=r.contact,ym=r.date.slice(0,7);if(contact&&!first.has(contact))first.set(contact,r.date);
       var g=groups[ym]||(groups[ym]={payments:0,cents:0,contacts:new Set(),newContacts:new Set(),missingContacts:0});
       g.payments++;g.cents+=Math.round(r.revenue*100);if(contact){g.contacts.add(contact);if(first.get(contact).slice(0,7)===ym)g.newContacts.add(contact);}else g.missingContacts++;
       var day=daily[r.date]||(daily[r.date]={payments:0,cents:0,contacts:new Set(),newContacts:new Set(),missingContacts:0});
@@ -51,5 +60,5 @@
     }
     return points;
   }
-  return {dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
+  return {rangeStats:rangeStats,dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
 });
