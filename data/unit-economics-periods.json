@@ -1,0 +1,332 @@
+{
+  "version": 1,
+  "source": {
+    "spreadsheetId": "17UASQ3Dz-RCjcjGF-Y982zU_EqYj7kHHfAiTstzi-jM",
+    "sheet": "Юнитка - 2026",
+    "range": "B7:AF16",
+    "readAt": "2026-11-23"
+  },
+  "scope": "Сайт и прямые продажи · все города",
+  "months": [
+    {
+      "month": "2026-01",
+      "label": "Январь 2026",
+      "sourceRow": 16,
+      "input": {
+        "users": 57136,
+        "conversion": 1.3511621394567348,
+        "frequency": 1.0362694300518134,
+        "avgPrice": 6626.3875,
+        "acquisition": 586160,
+        "fixed": 1975237.71,
+        "costs": {
+          "packaging": 1.088899305994405,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.453896825381854,
+          "acquiring": 2.186579980419195,
+          "partners": 42.25,
+          "delivery": 2.8980243760269078,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 772,
+        "payments": 800,
+        "revenue": 5301110,
+        "grossProfit": 2338987.535,
+        "profit": -222410.1749999998,
+        "cogsTotal": 2962122.465,
+        "margin": 44.12259951217764
+      }
+    },
+    {
+      "month": "2026-02",
+      "label": "Февраль 2026",
+      "sourceRow": 15,
+      "input": {
+        "users": 66056,
+        "conversion": 1.5819910379072302,
+        "frequency": 1.061244019138756,
+        "avgPrice": 9289.598737601444,
+        "acquisition": 808160,
+        "fixed": 2664692.3,
+        "costs": {
+          "packaging": 1.3048927094450535,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.1991959942400456,
+          "acquiring": 1.5541456577331072,
+          "partners": 42.25,
+          "delivery": 2.8698485221310275,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 1045,
+        "payments": 1109,
+        "revenue": 10302165.000000002,
+        "grossProfit": 4617627.857500002,
+        "profit": 1144775.5575000006,
+        "cogsTotal": 5684537.1425,
+        "margin": 44.82191711645077
+      }
+    },
+    {
+      "month": "2026-03",
+      "label": "Март 2026",
+      "sourceRow": 14,
+      "input": {
+        "users": 49068,
+        "conversion": 1.8953289312790413,
+        "frequency": 1.0290322580645161,
+        "avgPrice": 7314.987460815047,
+        "acquisition": 758160,
+        "fixed": 1582892.02,
+        "costs": {
+          "packaging": 1.2863335934597282,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.4451473999574027,
+          "acquiring": 1.9773115787100903,
+          "partners": 42.25,
+          "delivery": 2.7202045641968664,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 930,
+        "payments": 957,
+        "revenue": 7000443,
+        "grossProfit": 3102666.5424999995,
+        "profit": 761614.522499999,
+        "cogsTotal": 3897776.4575000005,
+        "margin": 44.32100286367591
+      }
+    },
+    {
+      "month": "2026-04",
+      "label": "Апрель 2026",
+      "sourceRow": 13,
+      "input": {
+        "users": 37676,
+        "conversion": 1.9481898290689033,
+        "frequency": 1.0326975476839237,
+        "avgPrice": 7227.423482849605,
+        "acquisition": 611040,
+        "fixed": 1597763.94,
+        "costs": {
+          "packaging": 1.231615254636082,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.4996757257199975,
+          "acquiring": 1.9645130948215233,
+          "partners": 42.25,
+          "delivery": 2.467979352316658,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 734,
+        "payments": 758,
+        "revenue": 5478387,
+        "grossProfit": 2442605.4924999997,
+        "profit": 233801.55249999976,
+        "cogsTotal": 3035781.5075000003,
+        "margin": 44.586216572505734
+      }
+    },
+    {
+      "month": "2026-05",
+      "label": "Май 2026",
+      "sourceRow": 12,
+      "input": {
+        "users": 40684,
+        "conversion": 1.897551863140301,
+        "frequency": 1.0297927461139897,
+        "avgPrice": 7607.259119496855,
+        "acquisition": 735440,
+        "fixed": 1627869.18,
+        "costs": {
+          "packaging": 1.1665661613179468,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.3910057110297331,
+          "acquiring": 2.0194476609646763,
+          "partners": 42.25,
+          "delivery": 2.388666502088125,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 772,
+        "payments": 795,
+        "revenue": 6047771,
+        "grossProfit": 2708452.7525,
+        "profit": 345143.5725000005,
+        "cogsTotal": 3339318.2475,
+        "margin": 44.78431396459952
+      }
+    },
+    {
+      "month": "2026-06",
+      "label": "Июнь 2026",
+      "sourceRow": 11,
+      "input": {
+        "users": 39670,
+        "conversion": 2.2435089488278295,
+        "frequency": 1.0269662921348315,
+        "avgPrice": 7612.814004376368,
+        "acquisition": 637062.6,
+        "fixed": 2130670.55,
+        "costs": {
+          "packaging": 1.0508130653832535,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.48700796997806295,
+          "acquiring": 2.041537704480756,
+          "partners": 42.25,
+          "delivery": 2.6653609484871756,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 890,
+        "payments": 914,
+        "revenue": 6958112,
+        "grossProfit": 3096727.2500000005,
+        "profit": 328994.1000000001,
+        "cogsTotal": 3861384.7499999995,
+        "margin": 44.50528031167076
+      }
+    },
+    {
+      "month": "2026-07",
+      "label": "Июль 2026",
+      "sourceRow": 10,
+      "input": {
+        "users": 42136,
+        "conversion": 2.0861021454338333,
+        "frequency": 1.0273037542662116,
+        "avgPrice": 7621.959025470654,
+        "acquisition": 723280,
+        "fixed": 2144525.05,
+        "costs": {
+          "packaging": 1.3344450209360406,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.4410670689935488,
+          "acquiring": 2.098043494716917,
+          "partners": 42.25,
+          "delivery": 2.27896898118437,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 879,
+        "payments": 903,
+        "revenue": 6882629,
+        "grossProfit": 3069478.7775,
+        "profit": 201673.7275000005,
+        "cogsTotal": 3813150.2225,
+        "margin": 44.59747543416912
+      }
+    },
+    {
+      "month": "2026-08",
+      "label": "Август 2026",
+      "sourceRow": 9,
+      "input": {
+        "users": 38625,
+        "conversion": 2.04789644012945,
+        "frequency": 1.0353982300884956,
+        "avgPrice": 7467.954822954823,
+        "acquisition": 511040,
+        "fixed": 1655613.97,
+        "costs": {
+          "packaging": 1.2248115881368582,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.5053625134988649,
+          "acquiring": 2.080569564218627,
+          "partners": 42.25,
+          "delivery": 2.6133284174711484,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 791,
+        "payments": 819,
+        "revenue": 6116255,
+        "grossProfit": 2711086.7825,
+        "profit": 544432.8125000002,
+        "cogsTotal": 3405168.2175,
+        "margin": 44.3259279166745
+      }
+    },
+    {
+      "month": "2026-09",
+      "label": "Сентябрь 2026",
+      "sourceRow": 8,
+      "input": {
+        "users": 31795,
+        "conversion": 2.0128951092939142,
+        "frequency": 1.0328125,
+        "avgPrice": 7195.175491679274,
+        "acquisition": 300000,
+        "fixed": 1762718.01,
+        "costs": {
+          "packaging": 1.089633728769761,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.4915674080652883,
+          "acquiring": 2.0905336425840897,
+          "partners": 42.25,
+          "delivery": 2.7951661592035846,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 640,
+        "payments": 661,
+        "revenue": 4756011,
+        "grossProfit": 2106109.0625,
+        "profit": 43391.05249999976,
+        "cogsTotal": 2649901.9375,
+        "margin": 44.28309906137727
+      }
+    },
+    {
+      "month": "2026-10",
+      "label": "Октябрь 2026",
+      "sourceRow": 7,
+      "input": {
+        "users": 37787,
+        "conversion": 1.6910577711911505,
+        "frequency": 1.0391236306729263,
+        "avgPrice": 7298.826807228916,
+        "acquisition": 292880,
+        "fixed": 2132596.17,
+        "costs": {
+          "packaging": 1.0851873991136967,
+          "vat": 5,
+          "usn": 1,
+          "bank": 0.538574341766842,
+          "acquiring": 2.1182755274459235,
+          "partners": 42.25,
+          "delivery": 2.3986826567481447,
+          "other": 1
+        }
+      },
+      "expected": {
+        "buyers": 639,
+        "payments": 664,
+        "revenue": 4846421,
+        "grossProfit": 2161953.5175,
+        "profit": -263522.6524999996,
+        "cogsTotal": 2684467.4825,
+        "margin": 44.609280074925394
+      }
+    }
+  ]
+}

@@ -48,6 +48,37 @@
   root.addEventListener('focusout',function(e){if(e.target.dataset.unitInput){e.target.removeAttribute('aria-invalid');$('ueError').textContent='';render();}});
   root.addEventListener('click',function(e){var btn=e.target.closest('[data-step]');if(!btn)return;var x=fields.find(function(x){return x.key===btn.dataset.step;}),r=M.calculate(current),v=r[x.key]+Number(btn.dataset.direction)*x.step;if(x.key==='frequency')v=Math.max(1,v);else if(x.key==='conversion')v=Math.max(0,Math.min(100,v));else if(x.key==='margin')v=Math.min(100,v);else if(x.key!=='profit')v=Math.max(0,v);apply(x.key,v);});
   $('ueReset').addEventListener('click',function(){current=M.copy(initial);$('ueError').textContent='';render();save();});
+  function mountPeriods(){
+    var P=window.WowlifeUnitPeriods,periodData=null,kind='month';
+    function monthLabel(ym){return new Date(ym+'-01T00:00:00Z').toLocaleDateString('ru-RU',{month:'long',year:'numeric',timeZone:'UTC'});}
+    function rangeLabel(from,to){return from===to?monthLabel(from):monthLabel(from)+' — '+monthLabel(to);}
+    function choices(){
+      if(!periodData)return;
+      var custom=kind==='custom',year=$('uePeriodYear').value;
+      $('ueYearWrap').hidden=custom;$('uePeriodWrap').hidden=custom;$('uePeriodFromWrap').hidden=!custom;$('uePeriodToWrap').hidden=!custom;
+      root.querySelectorAll('[data-ue-period]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.uePeriod===kind));});
+      var options=P.options(periodData,kind,year);$('uePeriodChoice').replaceChildren();options.forEach(function(p){$('uePeriodChoice').add(new Option(p.label+(p.partial?' · '+rangeLabel(p.from,p.to):''),p.id));});
+      if(options.length)$('uePeriodChoice').value=options[options.length-1].id;
+      $('uePeriodStatus').textContent='Средний месяц выбранного периода · данные юнитки: '+rangeLabel(P.months(periodData)[0].month,P.months(periodData).slice(-1)[0].month);
+    }
+    root.querySelectorAll('[data-ue-period]').forEach(function(b){b.addEventListener('click',function(){kind=b.dataset.uePeriod;choices();});});
+    $('uePeriodYear').addEventListener('change',choices);
+    $('ueApplyPeriod').addEventListener('click',function(){
+      if(!periodData)return;var from,to;
+      if(kind==='custom'){from=$('uePeriodFrom').value;to=$('uePeriodTo').value;}
+      else{var choice=P.options(periodData,kind,$('uePeriodYear').value).find(function(p){return p.id===$('uePeriodChoice').value;});if(!choice)return;from=choice.from;to=choice.to;}
+      var result=P.build(periodData,from,to);if(!result.valid){$('uePeriodStatus').textContent=result.error;return;}
+      initial=M.copy(result.input);current=M.copy(result.input);root.querySelectorAll('[aria-invalid=true]').forEach(function(x){x.removeAttribute('aria-invalid');});$('ueError').textContent='';$('ueCases').value='';
+      var name=(result.count===1?'': 'Средний месяц · ')+rangeLabel(from,to);$('ueCaseName').value=name;render();save();
+      $('uePeriodStatus').textContent='Подставлено: '+name+(result.count>1?' · '+result.count+' мес.':'')+' · можно менять показатели и сохранить кейс.';
+    });
+    fetch('data/unit-economics-periods.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('Не удалось загрузить значения юнитки.');return r.json();}).then(function(d){
+      var rows=P.months(d);if(!rows.length)throw Error('В юнитке нет заполненных месяцев.');periodData=d;
+      var years=Array.from(new Set(rows.map(function(p){return p.month.slice(0,4);})));$('uePeriodYear').replaceChildren();years.forEach(function(y){$('uePeriodYear').add(new Option(y,y));});$('uePeriodYear').value=years[years.length-1];
+      ['uePeriodFrom','uePeriodTo'].forEach(function(id){$(id).replaceChildren();rows.forEach(function(p){$(id).add(new Option(p.label,p.month));});});$('uePeriodFrom').value=rows[0].month;$('uePeriodTo').value=rows[rows.length-1].month;
+      ['uePeriodYear','uePeriodChoice','uePeriodFrom','uePeriodTo','ueApplyPeriod'].forEach(function(id){$(id).disabled=false;});choices();
+    }).catch(function(e){$('uePeriodStatus').textContent=e.message;});
+  }
   function mountCases(){
     var store=new window.WowlifeUnitCases.Store(window.WOWLIFE_PROJECT_CONFIG,window.fetch.bind(window),window.localStorage),cases=[],busy=false;
     function status(message){$('ueCaseStatus').textContent=message;}
@@ -62,5 +93,5 @@
       finally{busy=false;$('ueSaveCase').disabled=false;}
     });refresh();
   }
-  fetch('data/unit-economics-presets.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('Не удалось загрузить базы расчёта.');return r.json();}).then(function(data){presets=data.presets;initial=M.copy(presets[0].input);current=M.copy(initial);try{var stored=JSON.parse(localStorage.getItem(key)||'null');if(stored&&[2,3].includes(stored.version)&&M.calculate(stored.current).valid){current=stored.current;initial=M.calculate(stored.initial||stored.base).valid?(stored.initial||stored.base):M.copy(current);}}catch(ignored){}create();render();mountCases();$('ueLoading').hidden=true;$('ueContent').hidden=false;}).catch(function(e){$('ueLoading').textContent=e.message;});
+  fetch('data/unit-economics-presets.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('Не удалось загрузить базы расчёта.');return r.json();}).then(function(data){presets=data.presets;initial=M.copy(presets[0].input);current=M.copy(initial);try{var stored=JSON.parse(localStorage.getItem(key)||'null');if(stored&&[2,3].includes(stored.version)&&M.calculate(stored.current).valid){current=stored.current;initial=M.calculate(stored.initial||stored.base).valid?(stored.initial||stored.base):M.copy(current);}}catch(ignored){}create();render();mountCases();mountPeriods();$('ueLoading').hidden=true;$('ueContent').hidden=false;}).catch(function(e){$('ueLoading').textContent=e.message;});
 })();
