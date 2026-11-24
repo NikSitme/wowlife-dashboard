@@ -39,6 +39,10 @@
     return {version:4,days:days,orderMetric:sales.ORDER_METRIC,scope:'website-direct',sourceStart:sourceStart,sourceEnd:sourceEnd,through:through,generated_at:generatedAt||new Date().toISOString(),months:months};
   }
   function valid(data){return !!data&&(data.version===3||data.version===4)&&data.orderMetric===sales.ORDER_METRIC&&data.scope==='website-direct'&&!!data.months&&sales.isoDate(data.sourceStart)&&sales.isoDate(data.sourceEnd);}
+  function withConversions(point){
+    function ratio(n){return Number.isFinite(point.users)&&point.users>0&&Number.isFinite(n)&&n>=0?n/point.users:null;}
+    return Object.assign({},point,{leadConversion:ratio(point.leads),payingConversion:ratio(point.buyers)});
+  }
   function series(data,start,finish,report){
     if(!valid(data))return[];
     var points=[];for(var ym=start;ym<=finish;ym=add(ym,1)){var m=data.months[ym];if(m)points.push(Object.assign({month:ym,users:null,c1:null},m));}
@@ -60,5 +64,5 @@
     }
     return points;
   }
-  return {rangeStats:rangeStats,dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
+  return {withConversions:withConversions,rangeStats:rangeStats,dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
 });
