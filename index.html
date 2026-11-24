@@ -2535,7 +2535,7 @@ window.__salesActSetData = function(newData){
 
   <section class="panel" id="ws-lead-activity" aria-labelledby="la-title">
     <div class="panel-head"><h2 class="panel-title" id="la-title">Когда приходят лиды</h2></div>
-    <p class="panel-note">Дни недели и часы создания лидов. Все источники из вкладки «Лиды»; период этого блока выбирается отдельно. Общие фильтры продаж и города на него не влияют.</p>
+    <p class="panel-note">Дни недели и часы создания всех записей CRM, включая активации. Все источники и стадии из вкладки «Лиды»; период этого блока выбирается отдельно. Общие фильтры продаж и города на него не влияют.</p>
     <div class="la-controls">
       <label>Период<select id="la-preset"><option value="annual">Последние 12 месяцев</option><option value="last_month">Прошлый месяц</option><option value="year">Текущий год</option><option value="custom">Свой диапазон</option></select></label>
       <label>С<input id="la-from" type="date" aria-label="Начало периода активности лидов"></label>
@@ -2689,6 +2689,7 @@ window.__salesActSetData = function(newData){
 <script src="scripts/sales-classifier.js?v=adesk-only-classification-20261118"></script>
 <script src="scripts/sales-analytics-model.js?v=product-20261122b"></script>
 <script src="scripts/product-metrics-model.js?v=20261123-days"></script>
+<script src="scripts/lead-metrics.js?v=20261124"></script>
 <script src="scripts/lead-activity.js?v=20261118"></script>
 <script src="scripts/lead-activity-ui.js?v=20261118-labels"></script>
 <script>
@@ -4000,7 +4001,7 @@ window.__salesActSetData = function(newData){
 </style>
   <section class="card pm-card" id="productMetrics" aria-labelledby="pmTitle">
     <h2 id="pmTitle">Маркетинг и продукт</h2>
-    <p class="pm-subtitle">Пользователи, покупки и выручка сайта в динамике</p>
+    <p class="pm-subtitle">Пользователи, лиды, покупки и выручка в динамике</p>
     <div class="pm-toolbar rd-period-grid">
       <label class="rd-field"><span class="rd-label">Период</span><select id="pmPreset" disabled><option value="12m">Последние 12 месяцев</option><option value="year">Текущий год</option><option value="last_month">Прошлый месяц</option><option value="all">Всё время</option><option value="custom">Свой диапазон</option></select></label>
       <label class="rd-field"><span class="rd-label">С</span><input id="pmFrom" type="date" disabled data-month-only="true" aria-label="Начало периода продуктовых метрик"></label>
@@ -4009,7 +4010,7 @@ window.__salesActSetData = function(newData){
     <p class="pm-help">Нажмите на месяц в таблице или на графике, чтобы раскрыть дни</p>
     <p class="pm-meta" id="pmMeta" aria-live="polite">Загружаю показатели…</p>
     <div class="pm-table-wrap"><table class="pm-table"><thead id="pmTableHead"><tr>
-      <th scope="col">Месяц</th><th scope="col">Пользователи<small>Яндекс.Метрика</small></th><th scope="col">Платящие пользователи<small>Покупатели оплаченных заказов</small></th><th scope="col">Payments<small>Оплаченные заказы</small></th><th scope="col">Av. price<small>Средний чек заказа</small></th><th scope="col">Revenue<small>Выручка заказов CRM</small></th><th scope="col">C1<small>В первую покупку</small></th>
+      <th scope="col">Месяц</th><th scope="col">Пользователи<small>Яндекс.Метрика</small></th><th scope="col">Лиды<small>CRM без активаций</small></th><th scope="col">Платящие пользователи<small>Покупатели оплаченных заказов</small></th><th scope="col">Payments<small>Оплаченные заказы</small></th><th scope="col">Av. price<small>Средний чек заказа</small></th><th scope="col">Revenue<small>Выручка заказов CRM</small></th><th scope="col">C1<small>В первую покупку</small></th>
     </tr></thead><tbody id="pmTableBody"></tbody></table></div>
     <p class="pm-status" id="pmCoverage" hidden></p>
     <div class="pm-status"><span id="pmMetrikaStatus" aria-live="polite"></span><button id="pmRetry" type="button" hidden>Повторить</button></div>
@@ -4020,6 +4021,7 @@ window.__salesActSetData = function(newData){
     <div class="pm-chart" id="pmChart"></div>
     <details class="pm-definitions"><summary>Как считаются показатели</summary>
       <p>Пользователи — уникальные посетители всего сайта за каждый месяц, без суммирования дней. Платящие пользователи — уникальные ID контактов с оплаченной покупкой за месяц. Payments — уникальные успешные заказы с сертификатами и положительной суммой. Revenue — сумма этих заказов после скидок, включая позиции корзины. Av. price = Revenue / Payments. Маркетплейсы и B2B исключены.</p>
+      <p>Лиды — уникальные ID из выгрузки CRM по дате создания в Москве. Исключается только стадия «Активации(Завершенные)»; все остальные стадии и источники сохранены, включая «Дубль», «Спам» и «Партнеры». Корзины пока не добавлены. Месячные и дневные значения лидов считаются за те же даты, что и заказы; за пределами доступного снимка показан прочерк. Конверсия C1 по-прежнему относится к первой покупке.</p>
       <p>C1 = новые покупатели / пользователи сайта. По решению Никиты оплаченный заказ без ID клиента считается первой покупкой; возможные повторы таких клиентов не распознаны. Новый покупатель — клиент с первой оплаченной покупкой сайта или прямых каналов в доступной истории CRM с января 2024 года; покупки до начала истории неизвестны. Прямые продажи входят в покупателей, но трафик Метрики учитывает только сайт. Поэтому C1 — общая конверсия сайта и прямых продаж относительно трафика сайта, без сквозной привязки посетителя к покупке. Покупатели и пользователи уникальны внутри месяца: итоги месяцев не складываются в число уникальных людей за весь диапазон.</p>
       <p>При раскрытии месяца показываются дни: платящие пользователи уникальны внутри дня, средний чек = дневная выручка / дневные оплаченные заказы, C1 = новые покупатели дня / уникальные посетители дня. Месячные пользователи и покупатели не равны сумме дневных. Данные заказов — CRM, трафика — Метрика; оба источника обрезаются одной датой. Неполный месяц отмечен датой. По решению Никиты каждый оплаченный заказ без ID контакта учитывается как один платящий пользователь. возможные повторы между ними не распознаны. Для C1 такие заказы считаются первыми покупками. Прочерк означает отсутствие данных или невозможность расчёта. Кассовые поступления Адеска могут отличаться от выручки заказов по дате и составу.</p>
     </details>
@@ -4938,7 +4940,7 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
-<script src="scripts/product-metrics-ui.js?v=20261123-days"></script>
+<script src="scripts/product-metrics-ui.js?v=20261124-leads"></script>
 <script src="scripts/revenue-dynamics.js?v=product-style-20261122"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
