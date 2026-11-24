@@ -38,7 +38,7 @@
     $('pmBack').hidden=!detailMonth;$('pmDetailLabel').textContent=detailMonth?label(detailMonth)+' · по дням':'По месяцам · нажмите на месяц, чтобы раскрыть дни';
     $('pmDailyRefresh').hidden=!detailMonth||!!data.days;
     $('pmCoverage').hidden=false;
-    $('pmCoverage').textContent=leadLoading?'Загружаю лиды и корзины…':leadError?'Лиды недоступны: '+leadError:leadData?'Лиды = CRM без стадии «Активации(Завершенные)» + все корзины из воронки заказов, по дате создания. Все остальные стадии и источники включены. Снимок '+dateLabel(leadData.latestCreated)+' · доступны по '+dateLabel(leadData.coverageEnd)+'. За даты вне выгрузки — прочерк.':'Лиды CRM ещё не загружены.';
+    $('pmCoverage').textContent=leadLoading?'Загружаю лиды и корзины…':leadError?'Лиды недоступны: '+leadError:leadData?'Лиды = CRM без активаций, спама, дублей и партнёров + все корзины по дате создания. Снимок '+dateLabel(leadData.latestCreated)+' · доступны по '+dateLabel(leadData.coverageEnd)+'. За даты вне выгрузки — прочерк.':'Лиды CRM ещё не загружены.';
     var activeReport=detailMonth?dayReport:report,activeLoading=detailMonth?dayLoading:loading,activeError=detailMonth?dayError:error;
     $('pmMetrikaStatus').textContent=activeLoading?'Загружаю пользователей из Яндекс.Метрики…':activeError?'Пользователи и C1 недоступны: '+activeError:activeReport?'Метрика: уникальные посетители '+(detailMonth?'каждого дня':'каждого месяца')+' · обновлено '+new Date(activeReport.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow'}):'Пользователи и C1 загружаются отдельно от заказов.';
     $('pmRetry').hidden=!activeError;chart();
