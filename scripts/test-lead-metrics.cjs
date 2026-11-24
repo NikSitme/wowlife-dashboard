@@ -15,17 +15,29 @@ assert.throws(()=>model.fromRows([h,row('1','Спам','31.02.2026 00:00:00')],'
 assert(!model.valid({...d,days:{...d.days,'2026-01-01':{leads:99,activationExcluded:1}}}));
 const old=model.fromRows([h,row('1','Спам','01.01.2026 00:00:00')],'2026-02-01');
 assert.equal(old.coverageEnd,'2026-01-01');assert.equal(model.rangeStats(old,'2026-01-02','2026-01-02'),null,'old exports do not invent subsequent zero days');
+const bh=['ID','Дата создания','Стадия сделки','Дата оплаты'];
+const br=[bh,['1','31.12.2025 12:00:00','Корзина',''],['2','01.01.2026 23:59:59','Сделка провалена',''],['3','02.01.2026 00:00:00','Активации(Завершенные)',''],['4','04.01.2026 10:00:00','Сделка успешна','07.01.2026'],['5','05.01.2026 10:00:00','Корзина','']];
+const combined=model.withBaskets(d,br.concat([br[2]]));assert(model.valid(combined));
+assert.equal(combined.totals.leads,8);assert.equal(combined.totals.baskets,3);assert.equal(combined.totals.beforeCoverage,1);assert.equal(combined.totals.afterCutoff,2);assert.equal(combined.totals.duplicates,2);
+assert.deepEqual(model.rangeStats(combined,'2026-01-01','2026-01-04'),{leads:8,activationExcluded:1,crmLeads:5,baskets:3},'entity namespaces are independent; all basket stages count by creation, including unpaid baskets');
+assert.deepEqual(model.rangeStats(combined,'2026-01-02','2026-01-02'),{leads:1,activationExcluded:0,crmLeads:0,baskets:1});
+assert.throws(()=>model.withBaskets(d,br.concat([['2','02.01.2026 01:00:00']])) ,/противоречащие/);
+assert.throws(()=>model.withBaskets(d,[bh,['1','','Корзина','01.01.2026']]),/даты создания/,'payment dates cannot replace missing creation dates');
+assert.throws(()=>model.withBaskets(d,[bh,['1','03.01.2026 12:00:00']]),/не покрывает/);
+assert(!model.valid({...combined,totals:{...combined.totals,baskets:4}}));
+assert(!model.valid({...combined,sources:{...combined.sources,baskets:{...combined.sources.baskets,beforeCoverage:0}}}));
 const real=JSON.parse(fs.readFileSync('data/lead-metrics.json','utf8')),product=JSON.parse(fs.readFileSync('data/product-metrics.json','utf8'));
-assert(model.valid(real));assert.equal(real.totals.inputUnique,55209);assert.equal(real.totals.activationExcluded,19607);assert.equal(real.totals.afterCutoff,2);
-assert.deepEqual(model.rangeStats(real,'2026-10-01','2026-10-31'),{leads:471,activationExcluded:307});
+assert(model.valid(real));assert.equal(real.sources.crm.inputUnique,55209);assert.equal(real.totals.activationExcluded,19607);assert.equal(real.sources.crm.afterCutoff,2);assert.equal(real.sources.baskets.inputUnique,102174);assert.equal(real.sources.baskets.afterCutoff,20);
+assert.deepEqual(model.rangeStats(real,'2026-10-01','2026-10-31'),{leads:2995,activationExcluded:307,crmLeads:471,baskets:2524});
+assert.deepEqual(model.rangeStats(real,'2026-11-01','2026-11-23'),{leads:2291,activationExcluded:174,crmLeads:333,baskets:1958});
 let days=0,months=0;
 for(const m of Object.values(product.months)){
- const total=model.rangeStats(real,m.from,m.to);assert(total);let sum=0,excluded=0;
- for(let day=m.from;day<=m.to;day=sales.shift(day,1)){const v=model.rangeStats(real,day,day);sum+=v.leads;excluded+=v.activationExcluded;days++;}
- assert.equal(sum,total.leads);assert.equal(excluded,total.activationExcluded);months++;
+ const total=model.rangeStats(real,m.from,m.to);assert(total);let sum=0,excluded=0,crm=0,baskets=0;
+ for(let day=m.from;day<=m.to;day=sales.shift(day,1)){const v=model.rangeStats(real,day,day);sum+=v.leads;excluded+=v.activationExcluded;crm+=v.crmLeads;baskets+=v.baskets;days++;}
+ assert.equal(sum,total.leads);assert.equal(excluded,total.activationExcluded);assert.equal(crm,total.crmLeads);assert.equal(baskets,total.baskets);assert.equal(sum,crm+baskets);months++;
 }
 const text=JSON.stringify(real);assert(!/@|\+7\d{10}|"rows"|"contact"|"phone"/.test(text),'published data contain no CRM contacts or raw rows');
 const ui=fs.readFileSync('scripts/product-metrics-ui.js','utf8'),html=fs.readFileSync('index.html','utf8');
 assert(ui.includes("['users','leads','buyers','payments','avgPrice','revenue','c1']"));assert(ui.includes('colspan="8"'));assert(ui.includes('withLeads(model.dailySeries'));
-assert(html.includes('Лиды<small>CRM без активаций'));assert(ui.includes("selected:['users','revenue']"));
+assert(html.includes('Лиды<small>CRM + корзины'));assert(ui.includes("selected:['users','revenue']"));
 console.log(JSON.stringify({passed:true,months,days,totals:real.totals,checks:['exact excluded stage only','unique lead IDs and conflict detection','Moscow midnight','daily/monthly equality','outside coverage is unavailable','other product metrics preserved','only aggregates published']},null,2));

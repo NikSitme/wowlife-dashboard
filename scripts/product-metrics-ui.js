@@ -18,7 +18,7 @@
     ['pmFrom','pmTo'].forEach(function(id){$(id).disabled=false;$(id).min=data.sourceStart;$(id).max=data.sourceEnd;});$('pmPreset').disabled=false;$('pmPreset').value=state.from===model.addMonths(hi,-1)&&state.to===state.from?'last_month':state.from===model.addMonths(hi,-11)&&state.to===hi?'12m':state.from===hi.slice(0,4)+'-01'&&state.to===hi?'year':state.from===lo&&state.to===hi?'all':'custom';$('pmFrom').value=state.from+'-01';$('pmTo').value=data.months[state.to].to;if(window.WowlifeDatePicker){window.WowlifeDatePicker.enhance(root);window.WowlifeDatePicker.refresh();}$('pmMode').value=state.mode;
   }
   function pointLabel(p){return p.date?new Date(p.date+'T00:00:00Z').toLocaleDateString('ru-RU',{day:'numeric',month:'short',timeZone:'UTC'}):label(p.month);}
-  function cells(p){return ['users','leads','buyers','payments','avgPrice','revenue','c1'].map(function(id){return '<td'+(id==='c1'?' title="Новые покупатели: '+format(p.newBuyers,'buyers')+'"':'')+'>'+format(p[id],id)+'</td>';}).join('');}
+  function cells(p){return ['users','leads','buyers','payments','avgPrice','revenue','c1'].map(function(id){return '<td'+(id==='c1'?' title="Новые покупатели: '+format(p.newBuyers,'buyers')+'"':id==='leads'&&p.leads!==null?' title="Лиды CRM: '+format(p.crmLeads,'leads')+' + корзины: '+format(p.baskets,'leads')+'"':'')+'>'+format(p[id],id)+'</td>';}).join('');}
   function openMonth(ym,fromChart){if(!data||!data.months[ym])return;detailMonth=detailMonth===ym?null:ym;dayRequestId++;dayReport=null;dayReportKey='';dayError='';dayLoading=false;draw();if(detailMonth)loadDays(false);if(fromChart)$('pmBack').scrollIntoView({block:'start',behavior:'smooth'});}
   function closeMonth(){detailMonth=null;dayRequestId++;dayLoading=false;dayError='';draw();}
   function loadDays(force){
@@ -27,7 +27,7 @@
     if(!force&&key===dayReportKey)return;dayReportKey=key;dayReport=null;dayError='';dayLoading=true;var id=++dayRequestId;draw();
     getReport({from:m.from,to:m.to,step:'day'}).then(function(r){if(id!==dayRequestId)return;if(r.sampled)throw Error('ответ получен с семплированием');dayReport=r;}).catch(function(e){if(id===dayRequestId)dayError=e.name==='AbortError'?'истекло время ожидания':e.message;}).finally(function(){if(id===dayRequestId){dayLoading=false;draw();}});
   }
-  function withLeads(list){return list.map(function(p){var value=leadData?window.LeadMetrics.rangeStats(leadData,p.from,p.to):null;return Object.assign({},p,{leads:value?value.leads:null});});}
+  function withLeads(list){return list.map(function(p){var value=leadData?window.LeadMetrics.rangeStats(leadData,p.from,p.to):null;return Object.assign({},p,{leads:value?value.leads:null,crmLeads:value?value.crmLeads:null,baskets:value?value.baskets:null});});}
   function draw(){
     if(!data)return;bounds();if(detailMonth&&(detailMonth<state.from||detailMonth>state.to)){detailMonth=null;dayRequestId++;dayLoading=false;}var monthly=withLeads(model.series(data,state.from,state.to,report));points=detailMonth?withLeads(model.dailySeries(data,detailMonth,dayReport)):monthly;
     $('pmMeta').textContent='Сайт и прямые продажи · CRM по '+dateLabel(data.sourceEnd)+' · даты по Москве';
@@ -38,7 +38,7 @@
     $('pmBack').hidden=!detailMonth;$('pmDetailLabel').textContent=detailMonth?label(detailMonth)+' · по дням':'По месяцам · нажмите на месяц, чтобы раскрыть дни';
     $('pmDailyRefresh').hidden=!detailMonth||!!data.days;
     $('pmCoverage').hidden=false;
-    $('pmCoverage').textContent=leadLoading?'Загружаю лиды CRM…':leadError?'Лиды недоступны: '+leadError:leadData?'Лиды — все источники CRM, кроме стадии «Активации(Завершенные)». Без корзин · выгрузка '+dateLabel(leadData.latestCreated)+' · доступны по '+dateLabel(leadData.coverageEnd)+'. За даты вне выгрузки — прочерк.':'Лиды CRM ещё не загружены.';
+    $('pmCoverage').textContent=leadLoading?'Загружаю лиды и корзины…':leadError?'Лиды недоступны: '+leadError:leadData?'Лиды = CRM без стадии «Активации(Завершенные)» + все корзины из воронки заказов, по дате создания. Все остальные стадии и источники включены. Снимок '+dateLabel(leadData.latestCreated)+' · доступны по '+dateLabel(leadData.coverageEnd)+'. За даты вне выгрузки — прочерк.':'Лиды CRM ещё не загружены.';
     var activeReport=detailMonth?dayReport:report,activeLoading=detailMonth?dayLoading:loading,activeError=detailMonth?dayError:error;
     $('pmMetrikaStatus').textContent=activeLoading?'Загружаю пользователей из Яндекс.Метрики…':activeError?'Пользователи и C1 недоступны: '+activeError:activeReport?'Метрика: уникальные посетители '+(detailMonth?'каждого дня':'каждого месяца')+' · обновлено '+new Date(activeReport.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow'}):'Пользователи и C1 загружаются отдельно от заказов.';
     $('pmRetry').hidden=!activeError;chart();
@@ -80,7 +80,7 @@
   window.__productMetricsRerender=function(){if(!root.closest('[data-panel]').hidden){start();draw();loadUsers(false);if(detailMonth)loadDays(false);}};
   function loadLeads(){
     leadLoading=true;leadError='';
-    fetch('data/lead-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать выгрузку');return r.json();}).then(function(d){if(!window.LeadMetrics.valid(d))throw Error('выгрузка не прошла проверку итогов');leadData=d;}).catch(function(e){leadError=e.message;}).finally(function(){leadLoading=false;if(data&&!root.closest('[data-panel]').hidden)draw();});
+    fetch('data/lead-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать выгрузку');return r.json();}).then(function(d){if(!window.LeadMetrics.valid(d)||!d.includesBaskets)throw Error('выгрузка лидов и корзин не прошла проверку итогов');leadData=d;}).catch(function(e){leadError=e.message;}).finally(function(){leadLoading=false;if(data&&!root.closest('[data-panel]').hidden)draw();});
   }
   function start(){if(started)return;started=true;loadLeads();fetch('data/product-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('CRM недоступна');return r.json();}).then(accept).catch(function(e){if(!data)$('pmMeta').textContent='Не удалось загрузить показатели CRM. Нажмите «Обновить данные» сверху. '+e.message;});if(data){draw();loadUsers(false);}}
   $('pmChecks').innerHTML=metrics.map(function(m){return '<label class="pm-check" style="--pm-color:'+m.color+'"><input type="checkbox" data-metric="'+m.id+'" '+(state.selected.includes(m.id)?'checked':'')+'><span class="pm-dot"></span>'+m.label+'</label>';}).join('');
