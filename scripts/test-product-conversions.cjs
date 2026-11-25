@@ -19,9 +19,13 @@ for(const p of Object.values(data.days)){check(p,1361);daily++;}
 const october=check(data.months['2026-10'],37787);
 assert.equal(october.payingConversion,639/37787);assert.equal(october.leadConversion,leads.rangeStats(leadData,'2026-10-01','2026-10-31').leads/37787);
 const ui=fs.readFileSync('scripts/product-metrics-ui.js','utf8'),html=fs.readFileSync('index.html','utf8');
-assert(ui.includes('model.withConversions(Object.assign({},p,'));assert(html.includes('Все платящие / пользователи'));
+assert(ui.includes('model.withConversions(Object.assign({},p,'));assert(html.includes('Конверсия в платящего = все платящие пользователи / пользователи сайта'));
+const tableKeys=Array.from(html.slice(html.indexOf('id="pmTableHead"'),html.indexOf('id="pmTableBody"')).matchAll(/data-metric="([^"]+)"/g),m=>m[1]);
+const uiKeys=Array.from(ui.slice(ui.indexOf('var metrics='),ui.indexOf('var leadData=')).matchAll(/id:'([^']+)'/g),m=>m[1]);
+assert.deepEqual(tableKeys,uiKeys,'monthly and daily cells use the same metric order as the grouped headers');
+assert.equal(tableKeys.indexOf('leadConversion'),tableKeys.indexOf('leads')+1,'lead conversion stays beside lead counts');
 assert(ui.includes("saved.selected.filter"));assert(ui.includes('colspan="10"'));
 console.log(JSON.stringify({passed:true,monthly,daily,october:{users:october.users,leads:october.leads,buyers:october.buyers,leadConversion:october.leadConversion,payingConversion:october.payingConversion},checks:['same-date numerators and audience','all buyers, not new buyers or payments','zero versus missing values','no source mutation','no cap for aggregate lead events','shared monthly/daily conversion function']},null,2));
 
 assert(html.includes('product-metrics-model.js?v=20261124-conversions'));
-assert(html.includes('product-metrics-ui.js?v=20261124-conversions'));
+assert(html.includes('product-metrics-ui.js?v=20261125-compact'));

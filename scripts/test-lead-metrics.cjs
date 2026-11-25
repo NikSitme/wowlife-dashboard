@@ -46,6 +46,6 @@ for(const m of Object.values(product.months)){
 }
 const text=JSON.stringify(real);assert(!/@|\+7\d{10}|"rows"|"contact"|"phone"/.test(text),'published data contain no CRM contacts or raw rows');
 const ui=fs.readFileSync('scripts/product-metrics-ui.js','utf8'),html=fs.readFileSync('index.html','utf8');
-assert(ui.includes("['users','leads','buyers','payments','avgPrice','revenue','leadConversion','payingConversion','c1']"));assert(ui.includes('colspan="10"'));assert(ui.includes('withLeads(model.dailySeries'));
+assert(ui.includes('function cells(p){return metrics.map('));assert(html.includes('data-metric="leads"')&&html.includes('data-metric="leadConversion"'));assert(ui.includes('colspan="10"'));assert(ui.includes('withLeads(model.dailySeries'));
 assert(html.includes('Лиды<small>CRM + корзины'));assert(ui.includes("selected:['users','revenue']"));
 console.log(JSON.stringify({passed:true,months,days,totals:real.totals,checks:['four exact excluded stages with separate counts','other stages retained','basket source preserved','unique lead IDs and conflict detection','Moscow midnight','daily/monthly equality','old snapshots rejected','outside coverage is unavailable','other product metrics preserved','only aggregates published']},null,2));

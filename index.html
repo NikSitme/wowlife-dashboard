@@ -14,7 +14,7 @@
 })();
 </script>
 <link rel="stylesheet" href="./styles/dashboard-shell.css?v=20261119">
-<link rel="stylesheet" href="./styles/product-metrics.css?v=20261123-days">
+<link rel="stylesheet" href="./styles/product-metrics.css?v=20261125-compact">
 <link rel="stylesheet" href="./scripts/date-picker.css?v=month-grid-20261115">
 <link rel="stylesheet" href="./scripts/lead-activity.css?v=20261118">
 <script src="./scripts/date-picker.js?v=product-month-20261122" defer></script>
@@ -4009,9 +4009,13 @@ window.__salesActSetData = function(newData){
     </div>
     <p class="pm-help">Нажмите на месяц в таблице или на графике, чтобы раскрыть дни</p>
     <p class="pm-meta" id="pmMeta" aria-live="polite">Загружаю показатели…</p>
-    <div class="pm-table-wrap"><table class="pm-table"><thead id="pmTableHead"><tr>
-      <th scope="col">Месяц</th><th scope="col">Пользователи<small>Яндекс.Метрика</small></th><th scope="col">Лиды<small>CRM + корзины</small></th><th scope="col">Платящие пользователи<small>Покупатели оплаченных заказов</small></th><th scope="col">Payments<small>Оплаченные заказы</small></th><th scope="col">Av. price<small>Средний чек заказа</small></th><th scope="col">Revenue<small>Выручка заказов CRM</small></th><th scope="col">В лида<small>Лиды / пользователи</small></th><th scope="col">В платящего<small>Все платящие / пользователи</small></th><th scope="col">C1<small>В первую покупку</small></th>
-    </tr></thead><tbody id="pmTableBody"></tbody></table></div>
+    <div class="pm-table-wrap"><table class="pm-table" aria-labelledby="pmTitle">
+      <colgroup id="pmTableColumns"><col class="pm-col-period"><col class="pm-col-count"><col class="pm-col-count"><col class="pm-col-rate"><col class="pm-col-count"><col class="pm-col-rate"><col class="pm-col-rate"><col class="pm-col-count"><col class="pm-col-price"><col class="pm-col-revenue"></colgroup>
+      <thead id="pmTableHead"><tr class="pm-column-groups">
+        <th class="pm-period" scope="col" rowspan="2">Месяц</th><th scope="colgroup" colspan="3">Трафик и лиды</th><th scope="colgroup" colspan="4">Покупки</th><th scope="colgroup" colspan="2">Деньги</th>
+      </tr><tr class="pm-column-labels">
+        <th class="pm-group-start" scope="col" data-metric="users">Пользователи<small>Метрика</small></th><th scope="col" data-metric="leads">Лиды<small>CRM + корзины</small></th><th scope="col" data-metric="leadConversion">В лида<small>% аудитории</small></th><th class="pm-group-start" scope="col" data-metric="buyers">Платящие<small>Покупатели</small></th><th scope="col" data-metric="payingConversion">В платящего<small>% аудитории</small></th><th scope="col" data-metric="c1">Первая покупка<small>C1, %</small></th><th scope="col" data-metric="payments">Заказы<small>Оплаченные</small></th><th class="pm-group-start" scope="col" data-metric="avgPrice">Средний чек<small>₽ / заказ</small></th><th scope="col" data-metric="revenue">Выручка<small>CRM, ₽</small></th>
+      </tr></thead><tbody id="pmTableBody"></tbody></table></div>
     <p class="pm-status" id="pmCoverage" hidden></p>
     <div class="pm-status"><span id="pmMetrikaStatus" aria-live="polite"></span><button id="pmRetry" type="button" hidden>Повторить</button></div>
     <h3>Динамика показателей</h3>
@@ -4941,7 +4945,7 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
-<script src="scripts/product-metrics-ui.js?v=20261124-conversions"></script>
+<script src="scripts/product-metrics-ui.js?v=20261125-compact"></script>
 <script src="scripts/revenue-dynamics.js?v=product-style-20261122"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
