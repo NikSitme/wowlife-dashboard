@@ -81,5 +81,11 @@
     var result=emptyCounts();if(d.includesBaskets){result.crmLeads=0;result.baskets=0;}
     for(var day=from;day<=to;day=sales.shift(day,1)){var p=d.days[day];if(!p)return null;Object.keys(result).forEach(function(k){result[k]+=p[k];});}return result;
   }
-  return {METRIC:METRIC,COMBINED:COMBINED,EXCLUDED:EXCLUDED,EXCLUDED_STAGES:EXCLUDED_STAGES.slice(),creation:creation,fromRows:fromRows,withBaskets:withBaskets,valid:valid,rangeStats:rangeStats};
+  function availableRangeStats(d,from,to){
+    if(!d||!sales.isoDate(from)||!sales.isoDate(to)||from>to)return null;
+    var start=from>d.coverageStart?from:d.coverageStart,finish=to<d.coverageEnd?to:d.coverageEnd;
+    var counts=start<=finish?rangeStats(d,start,finish):null;
+    return counts?{from:start,to:finish,partial:start!==from||finish!==to,counts:counts}:null;
+  }
+  return {METRIC:METRIC,COMBINED:COMBINED,EXCLUDED:EXCLUDED,EXCLUDED_STAGES:EXCLUDED_STAGES.slice(),creation:creation,fromRows:fromRows,withBaskets:withBaskets,valid:valid,rangeStats:rangeStats,availableRangeStats:availableRangeStats};
 });

@@ -50,7 +50,7 @@
   }
   function withConversions(point){
     function ratio(n){return Number.isFinite(point.users)&&point.users>0&&Number.isFinite(n)&&n>=0?n/point.users:null;}
-    return Object.assign({},point,{leadConversion:ratio(point.leads),payingConversion:ratio(point.buyers)});
+    return Object.assign({},point,{leadConversion:point.leadsPartial?null:ratio(point.leads),payingConversion:ratio(point.buyers)});
   }
   function series(data,start,finish,report){
     if(!valid(data))return[];
