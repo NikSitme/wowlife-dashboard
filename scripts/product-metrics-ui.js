@@ -4,6 +4,7 @@
   var model=window.ProductMetrics,data=null,report=null,started=false,loading=false,requestId=0,reportKey='',error='',storageKey='wowlife-product-metrics-v1';
   var metrics=[{id:'users',label:'Пользователи',unit:'count',color:'#2871d9'},{id:'leads',label:'Лиды',unit:'count',color:'#6256bd'},{id:'leadConversion',label:'В лида',unit:'percent',color:'#007f86'},{id:'buyers',label:'Платящие',unit:'count',color:'#d43b3b'},{id:'payingConversion',label:'В платящего',unit:'percent',color:'#b35c00'},{id:'c1',label:'C1 · первая покупка',unit:'percent',color:'#e05f83'},{id:'payments',label:'Заказы',unit:'count',color:'#16a085'},{id:'avgPrice',label:'Средний чек',unit:'money',color:'#ad6bc7'},{id:'revenue',label:'Выручка',unit:'money',color:'#d49a24'}];
   var leadData=null,leadError='',leadLoading=false;
+  var revenueData=null,revenueLive=false,revenueError='';
   var detailMonth=null,dayReport=null,dayReportKey='',dayRequestId=0,dayLoading=false,dayError='';
   var state={selected:['users','revenue'],from:null,to:null,mode:'values'},points=[],getReport=window.MetrikaUsers.client(function(url,options){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},30000);return fetch(url,Object.assign({},options,{signal:controller.signal})).finally(function(){clearTimeout(timer);});});
   try{var saved=JSON.parse(localStorage.getItem(storageKey)||'null');if(saved){state.selected=Array.isArray(saved.selected)?saved.selected.filter(function(id){return metrics.some(function(m){return m.id===id;});}):state.selected;state.from=/^\d{4}-\d{2}$/.test(saved.from)?saved.from:null;state.to=/^\d{4}-\d{2}$/.test(saved.to)?saved.to:null;state.mode=saved.mode==='index'?'index':'values';}}catch(ignored){}
@@ -29,8 +30,10 @@
   }
   function withLeads(list){return list.map(function(p){var value=leadData?window.LeadMetrics.rangeStats(leadData,p.from,p.to):null;return model.withConversions(Object.assign({},p,{leads:value?value.leads:null,crmLeads:value?value.crmLeads:null,baskets:value?value.baskets:null}));});}
   function draw(){
-    if(!data)return;bounds();if(detailMonth&&(detailMonth<state.from||detailMonth>state.to)){detailMonth=null;dayRequestId++;dayLoading=false;}var monthly=withLeads(model.series(data,state.from,state.to,report));points=detailMonth?withLeads(model.dailySeries(data,detailMonth,dayReport)):monthly;
-    $('pmMeta').textContent='Сайт и прямые продажи · CRM по '+dateLabel(data.sourceEnd)+' · даты по Москве';
+    if(!data)return;bounds();if(detailMonth&&(detailMonth<state.from||detailMonth>state.to)){detailMonth=null;dayRequestId++;dayLoading=false;}var monthly=model.withAdeskRevenue(withLeads(model.series(data,state.from,state.to,report)),revenueData);points=detailMonth?model.withAdeskRevenue(withLeads(model.dailySeries(data,detailMonth,dayReport)),revenueData):monthly;
+    $('pmMeta').textContent='Покупки — CRM по '+dateLabel(data.sourceEnd)+' · выручка — Адеск, сайт СПб + Москва, без B2B · даты по Москве';
+    var coverage=revenueData&&revenueData.coverage,msk=coverage&&coverage.siteMsk,spb=coverage&&coverage.siteSpb;
+    $('pmRevenueStatus').textContent=msk&&spb?'Выручка Адеска по '+dateLabel(msk.to<spb.to?msk.to:spb.to)+'. За даты вне покрытия — прочерк.':revenueError?'Выручка Адеска недоступна: '+revenueError:'Загружаю выручку сайта из Адеска…';
     $('pmTableBody').innerHTML=monthly.map(function(p){var partial=p.from!==p.month+'-01'||p.to!==model.monthEnd(p.month),opened=detailMonth===p.month;var row='<tr class="pm-month-row'+(opened?' pm-month-open':'')+'"><td><button type="button" class="pm-month-toggle" data-month="'+p.month+'" aria-expanded="'+opened+'"'+(opened?' aria-controls="pmDays"':'')+'><span aria-hidden="true">'+(opened?'▾':'▸')+'</span>'+label(p.month)+'</button>'+(partial?'<small>по '+dateLabel(p.to)+'</small>':'')+'</td>'+cells(p)+'</tr>';
       if(opened){var header=$('pmTableHead').innerHTML.replace('Месяц','День');row+='<tr class="pm-days-row"><td colspan="10"><div id="pmDays" class="pm-days" role="region" aria-label="Дни за '+label(p.month)+'">'+(points.length?'<table class="pm-table pm-day-table"><colgroup>'+$('pmTableColumns').innerHTML+'</colgroup><thead>'+header+'</thead><tbody>'+points.map(function(d){return '<tr><td>'+pointLabel(d)+'</td>'+cells(d)+'</tr>';}).join('')+'</tbody></table>':'<p>Дневные данные появятся после обновления показателей.</p>')+'</div></td></tr>';}
       return row;
@@ -76,13 +79,24 @@
     getReport({from:from,to:to,step:'month'}).then(function(r){if(id!==requestId)return;if(r.sampled)throw Error('ответ получен с семплированием');report=r;}).catch(function(e){if(id===requestId)error=e.name==='AbortError'?'истекло время ожидания':e.message;}).finally(function(){if(id===requestId){loading=false;draw();}});
   }
   function accept(d){if(!model.valid(d))return;if(data&&(d.sourceEnd<data.sourceEnd||d.sourceEnd===data.sourceEnd&&String(d.generated_at)<String(data.generated_at)&&!(d.days&&!data.days)))return;data=d;if(!root.closest('[data-panel]').hidden){draw();if(started){loadUsers(false);if(detailMonth)loadDays(false);}}}
+  function acceptRevenue(next,live){
+    if(!next||next.version!==1||!next.days||!next.coverage||!next.coverage.siteMsk||!next.coverage.siteSpb)return;
+    if(revenueLive&&!live)return;
+    if(revenueData&&next.asOf<revenueData.asOf)return;
+    revenueData=next;revenueLive=!!live;revenueError='';
+    if(data&&!root.closest('[data-panel]').hidden)draw();
+  }
+  window.__productMetricsSetRevenueData=function(next){acceptRevenue(next,true);};
   window.__productMetricsSetData=accept;
   window.__productMetricsRerender=function(){if(!root.closest('[data-panel]').hidden){start();draw();loadUsers(false);if(detailMonth)loadDays(false);}};
   function loadLeads(){
     leadLoading=true;leadError='';
     fetch('data/lead-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать выгрузку');return r.json();}).then(function(d){if(!window.LeadMetrics.valid(d)||!d.includesBaskets)throw Error('выгрузка лидов и корзин не прошла проверку итогов');leadData=d;}).catch(function(e){leadError=e.message;}).finally(function(){leadLoading=false;if(data&&!root.closest('[data-panel]').hidden)draw();});
   }
-  function start(){if(started)return;started=true;loadLeads();fetch('data/product-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('CRM недоступна');return r.json();}).then(accept).catch(function(e){if(!data)$('pmMeta').textContent='Не удалось загрузить показатели CRM. Нажмите «Обновить данные» сверху. '+e.message;});if(data){draw();loadUsers(false);}}
+  function start(){if(started)return;started=true;loadLeads();
+    if(window.__revenueTimelineData)acceptRevenue(window.__revenueTimelineData,true);
+    fetch('data/revenue-timeline.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать источник');return r.json();}).then(function(d){acceptRevenue(d,false);}).catch(function(e){revenueError=e.message;if(data&&!root.closest('[data-panel]').hidden)draw();});
+    fetch('data/product-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('CRM недоступна');return r.json();}).then(accept).catch(function(e){if(!data)$('pmMeta').textContent='Не удалось загрузить показатели CRM. Нажмите «Обновить данные» сверху. '+e.message;});if(data){draw();loadUsers(false);}}
   $('pmChecks').innerHTML=metrics.map(function(m){return '<label class="pm-check" style="--pm-color:'+m.color+'"><input type="checkbox" data-metric="'+m.id+'" '+(state.selected.includes(m.id)?'checked':'')+'><span class="pm-dot"></span>'+m.label+'</label>';}).join('');
   $('pmChecks').addEventListener('change',function(e){var id=e.target.dataset.metric;if(!id)return;state.selected=metrics.filter(function(m){return $('pmChecks').querySelector('[data-metric="'+m.id+'"]').checked;}).map(function(m){return m.id;});persist();draw();});
   ['pmFrom','pmTo'].forEach(function(id){$(id).addEventListener('change',function(){var ym=this.value.slice(0,7);if(!validMonth(ym))return;state[id==='pmFrom'?'from':'to']=ym;if(state.from>state.to)state[id==='pmFrom'?'to':'from']=ym;$('pmPreset').value='custom';persist();draw();loadUsers(false);});});

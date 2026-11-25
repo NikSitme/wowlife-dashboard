@@ -1,4 +1,4 @@
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./sales-analytics-model.js'));else root.ProductMetrics=factory(root.SalesAnalytics);})(typeof globalThis!=='undefined'?globalThis:this,function(sales){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./sales-analytics-model.js'),require('./revenue-dynamics.js'));else root.ProductMetrics=factory(root.SalesAnalytics,root.RevenueDynamics);})(typeof globalThis!=='undefined'?globalThis:this,function(sales,revenue){
   'use strict';
   function end(ym){return new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),0)).toISOString().slice(0,10);}
   function add(ym,n){return new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7)-1+n,1)).toISOString().slice(0,7);}
@@ -39,6 +39,15 @@
     return {version:4,days:days,orderMetric:sales.ORDER_METRIC,scope:'website-direct',sourceStart:sourceStart,sourceEnd:sourceEnd,through:through,generated_at:generatedAt||new Date().toISOString(),months:months};
   }
   function valid(data){return !!data&&(data.version===3||data.version===4)&&data.orderMetric===sales.ORDER_METRIC&&data.scope==='website-direct'&&!!data.months&&sales.isoDate(data.sourceStart)&&sales.isoDate(data.sourceEnd);}
+  // Same Adesk site series as the finance chart; never substitute CRM money.
+  function withAdeskRevenue(points,timeline){
+    return points.map(function(p){
+      var keys=['siteMsk','siteSpb'],covered=timeline&&timeline.version===1&&timeline.days&&timeline.coverage&&keys.every(function(k){var c=timeline.coverage[k];return c&&c.from<=p.from&&c.to>=p.to;});
+      var amount=null;
+      if(covered){var values=revenue.series(timeline,{from:p.from,to:p.to,step:'month',sources:['site'],city:'all'});amount=values.length===1?values[0].current:null;}
+      return Object.assign({},p,{revenue:amount,revenueSource:'adesk-site'});
+    });
+  }
   function withConversions(point){
     function ratio(n){return Number.isFinite(point.users)&&point.users>0&&Number.isFinite(n)&&n>=0?n/point.users:null;}
     return Object.assign({},point,{leadConversion:ratio(point.leads),payingConversion:ratio(point.buyers)});
@@ -64,5 +73,5 @@
     }
     return points;
   }
-  return {withConversions:withConversions,rangeStats:rangeStats,dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
+  return {withAdeskRevenue:withAdeskRevenue,withConversions:withConversions,rangeStats:rangeStats,dailySeries:dailySeries,fromRows:fromRows,valid:valid,series:series,monthEnd:end,addMonths:add};
 });
