@@ -28,4 +28,4 @@ assert(ui.includes("saved.selected.filter"));assert(ui.includes('colspan="10"'))
 console.log(JSON.stringify({passed:true,monthly,daily,october:{users:october.users,leads:october.leads,buyers:october.buyers,leadConversion:october.leadConversion,payingConversion:october.payingConversion},checks:['same-date numerators and audience','all buyers, not new buyers or payments','zero versus missing values','no source mutation','no cap for aggregate lead events','shared monthly/daily conversion function']},null,2));
 
 assert(html.includes('product-metrics-model.js?v=20261125-available-leads'));
-assert(html.includes('product-metrics-ui.js?v=20261125-available-leads'));
+assert(html.includes('product-metrics-ui.js?v=20261126-month-reveal'));

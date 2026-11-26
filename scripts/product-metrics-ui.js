@@ -21,7 +21,14 @@
   function pointLabel(p){return p.date?new Date(p.date+'T00:00:00Z').toLocaleDateString('ru-RU',{day:'numeric',month:'short',timeZone:'UTC'}):label(p.month);}
   function leadPeriod(p){return p.leadsPartial?'Лиды за '+dateLabel(p.leadsFrom)+'–'+dateLabel(p.leadsTo):'';}
   function cells(p){return metrics.map(function(m){var id=m.id;return '<td data-metric="'+id+'"'+(['users','buyers','avgPrice'].includes(id)?' class="pm-group-start"':'')+(id==='c1'?' title="Новые покупатели: '+format(p.newBuyers,'buyers')+'"':id==='leads'&&p.leads!==null?' title="'+leadPeriod(p)+(p.leadsPartial?'. ':'')+'Лиды CRM: '+format(p.crmLeads,'leads')+' + корзины: '+format(p.baskets,'leads')+'"':id==='leadConversion'&&p.leadsPartial?' title="Конверсия недоступна: лиды и пользователи за разные периоды"':'')+'>'+format(p[id],id)+(id==='leads'&&p.leadsPartial?'<small>'+dateLabel(p.leadsFrom)+'–'+dateLabel(p.leadsTo)+'</small>':'')+'</td>';}).join('');}
-  function openMonth(ym,fromChart){if(!data||!data.months[ym])return;detailMonth=detailMonth===ym?null:ym;dayRequestId++;dayReport=null;dayReportKey='';dayError='';dayLoading=false;draw();if(detailMonth)loadDays(false);if(fromChart)$('pmBack').scrollIntoView({block:'start',behavior:'smooth'});}
+  function revealMonthDays(){
+    var row=root.querySelector('.pm-month-open'),wrap=row&&row.closest('.pm-table-wrap');if(!wrap)return;
+    var left=wrap.scrollLeft;
+    wrap.scrollTop+=row.getBoundingClientRect().top-wrap.getBoundingClientRect().top-$('pmTableHead').getBoundingClientRect().height-1;
+    wrap.scrollIntoView({block:'nearest',inline:'nearest'});
+    wrap.scrollLeft=left;
+  }
+  function openMonth(ym,fromChart){if(!data||!data.months[ym])return;detailMonth=detailMonth===ym?null:ym;dayRequestId++;dayReport=null;dayReportKey='';dayError='';dayLoading=false;draw();if(detailMonth)loadDays(false);if(fromChart)$('pmBack').scrollIntoView({block:'start',behavior:'smooth'});else if(detailMonth)revealMonthDays();}
   function closeMonth(){detailMonth=null;dayRequestId++;dayLoading=false;dayError='';draw();}
   function loadDays(force){
     if(!data||!detailMonth||!data.days)return;
