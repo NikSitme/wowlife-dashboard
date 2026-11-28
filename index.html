@@ -4947,7 +4947,7 @@ window.__salesActSetData = function(newData){
 </div>
 
 <script src="scripts/metrika-users.js?v=20261118"></script>
-<script src="scripts/product-metrics-ui.js?v=20261126-month-reveal"></script>
+<script src="scripts/product-metrics-ui.js?v=20261128-lead-refresh"></script>
 <script src="scripts/opiu-payroll.js?v=creators-20261110"></script>
 <script>
 (function(){
@@ -8276,6 +8276,13 @@ window.__salesActSetData = function(newData){
       // файлы, которые кладут в репозиторий серверные сборщики (Метрика, бот контент-завода); их отсутствие — не ошибка
       (async function(){ fetches.metrika=await optionalJson("data/metrika.json?ts=" + Date.now()); })(),
       (async function(){ fetches.content=await optionalJson("data/content.json?ts=" + Date.now()); })(),
+      // The product funnel uses the cleaned lead+basket export, not the raw lead-activity sheet.
+      (async function(){
+        if(!window.__productMetricsRefreshLeads)return;
+        var updated=await window.__productMetricsRefreshLeads();
+        if(!updated)errors.push('Лиды и корзины: не удалось обновить продуктовый снимок');
+        else if(updated.coverageEnd<window.SalesAnalytics.shift(window.SalesAnalytics.today(),-1))errors.push('Лиды и корзины доступны только по '+updated.coverageEnd+'; нужна свежая выгрузка CRM');
+      })(),
     ]);
     async function readyGroup(name,keys,apply){
       await Promise.all(keys.map(function(key){return requests[key];}));

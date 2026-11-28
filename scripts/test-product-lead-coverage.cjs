@@ -1,11 +1,13 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const leads=require('./lead-metrics.js'),product=require('./product-metrics-model.js');
-const data=JSON.parse(fs.readFileSync('data/lead-metrics.json','utf8'));
+const current=JSON.parse(fs.readFileSync('data/lead-metrics.json','utf8'));
+assert(leads.valid(current));
+// Retain the historical partial-coverage regression even after refreshing production data.
+const data={...current,coverageEnd:'2026-11-23'};
 const before=JSON.stringify(data);
-assert(leads.valid(data));
 const november=leads.availableRangeStats(data,'2026-11-01','2026-11-24');
 assert.deepEqual({from:november.from,to:november.to,partial:november.partial,leads:november.counts.leads,crm:november.counts.crmLeads,baskets:november.counts.baskets},
-  {from:'2026-11-01',to:'2026-11-23',partial:true,leads:2221,crm:263,baskets:1958});
+  {from:'2026-11-01',to:'2026-11-23',partial:true,leads:2220,crm:263,baskets:1957});
 assert.equal(leads.rangeStats(data,'2026-11-01','2026-11-24'),null,'strict range API remains strict');
 const converted=product.withConversions({users:28595,leads:november.counts.leads,leadsPartial:november.partial,buyers:436});
 assert.equal(converted.leadConversion,null,'never divide 23-day leads by a 24-day audience');
@@ -18,8 +20,8 @@ for(let day=1;day<=24;day++){
 }
 assert.equal(daySum,november.counts.leads,'visible days equal the available monthly total');
 const october=leads.availableRangeStats(data,'2026-10-01','2026-10-31');
-assert.equal(october.partial,false);assert.equal(october.counts.leads,2917);
-assert.equal(product.withConversions({users:37787,leads:october.counts.leads,leadsPartial:false}).leadConversion,2917/37787);
+assert.equal(october.partial,false);assert.equal(october.counts.leads,2913);
+assert.equal(product.withConversions({users:37787,leads:october.counts.leads,leadsPartial:false}).leadConversion,2913/37787);
 assert.equal(leads.availableRangeStats(data,'2026-12-01','2026-12-31'),null);
 assert.equal(leads.availableRangeStats(data,'2026-11-24','2026-11-01'),null);
 assert.equal(leads.availableRangeStats(data,'bad','2026-11-01'),null);

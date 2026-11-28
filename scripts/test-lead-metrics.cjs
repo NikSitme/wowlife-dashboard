@@ -33,9 +33,9 @@ assert.throws(()=>model.withBaskets(d,[bh,['1','03.01.2026 12:00:00']]),/не п
 assert(!model.valid({...combined,totals:{...combined.totals,baskets:4}}));
 assert(!model.valid({...combined,sources:{...combined.sources,baskets:{...combined.sources.baskets,beforeCoverage:0}}}));
 const real=JSON.parse(fs.readFileSync('data/lead-metrics.json','utf8')),product=JSON.parse(fs.readFileSync('data/product-metrics.json','utf8'));
-assert(model.valid(real));assert.equal(real.sources.crm.inputUnique,55209);assert.equal(real.totals.activationExcluded,19607);assert.equal(real.sources.crm.afterCutoff,2);assert.equal(real.sources.baskets.inputUnique,102174);assert.equal(real.sources.baskets.afterCutoff,20);
-assert.deepEqual(model.rangeStats(real,'2026-10-01','2026-10-31'),{...counts(2917,307,11,47,20),crmLeads:393,baskets:2524});
-assert.deepEqual(model.rangeStats(real,'2026-11-01','2026-11-23'),{...counts(2221,174,9,31,30),crmLeads:263,baskets:1958});
+assert(model.valid(real));assert.equal(real.sources.crm.inputUnique,55300);assert.equal(real.totals.activationExcluded,19629);assert.equal(real.sources.crm.afterCutoff,12);assert.equal(real.sources.baskets.inputUnique,102606);assert.equal(real.sources.baskets.afterCutoff,39);
+assert.deepEqual(model.rangeStats(real,'2026-10-01','2026-10-31'),{...counts(2913,307,11,47,20),crmLeads:393,baskets:2520});
+assert.deepEqual(model.rangeStats(real,'2026-11-01','2026-11-23'),{...counts(2220,174,9,31,30),crmLeads:263,baskets:1957});
 assert(!model.valid({...real,version:2}),'old metric snapshots must not be displayed as the cleaned metric');
 assert(!model.valid({...real,excludedStages:[model.EXCLUDED]}));
 let days=0,months=0;

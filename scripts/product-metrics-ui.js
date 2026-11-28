@@ -3,7 +3,7 @@
   var root=document.getElementById('productMetrics');if(!root)return;
   var model=window.ProductMetrics,data=null,report=null,started=false,loading=false,requestId=0,reportKey='',error='',storageKey='wowlife-product-metrics-v1';
   var metrics=[{id:'users',label:'Пользователи',unit:'count',color:'#2871d9'},{id:'leads',label:'Лиды',unit:'count',color:'#6256bd'},{id:'leadConversion',label:'В лида',unit:'percent',color:'#007f86'},{id:'buyers',label:'Платящие',unit:'count',color:'#d43b3b'},{id:'payingConversion',label:'В платящего',unit:'percent',color:'#b35c00'},{id:'c1',label:'C1 · первая покупка',unit:'percent',color:'#e05f83'},{id:'payments',label:'Заказы',unit:'count',color:'#16a085'},{id:'avgPrice',label:'Средний чек',unit:'money',color:'#ad6bc7'},{id:'revenue',label:'Выручка',unit:'money',color:'#d49a24'}];
-  var leadData=null,leadError='',leadLoading=false;
+  var leadData=null,leadError='',leadLoading=false,leadRequest=null;
   var revenueData=null,revenueLive=false,revenueError='';
   var detailMonth=null,dayReport=null,dayReportKey='',dayRequestId=0,dayLoading=false,dayError='';
   var state={selected:['users','revenue'],from:null,to:null,mode:'values'},points=[],getReport=window.MetrikaUsers.client(function(url,options){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},30000);return fetch(url,Object.assign({},options,{signal:controller.signal})).finally(function(){clearTimeout(timer);});});
@@ -98,9 +98,13 @@
   window.__productMetricsSetData=accept;
   window.__productMetricsRerender=function(){if(!root.closest('[data-panel]').hidden){start();draw();loadUsers(false);if(detailMonth)loadDays(false);}};
   function loadLeads(){
+    if(leadRequest)return leadRequest;
     leadLoading=true;leadError='';
-    fetch('data/lead-metrics.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать выгрузку');return r.json();}).then(function(d){if(!window.LeadMetrics.valid(d)||!d.includesBaskets)throw Error('выгрузка лидов и корзин не прошла проверку итогов');leadData=d;}).catch(function(e){leadError=e.message;}).finally(function(){leadLoading=false;if(data&&!root.closest('[data-panel]').hidden)draw();});
+    var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},30000);
+    leadRequest=fetch('data/lead-metrics.json',{cache:'no-cache',signal:controller.signal}).then(function(r){if(!r.ok)throw Error('не удалось прочитать выгрузку');return r.json();}).then(function(d){if(!window.LeadMetrics.valid(d)||!d.includesBaskets)throw Error('выгрузка лидов и корзин не прошла проверку итогов');if(leadData&&(d.coverageEnd<leadData.coverageEnd||d.coverageEnd===leadData.coverageEnd&&String(d.generated_at)<String(leadData.generated_at)))throw Error('сервер вернул более старый снимок');leadData=d;return {coverageEnd:d.coverageEnd,generated_at:d.generated_at};}).catch(function(e){leadError=e.message;return null;}).finally(function(){clearTimeout(timer);leadLoading=false;leadRequest=null;if(data&&!root.closest('[data-panel]').hidden)draw();});
+    return leadRequest;
   }
+  window.__productMetricsRefreshLeads=loadLeads;
   function start(){if(started)return;started=true;loadLeads();
     if(window.__revenueTimelineData)acceptRevenue(window.__revenueTimelineData,true);
     fetch('data/revenue-timeline.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('не удалось прочитать источник');return r.json();}).then(function(d){acceptRevenue(d,false);}).catch(function(e){revenueError=e.message;if(data&&!root.closest('[data-panel]').hidden)draw();});
